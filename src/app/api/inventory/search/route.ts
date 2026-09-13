@@ -9,18 +9,27 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get('q') ?? '').trim();
+  const category = (searchParams.get('category') ?? '').trim();
 
   try {
-    const searchCondition = q
-      ? or(
+    const conditions = [eq(inventoryItems.isActive, true)];
+
+    if (category) {
+      conditions.push(eq(inventoryItems.category, category as any));
+    }
+
+    if (q) {
+      conditions.push(
+        or(
           ilike(inventoryItems.sku, `%${q}%`),
           ilike(
             sql`${inventoryItems.brand} || ' ' || ${inventoryItems.model}`,
             `%${q}%`
           ),
           ilike(inventoryItems.description, `%${q}%`)
-        )
-      : undefined;
+        )!
+      );
+    }
 
     // Strict RBAC: Omit costPrice from query projection so wholesale cost never reaches client
     const items = await db
@@ -43,12 +52,8 @@ export async function GET(request: Request) {
         lensMaterial: inventoryItems.lensMaterial,
       })
       .from(inventoryItems)
-      .where(
-        searchCondition
-          ? and(eq(inventoryItems.isActive, true), searchCondition)
-          : eq(inventoryItems.isActive, true)
-      )
-      .limit(20);
+      .where(and(...conditions))
+      .limit(30);
 
     return NextResponse.json({ items });
   } catch (err) {

@@ -19,9 +19,18 @@ export interface PrintInvoiceItem {
   lensType?: string | null;
   coating?: string | null;
   lensMaterial?: string | null;
+  patientId?: string | null;
+  patientName?: string | null;
+  isCustomerOwnFrame?: boolean;
+  fittingNote?: string | null;
 }
 
 export interface PrintPrescriptionData {
+  patientId?: string;
+  patientName?: string;
+  relationType?: string;
+  isCustomerOwnFrame?: boolean;
+  fittingNote?: string | null;
   odSphere?: number | string | null;
   odCylinder?: number | string | null;
   odAxis?: number | string | null;
@@ -42,6 +51,8 @@ export interface PrintCustomerData {
   age?: number | null;
   gender?: string | null;
   address?: string | null;
+  email?: string | null;
+  gstin?: string | null;
 }
 
 export interface PrintOrderData {
@@ -52,6 +63,7 @@ export interface PrintOrderData {
   customer: PrintCustomerData;
   items: PrintInvoiceItem[];
   prescription?: PrintPrescriptionData | null;
+  prescriptions?: PrintPrescriptionData[] | null;
   grandTotal: string | number;
   advancePaid: string | number;
   balanceDue: string | number;
@@ -422,56 +434,97 @@ export function WorkshopSlip({ order }: { order: PrintOrderData }) {
         </div>
       </div>
 
-      {/* Refraction Matrix (OD / OS) */}
-      <div className="mt-4">
+      {/* Refraction Matrix - Loops over each distinct prescription for family orders */}
+      <div className="mt-4 space-y-4">
         <div className="font-bold text-sm uppercase tracking-wide border-b border-black pb-1">
           2. Clinical Refraction Matrix (OD / OS)
         </div>
 
-        <table className="rx-grid">
-          <thead>
-            <tr>
-              <th className="eye-label">Eye</th>
-              <th>SPHERE (SPH)</th>
-              <th>CYLINDER (CYL)</th>
-              <th>AXIS (1–180°)</th>
-              <th>ADDITION (ADD)</th>
-              <th>MONO PD (mm)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="eye-label">OD (Right Eye)</td>
-              <td className="font-mono font-bold text-sm">{formatDiopter(rx?.odSphere)}</td>
-              <td className="font-mono font-bold text-sm">{formatDiopter(rx?.odCylinder)}</td>
-              <td className="font-mono font-bold text-sm">
-                {rx?.odAxis ? `${rx.odAxis}°` : '—'}
-              </td>
-              <td className="font-mono font-bold text-sm">{formatDiopter(rx?.odAdd)}</td>
-              <td className="font-mono text-sm">
-                {rx?.odPd ? `${rx.odPd} mm` : rx?.binocularPd ? `${rx.binocularPd} mm (Binoc)` : '—'}
-              </td>
-            </tr>
-            <tr>
-              <td className="eye-label">OS (Left Eye)</td>
-              <td className="font-mono font-bold text-sm">{formatDiopter(rx?.osSphere)}</td>
-              <td className="font-mono font-bold text-sm">{formatDiopter(rx?.osCylinder)}</td>
-              <td className="font-mono font-bold text-sm">
-                {rx?.osAxis ? `${rx.osAxis}°` : '—'}
-              </td>
-              <td className="font-mono font-bold text-sm">{formatDiopter(rx?.osAdd)}</td>
-              <td className="font-mono text-sm">
-                {rx?.osPd ? `${rx.osPd} mm` : rx?.binocularPd ? `${rx.binocularPd} mm (Binoc)` : '—'}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        {(() => {
+          const rxList =
+            order.prescriptions && order.prescriptions.length > 0
+              ? order.prescriptions
+              : order.prescription
+                ? [order.prescription]
+                : [];
 
-        {rx?.binocularPd && (
-          <div className="mt-2 text-xs font-semibold">
-            Binocular Pupillary Distance (PD): <span className="font-mono">{rx.binocularPd} mm</span>
-          </div>
-        )}
+          if (rxList.length === 0) {
+            return (
+              <div className="p-3 border border-dashed border-slate-300 text-xs italic text-slate-500">
+                No clinical prescription attached to this order.
+              </div>
+            );
+          }
+
+          return rxList.map((rxItem, idx) => (
+            <div key={idx} className="space-y-1.5 border border-slate-300 p-2.5 rounded bg-slate-50/40">
+              {/* Prescription Header / Recipient */}
+              <div className="flex justify-between items-center text-xs pb-1 border-b border-slate-200">
+                <div className="font-bold">
+                  <span className="text-slate-600">For: </span>
+                  <span className="text-blue-900">{rxItem.patientName || order.customer.name}</span>
+                  {rxItem.relationType && (
+                    <span className="ml-1.5 font-normal text-slate-500">
+                      ({rxItem.relationType})
+                    </span>
+                  )}
+                </div>
+
+                {rxItem.isCustomerOwnFrame && (
+                  <span className="font-bold text-[10px] uppercase bg-amber-100 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
+                    Customer&apos;s Own Frame
+                    {rxItem.fittingNote ? ` — ${rxItem.fittingNote}` : ''}
+                  </span>
+                )}
+              </div>
+
+              <table className="rx-grid">
+                <thead>
+                  <tr>
+                    <th className="eye-label">Eye</th>
+                    <th>SPHERE (SPH)</th>
+                    <th>CYLINDER (CYL)</th>
+                    <th>AXIS (1–180°)</th>
+                    <th>ADDITION (ADD)</th>
+                    <th>MONO PD (mm)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="eye-label">OD (Right Eye)</td>
+                    <td className="font-mono font-bold text-sm">{formatDiopter(rxItem.odSphere)}</td>
+                    <td className="font-mono font-bold text-sm">{formatDiopter(rxItem.odCylinder)}</td>
+                    <td className="font-mono font-bold text-sm">
+                      {rxItem.odAxis ? `${rxItem.odAxis}°` : '—'}
+                    </td>
+                    <td className="font-mono font-bold text-sm">{formatDiopter(rxItem.odAdd)}</td>
+                    <td className="font-mono text-sm">
+                      {rxItem.odPd ? `${rxItem.odPd} mm` : rxItem.binocularPd ? `${rxItem.binocularPd} mm (Binoc)` : '—'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="eye-label">OS (Left Eye)</td>
+                    <td className="font-mono font-bold text-sm">{formatDiopter(rxItem.osSphere)}</td>
+                    <td className="font-mono font-bold text-sm">{formatDiopter(rxItem.osCylinder)}</td>
+                    <td className="font-mono font-bold text-sm">
+                      {rxItem.osAxis ? `${rxItem.osAxis}°` : '—'}
+                    </td>
+                    <td className="font-mono font-bold text-sm">{formatDiopter(rxItem.osAdd)}</td>
+                    <td className="font-mono text-sm">
+                      {rxItem.osPd ? `${rxItem.osPd} mm` : rxItem.binocularPd ? `${rxItem.binocularPd} mm (Binoc)` : '—'}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {rxItem.binocularPd && (
+                <div className="pt-1 text-[11px] font-semibold text-slate-700">
+                  Binocular Pupillary Distance (PD): <span className="font-mono">{rxItem.binocularPd} mm</span>
+                </div>
+              )}
+            </div>
+          ));
+        })()}
       </div>
 
       {/* Ophthalmic Lens Fabrication Parameters */}
@@ -480,25 +533,56 @@ export function WorkshopSlip({ order }: { order: PrintOrderData }) {
           3. Ophthalmic Lens Fabrication Parameters
         </div>
 
-        <div className="mt-2 text-xs grid grid-cols-3 gap-3 border border-slate-300 p-3 rounded">
-          <div>
-            <span className="font-semibold text-slate-600 block">Lens Design:</span>
-            <span className="font-bold text-sm">
-              {lensItems[0]?.lensType || 'Single Vision (Standard)'}
-            </span>
-          </div>
-          <div>
-            <span className="font-semibold text-slate-600 block">Coating / Treatment:</span>
-            <span className="font-bold text-sm">
-              {lensItems[0]?.coating || 'Anti-Reflective + UV400'}
-            </span>
-          </div>
-          <div>
-            <span className="font-semibold text-slate-600 block">Substrate / Index:</span>
-            <span className="font-bold text-sm">
-              {lensItems[0]?.lensMaterial || 'CR39 Organic (Index 1.50)'}
-            </span>
-          </div>
+        <div className="mt-2 text-xs space-y-2">
+          {lensItems.length > 0 ? (
+            lensItems.map((l, idx) => (
+              <div
+                key={idx}
+                className="border border-slate-300 p-2.5 rounded bg-slate-50/50 space-y-1.5"
+              >
+                <div className="flex justify-between items-center font-bold text-xs">
+                  <span>{l.description}</span>
+                  {l.patientName && (
+                    <span className="text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                      For: {l.patientName}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-[11px]">
+                  <div>
+                    <span className="text-slate-500">Design: </span>
+                    <span className="font-semibold">
+                      {l.lensType || 'Single Vision (Standard)'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Coating: </span>
+                    <span className="font-semibold">
+                      {l.coating || 'Anti-Reflective + UV400'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Material: </span>
+                    <span className="font-semibold">
+                      {l.lensMaterial || 'CR39 Organic (Index 1.50)'}
+                    </span>
+                  </div>
+                </div>
+                {l.isCustomerOwnFrame && (
+                  <div className="text-[11px] text-amber-900 bg-amber-50 p-1.5 rounded border border-amber-200 mt-1">
+                    <span className="font-bold">Customer's Own Frame: </span>
+                    <span>
+                      {l.fittingNote || 'Standard assembly into customer supplied frame chassis.'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="p-3 border border-dashed border-slate-300 rounded text-xs text-slate-500 italic">
+              No ophthalmic lenses attached to this order.
+            </div>
+          )}
         </div>
       </div>
 

@@ -151,6 +151,18 @@ export function A4Invoice({ order }: { order: PrintOrderData }) {
             <span className="w-24 text-black">Address / City:</span>
             <span className="text-black">{order.customer.address || 'Tiruvannamalai'}</span>
           </div>
+          {order.customer.email && (
+            <div className="flex">
+              <span className="w-24 text-black">Email:</span>
+              <span className="text-black">{order.customer.email}</span>
+            </div>
+          )}
+          {order.customer.gstin && (
+            <div className="flex">
+              <span className="w-24 font-bold text-black">GSTIN:</span>
+              <span className="font-mono font-bold text-black">{order.customer.gstin}</span>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Invoice Metadata */}

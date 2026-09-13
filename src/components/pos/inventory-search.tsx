@@ -2,7 +2,20 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
-import { Search, Package, Loader2, X, Plus, AlertTriangle, CheckCircle } from 'lucide-react';
+import {
+  Search,
+  Package,
+  Plus,
+  Loader2,
+  X,
+  AlertTriangle,
+  CheckCircle,
+  Glasses,
+  Eye,
+  Info,
+  Layers,
+  Sparkles,
+} from 'lucide-react';
 
 export interface InventoryItem {
   id: string;
@@ -31,13 +44,16 @@ export interface InventoryItem {
 
 interface InventorySearchProps {
   onAdd: (item: InventoryItem) => void;
+  onSelectFrame?: (item: InventoryItem) => void;
 }
 
-export function InventorySearch({ onAdd }: InventorySearchProps) {
+export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<InventoryItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -82,6 +98,19 @@ export function InventorySearch({ onAdd }: InventorySearchProps) {
   }, 150);
 
   const handleSelectItem = (item: InventoryItem) => {
+    if (item.category === 'FRAME' && onSelectFrame) {
+      onSelectFrame(item);
+    } else {
+      onAdd(item);
+    }
+    setQuery('');
+    setResults([]);
+    setIsOpen(false);
+    inputRef.current?.focus();
+  };
+
+  const handleDirectAdd = (e: React.MouseEvent, item: InventoryItem) => {
+    e.stopPropagation();
     onAdd(item);
     setQuery('');
     setResults([]);
@@ -111,12 +140,14 @@ export function InventorySearch({ onAdd }: InventorySearchProps) {
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <div className="relative flex items-center">
-        <div className="pointer-events-none absolute left-3 flex items-center text-slate-400">
+        <div className="pointer-events-none absolute left-3 flex items-center text-slate-400 dark:text-slate-500">
           <Search className="h-4 w-4" />
         </div>
         <input
           ref={inputRef}
           type="text"
+          data-testid="inventory-search-input"
+          aria-label="Search inventory items"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -126,11 +157,11 @@ export function InventorySearch({ onAdd }: InventorySearchProps) {
             if (results.length > 0) setIsOpen(true);
           }}
           placeholder="Scan barcode or search SKU, brand, model... [F3]"
-          className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-9 text-xs font-medium text-slate-900 shadow-sm transition placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+          className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-9 pr-9 text-xs font-medium text-slate-900 dark:text-slate-100 shadow-sm transition placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-400 dark:hover:border-slate-600 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
         />
         <div className="absolute right-2.5 flex items-center space-x-1">
           {isSearching && (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600 dark:text-blue-400" />
           )}
           {query && !isSearching && (
             <button
@@ -140,7 +171,7 @@ export function InventorySearch({ onAdd }: InventorySearchProps) {
                 setResults([]);
                 setIsOpen(false);
               }}
-              className="rounded p-0.5 text-slate-400 hover:text-slate-600"
+              className="rounded p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -150,59 +181,67 @@ export function InventorySearch({ onAdd }: InventorySearchProps) {
 
       {/* Floating Dropdown Results */}
       {isOpen && (
-        <div className="absolute left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-xl">
+        <div className="absolute left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
           {results.length > 0 ? (
             <div className="p-1">
-              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex justify-between items-center">
+              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex justify-between items-center">
                 <span>Matching Inventory ({results.length})</span>
-                <span className="text-slate-400 font-normal">Click or Enter to add to cart</span>
+                <span className="text-slate-400 dark:text-slate-500 font-normal">
+                  Frames open Spectacle Wizard · Other items add directly
+                </span>
               </div>
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                 {results.map((item) => {
                   const isLowStock = item.stockQuantity <= item.lowStockThreshold;
                   const isOutOfStock = item.stockQuantity <= 0;
+                  const isFrame = item.category === 'FRAME';
 
                   return (
                     <li
                       key={item.id}
                       onClick={() => handleSelectItem(item)}
-                      className="group flex cursor-pointer items-center justify-between p-2.5 rounded-md transition hover:bg-blue-50"
+                      className="group flex cursor-pointer items-center justify-between p-2.5 rounded-md transition hover:bg-blue-50 dark:hover:bg-slate-800/70"
                     >
                       <div className="flex-1 min-w-0 pr-3">
                         <div className="flex items-center space-x-2">
-                          <span className="font-mono text-xs font-bold text-blue-700">
+                          <span className="font-mono text-xs font-bold text-blue-700 dark:text-blue-400">
                             {item.sku}
                           </span>
-                          <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-semibold text-slate-600">
+                          <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
                             {categoryLabel(item.category)}
                           </span>
-                          <span className="rounded bg-amber-50 px-1.5 py-0.2 text-[10px] font-mono text-amber-700 border border-amber-200">
+                          <span className="rounded bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.2 text-[10px] font-mono text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
                             GST {item.taxRate}%
                           </span>
+                          {isFrame && (
+                            <span className="rounded bg-purple-50 dark:bg-purple-950/60 px-1.5 py-0.2 text-[9px] font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                              Opens Pair Wizard
+                            </span>
+                          )}
                         </div>
 
-                        <div className="mt-0.5 truncate text-xs font-semibold text-slate-900">
+                        <div className="mt-0.5 truncate text-xs font-semibold text-slate-900 dark:text-slate-100">
                           {item.brand ? `${item.brand} ` : ''}
                           {item.model ? `${item.model} — ` : ''}
-                          <span className="font-normal text-slate-600">
+                          <span className="font-normal text-slate-600 dark:text-slate-400">
                             {item.description}
                           </span>
                         </div>
 
-                        <div className="mt-1 flex items-center space-x-3 text-[11px] text-slate-500">
+                        <div className="mt-1 flex items-center space-x-3 text-[11px] text-slate-500 dark:text-slate-400">
                           <span className="flex items-center">
                             {isOutOfStock ? (
-                              <span className="flex items-center text-red-600 font-semibold">
+                              <span className="flex items-center text-red-600 dark:text-red-400 font-semibold">
                                 <AlertTriangle className="mr-1 h-3 w-3" />
                                 Out of stock (0)
                               </span>
                             ) : isLowStock ? (
-                              <span className="flex items-center text-amber-600 font-semibold">
+                              <span className="flex items-center text-amber-600 dark:text-amber-400 font-semibold">
                                 <AlertTriangle className="mr-1 h-3 w-3" />
                                 Low stock ({item.stockQuantity})
                               </span>
                             ) : (
-                              <span className="flex items-center text-emerald-700 font-medium">
+                              <span className="flex items-center text-emerald-700 dark:text-emerald-400 font-medium">
                                 <CheckCircle className="mr-1 h-3 w-3 text-emerald-500" />
                                 In stock: {item.stockQuantity}
                               </span>
@@ -216,20 +255,51 @@ export function InventorySearch({ onAdd }: InventorySearchProps) {
 
                       <div className="text-right flex items-center space-x-2">
                         <div>
-                          <div className="font-mono text-sm font-bold text-slate-900">
+                          <div className="font-mono text-sm font-bold text-slate-900 dark:text-slate-100">
                             ₹{Number(item.sellingPrice).toLocaleString('en-IN', {
                               minimumFractionDigits: 2,
                             })}
                           </div>
                           {item.mrp && Number(item.mrp) > Number(item.sellingPrice) && (
-                            <div className="text-[10px] text-slate-400 line-through font-mono">
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 line-through font-mono">
                               MRP ₹{item.mrp}
                             </div>
                           )}
                         </div>
-                        <div className="flex h-7 w-7 items-center justify-center rounded bg-blue-100 text-blue-700 group-hover:bg-blue-600 group-hover:text-white transition">
-                          <Plus className="h-4 w-4" />
-                        </div>
+
+                        {/* Quick detail view button */}
+                        <button
+                          type="button"
+                          title="View product details"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDetailItem(item);
+                          }}
+                          className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+
+                        {/* Add action */}
+                        {isFrame ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              title="Direct add frame only"
+                              onClick={(e) => handleDirectAdd(e, item)}
+                              className="px-2 py-1 text-[10px] font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                            >
+                              + Frame Only
+                            </button>
+                            <div className="flex h-7 w-7 items-center justify-center rounded bg-blue-600 text-white shadow-2xs group-hover:bg-blue-700 transition">
+                              <Glasses className="h-4 w-4" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex h-7 w-7 items-center justify-center rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 group-hover:bg-blue-600 group-hover:text-white transition">
+                            <Plus className="h-4 w-4" />
+                          </div>
+                        )}
                       </div>
                     </li>
                   );
@@ -238,15 +308,111 @@ export function InventorySearch({ onAdd }: InventorySearchProps) {
             </div>
           ) : query.trim() && !isSearching ? (
             <div className="p-4 text-center">
-              <Package className="mx-auto h-6 w-6 text-slate-300" />
-              <p className="mt-1 text-xs font-medium text-slate-600">
+              <Package className="mx-auto h-6 w-6 text-slate-300 dark:text-slate-600" />
+              <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
                 No inventory item found matching &quot;{query}&quot;
               </p>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 Check SKU or try searching by brand name
               </p>
             </div>
           ) : null}
+        </div>
+      )}
+
+      {/* Quick Item Detail View Modal */}
+      {detailItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
+            onClick={() => setDetailItem(null)}
+          />
+          <div className="relative z-50 w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xl space-y-4 text-xs font-sans text-slate-900 dark:text-slate-100">
+            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <div>
+                <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">
+                  {detailItem.sku}
+                </span>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                  {detailItem.brand} {detailItem.model}
+                </h4>
+                <span className="inline-block rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 mt-1">
+                  {categoryLabel(detailItem.category)}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailItem(null)}
+                className="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="text-slate-600 dark:text-slate-400">
+              {detailItem.description || 'No description provided.'}
+            </p>
+
+            <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-50 dark:bg-slate-950 p-3 border border-slate-200 dark:border-slate-800">
+              <div>
+                <span className="text-[10px] text-slate-400 block">Selling Price</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                  ₹{detailItem.sellingPrice}
+                </span>
+              </div>
+              {detailItem.mrp && (
+                <div>
+                  <span className="text-[10px] text-slate-400 block">MRP</span>
+                  <span className="font-mono text-slate-500 line-through">
+                    ₹{detailItem.mrp}
+                  </span>
+                </div>
+              )}
+              <div>
+                <span className="text-[10px] text-slate-400 block">Stock Level</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {detailItem.stockQuantity} units
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 block">Tax Rate / HSN</span>
+                <span className="font-mono text-slate-800 dark:text-slate-200">
+                  {detailItem.taxRate}% · {detailItem.hsnCode || '—'}
+                </span>
+              </div>
+            </div>
+
+            {/* Optical specifications if available */}
+            {(detailItem.lensType || detailItem.coating || detailItem.lensMaterial) && (
+              <div className="rounded-lg bg-blue-50/60 dark:bg-blue-950/40 p-2.5 text-[11px] space-y-1 border border-blue-200 dark:border-blue-900 text-blue-950 dark:text-blue-200">
+                <div className="font-bold">Optical Specifications:</div>
+                {detailItem.lensType && <div>Type: {detailItem.lensType}</div>}
+                {detailItem.coating && <div>Coating: {detailItem.coating}</div>}
+                {detailItem.lensMaterial && <div>Material: {detailItem.lensMaterial}</div>}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setDetailItem(null)}
+                className="rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const it = detailItem;
+                  setDetailItem(null);
+                  handleSelectItem(it);
+                }}
+                className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-700 shadow-2xs"
+              >
+                Add to Cart
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

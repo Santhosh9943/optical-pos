@@ -44,3 +44,7 @@ Thumbs.db
 scratch/
 temp/
 *.tmp
+
+# Playwright Test Artifacts
+/test-results/
+/playwright-report/

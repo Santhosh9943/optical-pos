@@ -85,20 +85,27 @@ export async function processOpticalOrder(
 
   // ── Step 2: Pre-transaction validation ──
 
-  // 2a. Verify customer exists
-  const [customer] = await db
-    .select({ id: customers.id })
+  // 2a. Verify customer exists or is provided in patients list
+  const [existingCustomer] = await db
+    .select({ id: customers.id, phone: customers.phone })
     .from(customers)
     .where(eq(customers.id, input.customerId))
     .limit(1);
 
-  if (!customer) {
+  const customerInPatients = input.patients?.find(
+    (p) => p.id === input.customerId
+  );
+
+  if (!existingCustomer && !customerInPatients) {
     return {
       success: false,
       error: 'CUSTOMER_NOT_FOUND',
-      message: `Customer ${input.customerId} does not exist`,
+      message: `Customer ${input.customerId} does not exist and was not provided in patient list`,
     };
   }
+
+  const primaryPhone =
+    existingCustomer?.phone || customerInPatients?.phone || '0000000000';
 
   // 2b. Verify all physical inventory items exist (before transaction)
   const inventoryItemIds = input.items
@@ -167,56 +174,148 @@ export async function processOpticalOrder(
         }
       }
 
-      // ── 3b. Persist prescription if provided ──
-      let prescriptionId: string | null = null;
-      if (input.prescription) {
+      // ── 3b. Persist family members & patients if provided ──
+      const patientIdMap = new Map<string, string>(); // temp/provided id -> real DB id
+      if (existingCustomer) {
+        patientIdMap.set(existingCustomer.id, existingCustomer.id);
+      }
+
+      if (input.patients && input.patients.length > 0) {
+        for (const p of input.patients) {
+          if (!p.fullName) continue;
+
+          if (p.id) {
+            // Check if patient exists
+            const [existing] = await tx
+              .select({ id: customers.id })
+              .from(customers)
+              .where(eq(customers.id, p.id))
+              .limit(1);
+
+            if (existing) {
+              patientIdMap.set(p.id, existing.id);
+              continue;
+            }
+          }
+
+          let validPrimaryId: string | null = null;
+          if (p.primaryCustomerId && p.primaryCustomerId !== p.id) {
+            const mappedPrimary =
+              patientIdMap.get(p.primaryCustomerId) || p.primaryCustomerId;
+            const [checkPrimary] = await tx
+              .select({ id: customers.id })
+              .from(customers)
+              .where(eq(customers.id, mappedPrimary))
+              .limit(1);
+            if (checkPrimary) {
+              validPrimaryId = checkPrimary.id;
+            }
+          }
+
+          // Insert new family member / dependent
+          const [newPatient] = await tx
+            .insert(customers)
+            .values({
+              fullName: p.fullName,
+              phone: p.phone || primaryPhone,
+              age: p.age ?? null,
+              gender: p.gender ?? null,
+              relationType: p.relationType || 'Other',
+              primaryCustomerId: validPrimaryId,
+            })
+            .returning({ id: customers.id });
+
+          if (p.id) {
+            patientIdMap.set(p.id, newPatient.id);
+          }
+          patientIdMap.set(newPatient.id, newPatient.id);
+        }
+      }
+
+      // ── 3c. Persist prescriptions ──
+      const savedPrescriptionIds = new Map<string, string>(); // patientId -> prescriptionId
+      let primaryPrescriptionId: string | null = null;
+
+      // Helper to insert optical prescription
+      const insertPrescription = async (
+        targetPatientId: string,
+        rxData: NonNullable<typeof input.prescription>
+      ) => {
         const [rx] = await tx
           .insert(opticalPrescriptions)
           .values({
-            customerId: input.customerId,
-            odSphere: input.prescription.odSphere != null ? input.prescription.odSphere.toFixed(2) : null,
-            odCylinder: input.prescription.odCylinder != null ? input.prescription.odCylinder.toFixed(2) : null,
-            odAxis: input.prescription.odAxis,
-            odAdd: input.prescription.odAdd != null ? input.prescription.odAdd.toFixed(2) : null,
-            odPd: input.prescription.odPd != null ? input.prescription.odPd.toFixed(1) : null,
-            osSphere: input.prescription.osSphere != null ? input.prescription.osSphere.toFixed(2) : null,
-            osCylinder: input.prescription.osCylinder != null ? input.prescription.osCylinder.toFixed(2) : null,
-            osAxis: input.prescription.osAxis,
-            osAdd: input.prescription.osAdd != null ? input.prescription.osAdd.toFixed(2) : null,
-            osPd: input.prescription.osPd != null ? input.prescription.osPd.toFixed(1) : null,
+            customerId: targetPatientId,
+            odSphere: rxData.odSphere != null ? rxData.odSphere.toFixed(2) : null,
+            odCylinder: rxData.odCylinder != null ? rxData.odCylinder.toFixed(2) : null,
+            odAxis: rxData.odAxis,
+            odAdd: rxData.odAdd != null ? rxData.odAdd.toFixed(2) : null,
+            odPd: rxData.odPd != null ? rxData.odPd.toFixed(1) : null,
+            osSphere: rxData.osSphere != null ? rxData.osSphere.toFixed(2) : null,
+            osCylinder: rxData.osCylinder != null ? rxData.osCylinder.toFixed(2) : null,
+            osAxis: rxData.osAxis,
+            osAdd: rxData.osAdd != null ? rxData.osAdd.toFixed(2) : null,
+            osPd: rxData.osPd != null ? rxData.osPd.toFixed(1) : null,
             binocularPd:
-              input.prescription.binocularPd != null
-                ? input.prescription.binocularPd.toFixed(1)
+              rxData.binocularPd != null
+                ? rxData.binocularPd.toFixed(1)
                 : null,
             odBaseCurve:
-              input.prescription.odBaseCurve != null
-                ? input.prescription.odBaseCurve.toFixed(1)
+              rxData.odBaseCurve != null
+                ? rxData.odBaseCurve.toFixed(1)
                 : null,
             odDiameter:
-              input.prescription.odDiameter != null
-                ? input.prescription.odDiameter.toFixed(1)
+              rxData.odDiameter != null
+                ? rxData.odDiameter.toFixed(1)
                 : null,
             osBaseCurve:
-              input.prescription.osBaseCurve != null
-                ? input.prescription.osBaseCurve.toFixed(1)
+              rxData.osBaseCurve != null
+                ? rxData.osBaseCurve.toFixed(1)
                 : null,
             osDiameter:
-              input.prescription.osDiameter != null
-                ? input.prescription.osDiameter.toFixed(1)
+              rxData.osDiameter != null
+                ? rxData.osDiameter.toFixed(1)
                 : null,
-            prismNotes: input.prescription.prismNotes ?? null,
-            visualAcuityNotes: input.prescription.visualAcuityNotes ?? null,
-            clinicalRemarks: input.prescription.clinicalRemarks ?? null,
+            prismNotes: rxData.prismNotes ?? null,
+            visualAcuityNotes: rxData.visualAcuityNotes ?? null,
+            clinicalRemarks: rxData.clinicalRemarks ?? null,
           })
           .returning({ id: opticalPrescriptions.id });
 
-        prescriptionId = rx.id;
+        return rx.id;
+      };
+
+      // 1. Process array of prescriptions if provided
+      if (input.prescriptions && input.prescriptions.length > 0) {
+        for (const rxItem of input.prescriptions) {
+          const rawPid =
+            rxItem.patientId ||
+            ('customerId' in rxItem ? (rxItem as any).customerId : input.customerId);
+          const targetPid = patientIdMap.get(rawPid) || rawPid;
+          const rxData = 'data' in rxItem ? rxItem.data : (rxItem as any);
+          const rxId = await insertPrescription(targetPid, rxData);
+          savedPrescriptionIds.set(targetPid, rxId);
+          if (rawPid) savedPrescriptionIds.set(rawPid, rxId);
+          if (targetPid === input.customerId && !primaryPrescriptionId) {
+            primaryPrescriptionId = rxId;
+          }
+        }
       }
 
-      // ── 3c. Generate invoice number ──
+      // 2. Legacy / single prescription fallback
+      if (input.prescription && !savedPrescriptionIds.has(input.customerId)) {
+        const rxId = await insertPrescription(input.customerId, input.prescription);
+        savedPrescriptionIds.set(input.customerId, rxId);
+        primaryPrescriptionId = rxId;
+      }
+
+      if (!primaryPrescriptionId && savedPrescriptionIds.size > 0) {
+        primaryPrescriptionId = Array.from(savedPrescriptionIds.values())[0];
+      }
+
+      // ── 3d. Generate invoice number ──
       const invoiceNumber = await generateInvoiceNumber(tx);
 
-      // ── 3d. Compute financial totals using Decimal (string-safe) ──
+      // ── 3e. Compute financial totals using Decimal (string-safe) ──
       let subtotal = new Decimal(0);
       let totalDiscount = new Decimal(0);
       let totalTax = new Decimal(0);
@@ -237,8 +336,20 @@ export async function processOpticalOrder(
         taxableValue = taxableValue.plus(lineTaxable);
         totalTax = totalTax.plus(lineTax);
 
+        const realPatientId = item.patientId
+          ? patientIdMap.get(item.patientId) || item.patientId
+          : null;
+
+        const realRxId =
+          item.prescriptionId ??
+          (realPatientId ? savedPrescriptionIds.get(realPatientId) : null) ??
+          primaryPrescriptionId ??
+          null;
+
         return {
           ...item,
+          patientId: realPatientId,
+          prescriptionId: realRxId,
           lineTotal: lineTaxable.plus(lineTax).toFixed(2),
           taxAmount: lineTax.toFixed(2),
         };
@@ -267,13 +378,16 @@ export async function processOpticalOrder(
           ? 'PAID'
           : 'PARTIAL';
 
-      // ── 3e. Insert invoice ──
+      // ── 3f. Insert invoice ──
+      const finalInvoiceCustomerId =
+        patientIdMap.get(input.customerId) || input.customerId;
+
       const [invoice] = await tx
         .insert(invoices)
         .values({
           invoiceNumber,
-          customerId: input.customerId,
-          prescriptionId,
+          customerId: finalInvoiceCustomerId,
+          prescriptionId: primaryPrescriptionId,
           orderStatus: 'ORDERED',
           paymentStatus,
           subtotal: subtotal.toFixed(2),
@@ -289,11 +403,16 @@ export async function processOpticalOrder(
           promisedDeliveryDate: input.promisedDeliveryDate
             ? new Date(input.promisedDeliveryDate)
             : null,
-          notes: input.notes ?? null,
+          notes:
+            input.billingDetails?.notes ||
+            input.notes ||
+            (input.billingDetails?.billingName
+              ? `Billed to: ${input.billingDetails.billingName}`
+              : null),
         })
         .returning({ id: invoices.id, invoiceNumber: invoices.invoiceNumber });
 
-      // ── 3f. Insert invoice items ──
+      // ── 3g. Insert invoice items ──
       await tx.insert(invoiceItems).values(
         computedItems.map((item) => ({
           invoiceId: invoice.id,
@@ -309,10 +428,14 @@ export async function processOpticalOrder(
           lensType: item.lensType ?? null,
           coating: item.coating ?? null,
           lensMaterial: item.lensMaterial ?? null,
+          patientId: item.patientId ?? null,
+          prescriptionId: item.prescriptionId ?? null,
+          isCustomerOwnFrame: item.isCustomerOwnFrame ?? false,
+          fittingNote: item.fittingNote ?? null,
         }))
       );
 
-      // ── 3g. Insert advance payment if collected ──
+      // ── 3h. Insert advance payment if collected ──
       if (input.advancePayment && advancePaid.greaterThan(0)) {
         await tx.insert(payments).values({
           invoiceId: invoice.id,

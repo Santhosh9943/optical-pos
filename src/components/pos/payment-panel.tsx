@@ -48,11 +48,11 @@ export function PaymentPanel({
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 space-y-2.5">
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 p-3 space-y-2.5">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
         <div className="flex items-center space-x-1.5">
-          <CreditCard className="h-3.5 w-3.5 text-blue-600" />
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+          <CreditCard className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             Payment & Settlement
           </span>
         </div>
@@ -61,16 +61,16 @@ export function PaymentPanel({
             type="button"
             onClick={handleQuickFullPay}
             disabled={disabled || grandTotal.isZero()}
-            className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50 transition"
+            className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-950/60 disabled:opacity-50 transition"
           >
             Pay Full
           </button>
-          <span className="text-slate-300">·</span>
+          <span className="text-slate-300 dark:text-slate-600">·</span>
           <button
             type="button"
             onClick={handleQuickZeroPay}
             disabled={disabled}
-            className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 hover:bg-slate-200 disabled:opacity-50 transition"
+            className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 transition"
           >
             Zero Adv
           </button>
@@ -78,16 +78,16 @@ export function PaymentPanel({
       </div>
 
       {/* Grand Total Display */}
-      <div className="flex items-center justify-between rounded-md bg-blue-50/70 px-2.5 py-1.5 border border-blue-100">
-        <span className="text-xs font-semibold text-blue-900">Grand Total</span>
-        <span className="font-mono text-sm font-bold text-blue-700">
+      <div className="flex items-center justify-between rounded-md bg-blue-50/70 dark:bg-blue-950/40 px-2.5 py-1.5 border border-blue-100 dark:border-blue-900/60">
+        <span className="text-xs font-semibold text-blue-900 dark:text-blue-200">Grand Total</span>
+        <span className="font-mono text-sm font-bold text-blue-700 dark:text-blue-400">
           ₹{grandTotal.toFixed(2)}
         </span>
       </div>
 
       {/* Payment Mode Selector Tabs */}
       <div>
-        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1 block">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 block">
           Payment Mode
         </label>
         <div className="grid grid-cols-3 gap-1.5">
@@ -98,7 +98,7 @@ export function PaymentPanel({
             className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition ${
               paymentMode === 'CASH'
                 ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
             }`}
           >
             <Banknote className="h-3.5 w-3.5" />
@@ -111,7 +111,7 @@ export function PaymentPanel({
             className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition ${
               paymentMode === 'UPI'
                 ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
             }`}
           >
             <QrCode className="h-3.5 w-3.5" />
@@ -124,7 +124,7 @@ export function PaymentPanel({
             className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition ${
               paymentMode === 'CARD'
                 ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
             }`}
           >
             <CreditCard className="h-3.5 w-3.5" />
@@ -136,11 +136,11 @@ export function PaymentPanel({
       {/* Advance Paid Input & Transaction Ref */}
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1 block">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 block">
             Advance Paid (₹)
           </label>
           <div className="relative flex items-center">
-            <span className="pointer-events-none absolute left-2.5 text-xs text-slate-400 font-mono">
+            <span className="pointer-events-none absolute left-2.5 text-xs text-slate-400 dark:text-slate-500 font-mono">
               ₹
             </span>
             <input
@@ -155,13 +155,13 @@ export function PaymentPanel({
                 }
               }}
               placeholder="0.00"
-              className="w-full rounded-md border border-slate-300 bg-white py-1.5 pl-6 pr-2 text-xs font-mono font-bold text-slate-900 shadow-2xs placeholder:text-slate-400 focus:border-blue-600 focus:outline-none"
+              className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-1.5 pl-6 pr-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 shadow-2xs placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-600 focus:outline-none"
             />
           </div>
         </div>
 
         <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1 block">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 block">
             {paymentMode === 'CASH' ? 'Note (Optional)' : 'Transaction Ref'}
           </label>
           <input
@@ -176,26 +176,26 @@ export function PaymentPanel({
                   ? 'Card Last 4'
                   : 'Cash remarks'
             }
-            className="w-full rounded-md border border-slate-300 bg-white py-1.5 px-2 text-xs text-slate-900 shadow-2xs placeholder:text-slate-400 focus:border-blue-600 focus:outline-none"
+            className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-1.5 px-2 text-xs text-slate-900 dark:text-slate-100 shadow-2xs placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-600 focus:outline-none"
           />
         </div>
       </div>
 
       {/* Balance Due Readout */}
-      <div className="flex items-center justify-between pt-1 border-t border-slate-200">
-        <span className="text-xs font-bold text-slate-700">Balance Due</span>
+      <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-800">
+        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Balance Due</span>
         {isOverpaid ? (
-          <div className="flex items-center gap-1 text-xs font-semibold text-red-600 font-mono">
+          <div className="flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-400 font-mono">
             <AlertCircle className="h-3.5 w-3.5" />
             <span>Overpaid (−₹{balanceDue.abs().toFixed(2)})</span>
           </div>
         ) : isFullyPaid ? (
-          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 font-mono">
+          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 font-mono">
             <CheckCircle2 className="h-3.5 w-3.5" />
             <span>₹0.00 (Settled)</span>
           </div>
         ) : (
-          <span className="font-mono text-sm font-bold text-amber-700">
+          <span className="font-mono text-sm font-bold text-amber-700 dark:text-amber-400">
             ₹{balanceDue.toFixed(2)}
           </span>
         )}

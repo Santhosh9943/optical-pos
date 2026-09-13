@@ -10,6 +10,8 @@ You are an expert full-stack engineer building a high-performance, cloud-native 
 - **Database:** Neon Serverless PostgreSQL using connection pooler (`DATABASE_URL` must use `-pooler`)
 - **ORM:** Drizzle ORM (`drizzle-orm/pg-core`)
 - **Styling & UI:** Tailwind CSS, Radix Primitives via shadcn/ui, Lucide Icons
+  - **Theme Mandate:** All UI components MUST support dark mode natively. Use shadcn/ui CSS variables (e.g., `bg-background`, `text-foreground`, `border-border`) instead of hardcoded colors. If hardcoded utility classes are required, you must include the `dark:` variant (e.g., `bg-white dark:bg-zinc-900`).
+  - **Fluid Full-Width Layouts:** All primary views (e.g., POS, Inventory, Reports) must utilize the full available width of the main content area. Use `w-full`, `h-full`, and `flex-1` with consistent padding (e.g., `p-4` or `p-6`). NEVER use `container`, `max-w-7xl`, or `mx-auto` wrapper classes on main dashboard views. Constrained widths are strictly reserved for standalone auth screens or modal dialogs.
 - **Validation:** Zod v3+
 - **Math Library:** `decimal.js` for all financial calculations
 
@@ -98,3 +100,33 @@ if (updated.length === 0) throw new InsufficientStockError(item.id);
 * Server Actions live under `src/actions/`.
 * Follow a vertical slice flow: **Database Schema & Seed -> Backend Action -> UI Components -> Print Layouts**.
 * If a proposed implementation contradicts `docs/PRD.md`, stop and flag the discrepancy.
+
+---
+
+## 8. SPA Architecture & Navigation
+- **Native SPA Routing:** Use Next.js native routing (`/pos/new-bill`, `/admin/inventory`) with `<Link>` components to maintain URL integrity. 
+- **Persistent Layouts:** The Top Action Bar and side navigation must live in a shared `layout.tsx` so they never unmount during navigation.
+- **Global State for Persistence:** Any critical volatile state (like the active POS Cart, Selected Patient, and Rx Matrix) MUST be stored in a global state manager (Zustand) so it survives route transitions.
+
+---
+
+## 9. Zero-Regression Testing Strategy
+- **E2E Virtual Testing:** No core POS or Inventory feature is considered complete without automated End-to-End tests using **Playwright**.
+- **Coverage Requirements:** Tests must simulate real user workflows (clicking, typing, route navigating) to verify UI state, Zustand store persistence, and database interactions (mocked or isolated test DB).
+- **Loophole Validation:** Every test suite must explicitly cover edge cases: insufficient stock, missing mandatory fields, family billing tab switching, and SPA state retention during navigation.
+
+---
+
+## 10. AI Agent Operational Constraints
+- **Manual Verification Priority & Targeted Testing:** Until explicitly requested, DO NOT attempt to run dev servers or test the application in the browser yourself. **Exception:** You ARE permitted and expected to run automated tests (e.g., Playwright E2E tests) to verify your syntax and logic, but you must ONLY execute the specific test files associated with the code or features you just modified. Do not run the entire global test suite to save time and resources. Notify me when the targeted tests pass so I can manually verify the UI.
+- **Token-Optimized Log Evaluation:** When executing targeted automated tests, do not ingest or analyze the full verbose terminal logs if the test suite passes successfully. If the tests pass, acknowledge the success briefly (using minimal tokens) and stop, waiting for my manual verification. ONLY ingest, read, and analyze the detailed logs if a test fails, crashes, or produces abnormal output.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

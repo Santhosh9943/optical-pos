@@ -116,6 +116,8 @@ export const customers = pgTable(
     state: varchar('state', { length: 100 }),
     pincode: varchar('pincode', { length: 10 }),
     gstin: varchar('gstin', { length: 15 }),
+    primaryCustomerId: uuid('primary_customer_id'),
+    relationType: varchar('relation_type', { length: 50 }).notNull().default('Self'),
     advanceBalance: numeric('advance_balance', {
       precision: 12,
       scale: 2,
@@ -133,8 +135,8 @@ export const customers = pgTable(
   },
   (table) => ({
     phoneIdx: index('customers_phone_idx').on(table.phone),
-    phoneUniqueIdx: uniqueIndex('customers_phone_unique_idx').on(
-      table.phone
+    primaryCustomerIdx: index('customers_primary_customer_idx').on(
+      table.primaryCustomerId
     ),
   })
 );
@@ -409,6 +411,11 @@ export const invoiceItems = pgTable(
     lensType: lensTypeEnum('lens_type'),
     coating: coatingEnum('coating'),
     lensMaterial: lensMaterialEnum('lens_material'),
+    // Family & Clinical mapping
+    patientId: uuid('patient_id').references(() => customers.id, { onDelete: 'set null' }),
+    prescriptionId: uuid('prescription_id').references(() => opticalPrescriptions.id, { onDelete: 'set null' }),
+    isCustomerOwnFrame: boolean('is_customer_own_frame').notNull().default(false),
+    fittingNote: text('fitting_note'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -418,6 +425,8 @@ export const invoiceItems = pgTable(
     inventoryIdx: index('invoice_item_inventory_idx').on(
       table.inventoryItemId
     ),
+    patientIdx: index('invoice_item_patient_idx').on(table.patientId),
+    prescriptionIdx: index('invoice_item_prescription_idx').on(table.prescriptionId),
   })
 );
 
@@ -456,7 +465,13 @@ export const payments = pgTable(
 // RELATIONS (for Drizzle query API)
 // ─────────────────────────────────────────────────────────────
 
-export const customersRelations = relations(customers, ({ many }) => ({
+export const customersRelations = relations(customers, ({ one, many }) => ({
+  primaryCustomer: one(customers, {
+    fields: [customers.primaryCustomerId],
+    references: [customers.id],
+    relationName: 'familyMembers',
+  }),
+  familyMembers: many(customers, { relationName: 'familyMembers' }),
   prescriptions: many(opticalPrescriptions),
   invoices: many(invoices),
 }));
@@ -495,6 +510,14 @@ export const invoiceItemsRelations = relations(
     inventoryItem: one(inventoryItems, {
       fields: [invoiceItems.inventoryItemId],
       references: [inventoryItems.id],
+    }),
+    patient: one(customers, {
+      fields: [invoiceItems.patientId],
+      references: [customers.id],
+    }),
+    prescription: one(opticalPrescriptions, {
+      fields: [invoiceItems.prescriptionId],
+      references: [opticalPrescriptions.id],
     }),
   })
 );
