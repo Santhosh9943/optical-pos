@@ -1,0 +1,275 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * STAGE 4: DUAL OUTPUT PRINT ENGINEERING (PRD SECTION 3.4)
+ * ───────────────────────────────────────────────────────────── */
+
+/* Hide print containers during normal screen viewing */
+@media screen {
+  #thermal-receipt,
+  #lab-slip,
+  #a4-invoice {
+    display: none !important;
+  }
+}
+
+@media print {
+  /* Common utility to hide interactive screen elements */
+  .no-print {
+    display: none !important;
+  }
+
+  /* ───────────────────────────────────────────────────────────
+   * 1. Thermal 80mm Receipt Mode (body.print-mode-thermal)
+   * ─────────────────────────────────────────────────────────── */
+  body.print-mode-thermal {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Hide everything in the body by default */
+  body.print-mode-thermal * {
+    visibility: hidden;
+  }
+
+  /* Ensure the thermal receipt container and children are visible */
+  body.print-mode-thermal #thermal-receipt,
+  body.print-mode-thermal #thermal-receipt * {
+    visibility: visible;
+  }
+
+  /* Thermal printable geometry strictly 72mm width on 80mm rolls */
+  body.print-mode-thermal #thermal-receipt {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 auto;
+    padding: 2mm 3mm;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    line-height: 1.25;
+    background: #fff;
+    color: #000;
+  }
+
+  body.print-mode-thermal #thermal-receipt .no-print {
+    display: none !important;
+  }
+
+  body.print-mode-thermal #thermal-receipt table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  body.print-mode-thermal #thermal-receipt td,
+  body.print-mode-thermal #thermal-receipt th {
+    padding: 1px 2px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  body.print-mode-thermal #thermal-receipt .amount-col {
+    text-align: right;
+  }
+
+  body.print-mode-thermal #thermal-receipt .divider {
+    border-top: 1px dashed #000;
+    margin: 4px 0;
+  }
+
+  /* ───────────────────────────────────────────────────────────
+   * 2. Workshop / Lab Slip Mode (body.print-mode-workshop)
+   * ─────────────────────────────────────────────────────────── */
+  body.print-mode-workshop {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Strict Redaction: Financial data is forcibly stripped */
+  body.print-mode-workshop .financial-data,
+  body.print-mode-workshop .invoice-totals,
+  body.print-mode-workshop .payment-section,
+  .financial-data {
+    display: none !important;
+  }
+
+  /* Hide screen elements */
+  body.print-mode-workshop * {
+    visibility: hidden;
+  }
+
+  /* Make lab slip container and children visible */
+  body.print-mode-workshop #lab-slip,
+  body.print-mode-workshop #lab-slip * {
+    visibility: visible;
+  }
+
+  /* Preserve redaction even within #lab-slip */
+  body.print-mode-workshop #lab-slip .financial-data,
+  body.print-mode-workshop #lab-slip .financial-data * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  body.print-mode-workshop #lab-slip {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.4;
+    background: #fff;
+    color: #000;
+    padding: 8mm 10mm;
+  }
+
+  body.print-mode-workshop #lab-slip .job-ticket {
+    font-size: 22pt;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+  }
+
+  body.print-mode-workshop #lab-slip .rx-grid {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10pt;
+  }
+
+  body.print-mode-workshop #lab-slip .rx-grid th,
+  body.print-mode-workshop #lab-slip .rx-grid td {
+    border: 1px solid #000;
+    padding: 5pt 7pt;
+    text-align: center;
+  }
+
+  body.print-mode-workshop #lab-slip .rx-grid .eye-label {
+    font-weight: bold;
+    text-align: left;
+    width: 70pt;
+  }
+
+  /* ───────────────────────────────────────────────────────────
+   * 3. Customer A4 Laser Tax Invoice Mode (body.print-mode-a4)
+   * ─────────────────────────────────────────────────────────── */
+  body.print-mode-a4 {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  }
+
+  /* Hide non-invoice DOM elements */
+  body.print-mode-a4 * {
+    visibility: hidden;
+  }
+
+  /* Reveal A4 invoice container and all child elements */
+  body.print-mode-a4 #a4-invoice,
+  body.print-mode-a4 #a4-invoice * {
+    visibility: visible;
+  }
+
+  body.print-mode-a4 #a4-invoice {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.35;
+  }
+
+  /* Force strict high-contrast B&W borders for laser printing */
+  body.print-mode-a4 #a4-invoice table {
+    width: 100%;
+    border-collapse: collapse !important;
+    border: 1px solid #000000 !important;
+  }
+
+  body.print-mode-a4 #a4-invoice th,
+  body.print-mode-a4 #a4-invoice td {
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+  }
+
+  body.print-mode-a4 #a4-invoice .border-solid-black {
+    border: 1px solid #000000 !important;
+  }
+
+  body.print-mode-a4 #a4-invoice * {
+    color: #000000 !important;
+  }
+}
+
+
