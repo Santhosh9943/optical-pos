@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Decimal from 'decimal.js';
 import { ShoppingBag, Trash2, Plus, Minus, Tag, AlertCircle, Edit3 } from 'lucide-react';
 import type { InventoryItem } from './inventory-search';
@@ -143,6 +143,154 @@ export function calculateCartMetrics(items: CartItem[]): {
   };
 }
 
+interface DiscountCellProps {
+  itemId: string;
+  subtotalDec: Decimal;
+  discount: string;
+  onUpdateDiscount: (id: string, discount: string) => void;
+}
+
+function DiscountCell({
+  itemId,
+  subtotalDec,
+  discount,
+  onUpdateDiscount,
+}: DiscountCellProps) {
+  const [amountStr, setAmountStr] = useState<string>('');
+  const [percentStr, setPercentStr] = useState<string>('');
+  const [activeInput, setActiveInput] = useState<'amount' | 'percent' | null>(null);
+
+  useEffect(() => {
+    const dVal = discount || '0.00';
+    const dDec = new Decimal(dVal || '0');
+
+    if (activeInput !== 'amount') {
+      if (dDec.greaterThan(0)) {
+        setAmountStr(dVal);
+      } else {
+        setAmountStr('');
+      }
+    }
+
+    if (activeInput !== 'percent') {
+      if (dDec.greaterThan(0) && subtotalDec.greaterThan(0)) {
+        const pDec = dDec.dividedBy(subtotalDec).times(100);
+        setPercentStr(pDec.toFixed(2).replace(/\.?0+$/, ''));
+      } else {
+        setPercentStr('');
+      }
+    }
+  }, [discount, subtotalDec, activeInput]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    if (!/^\d*(\.\d{0,2})?$/.test(val)) return;
+
+    setActiveInput('amount');
+
+    if (!val || val === '.') {
+      setAmountStr(val);
+      setPercentStr('');
+      onUpdateDiscount(itemId, '0.00');
+      return;
+    }
+
+    let amtDec = new Decimal(val);
+    if (subtotalDec.greaterThan(0) && amtDec.greaterThan(subtotalDec)) {
+      amtDec = subtotalDec;
+      val = subtotalDec.toFixed(2);
+    }
+    setAmountStr(val);
+
+    if (subtotalDec.greaterThan(0)) {
+      const pDec = amtDec.dividedBy(subtotalDec).times(100);
+      setPercentStr(pDec.toFixed(2).replace(/\.?0+$/, ''));
+    } else {
+      setPercentStr('0');
+    }
+    onUpdateDiscount(itemId, val);
+  };
+
+  const handlePercentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!/^\d*(\.\d{0,2})?$/.test(val)) return;
+    if (parseFloat(val) > 100) return;
+
+    setActiveInput('percent');
+    setPercentStr(val);
+
+    if (!val || val === '.') {
+      setAmountStr('');
+      onUpdateDiscount(itemId, '0.00');
+      return;
+    }
+
+    const pDec = new Decimal(val);
+    if (subtotalDec.greaterThan(0)) {
+      const amtDec = subtotalDec.times(pDec).dividedBy(100);
+      const amtFormatted = amtDec.toFixed(2);
+      setAmountStr(amtFormatted);
+      onUpdateDiscount(itemId, amtFormatted);
+    } else {
+      setAmountStr('0.00');
+      onUpdateDiscount(itemId, '0.00');
+    }
+  };
+
+  const handleBlur = () => {
+    setActiveInput(null);
+    if (amountStr && !isNaN(parseFloat(amountStr))) {
+      try {
+        setAmountStr(new Decimal(amountStr).toFixed(2));
+      } catch {}
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      {/* Price (₹) Box */}
+      <div className="flex items-center justify-end rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-1 focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-500/20 w-20 h-6 transition-colors shadow-2xs">
+        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mr-0.5 select-none font-sans">
+          ₹
+        </span>
+        <input
+          type="text"
+          inputMode="decimal"
+          aria-label="Discount amount in ₹"
+          title="Discount Amount in ₹"
+          data-testid="item-discount-amount-input"
+          value={amountStr}
+          placeholder="0.00"
+          onChange={handleAmountChange}
+          onFocus={() => setActiveInput('amount')}
+          onBlur={handleBlur}
+          className="w-full bg-transparent text-right font-mono text-xs text-slate-800 dark:text-slate-200 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600"
+        />
+      </div>
+
+      {/* Percentage (%) Box */}
+      <div className="flex items-center justify-end rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-1 focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-500/20 w-20 h-6 transition-colors shadow-2xs">
+        <input
+          type="text"
+          inputMode="decimal"
+          aria-label="Discount percentage %"
+          title="Discount Percentage %"
+          data-testid="item-discount-percent-input"
+          value={percentStr}
+          placeholder="0"
+          onChange={handlePercentChange}
+          onFocus={() => setActiveInput('percent')}
+          onBlur={handleBlur}
+          className="w-full bg-transparent text-right font-mono text-xs text-slate-800 dark:text-slate-200 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600"
+        />
+        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 ml-0.5 select-none font-sans">
+          %
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function BillingCart({
   items,
   activePatients,
@@ -179,7 +327,14 @@ export function BillingCart({
                   <th className="pb-2 pl-1">Item Description</th>
                   <th className="pb-2 text-center w-20">Qty</th>
                   <th className="pb-2 text-right w-20">Rate</th>
-                  <th className="pb-2 text-right w-20">Discount</th>
+                  <th className="pb-2 text-right w-24">
+                    <div className="flex flex-col items-end">
+                      <span>Discount</span>
+                      <span className="text-[9px] font-normal lowercase tracking-normal text-slate-400 dark:text-slate-500">
+                        ₹ / %
+                      </span>
+                    </div>
+                  </th>
                   <th className="pb-2 text-center w-14">GST</th>
                   <th className="pb-2 text-right w-24">Total</th>
                   <th className="pb-2 pr-1 w-8"></th>
@@ -190,6 +345,7 @@ export function BillingCart({
                   ({
                     item,
                     unitPriceDec,
+                    subtotalDec,
                     discountDec,
                     lineTotalDec,
                   }) => (
@@ -310,24 +466,14 @@ export function BillingCart({
                         ₹{unitPriceDec.toFixed(2)}
                       </td>
 
-                      {/* Discount (Editable) */}
+                      {/* Discount (Editable ₹ / %) */}
                       <td className="py-2 px-1 text-right align-top">
-                        <div className="flex items-center justify-end space-x-0.5">
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500">₹</span>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            value={item.discount ?? item.discountPerUnit ?? ''}
-                            placeholder="0.00"
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (/^\d*(\.\d{0,2})?$/.test(val)) {
-                                onUpdateDiscount(item.id, val);
-                              }
-                            }}
-                            className="h-6 w-14 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-1 text-right font-mono text-xs text-slate-800 dark:text-slate-200 focus:border-blue-600 focus:outline-none"
-                          />
-                        </div>
+                        <DiscountCell
+                          itemId={item.id}
+                          subtotalDec={subtotalDec}
+                          discount={item.discount ?? item.discountPerUnit ?? '0.00'}
+                          onUpdateDiscount={onUpdateDiscount}
+                        />
                       </td>
 
                       {/* Tax Rate Tag */}

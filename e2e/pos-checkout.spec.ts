@@ -570,5 +570,49 @@ test.describe('POS Core Workflows & Zero-Regression Test Suite', () => {
 
     await expect(page.locator('text=Clinical History & Profile')).not.toBeVisible({ timeout: 5000 });
   });
+
+  test('Test Case 11: Dual-Box Discount (Price ₹ and Percentage % Bidirectional Sync)', async ({ page }) => {
+    // 1. Select patient
+    const patientSearch = page.getByTestId('patient-search-input');
+    await expect(patientSearch).toBeVisible({ timeout: 15000 });
+    await patientSearch.fill('9876543210');
+    const patientOption = page.locator('li', { hasText: 'Rajesh Kumar' });
+    await expect(patientOption).toBeVisible({ timeout: 10000 });
+    await patientOption.click();
+
+    // 2. Add an item (Ray-Ban @ ₹4,500.00)
+    const inventorySearch = page.getByTestId('inventory-search-input');
+    await expect(inventorySearch).toBeVisible();
+    await inventorySearch.fill('Ray-Ban');
+    const inventoryOption = page.locator('li', { hasText: 'FRM-RB-2140-BLK' });
+    await expect(inventoryOption).toBeVisible({ timeout: 10000 });
+    const frameOnlyBtn = inventoryOption.getByRole('button', { name: '+ Frame Only' });
+    if (await frameOnlyBtn.isVisible()) {
+      await frameOnlyBtn.click();
+    } else {
+      await inventoryOption.click();
+    }
+
+    // 3. Verify dual discount inputs exist in the cart row
+    const discountAmtInput = page.getByTestId('item-discount-amount-input').first();
+    const discountPctInput = page.getByTestId('item-discount-percent-input').first();
+    await expect(discountAmtInput).toBeVisible({ timeout: 5000 });
+    await expect(discountPctInput).toBeVisible({ timeout: 5000 });
+
+    // 4. Type 10 into percentage box -> Price box should auto-calculate ₹250.00 (10% of ₹2,500)
+    await discountPctInput.fill('10');
+    await expect(discountAmtInput).toHaveValue('250.00');
+    await expect(page.locator('text=−₹250.00').first()).toBeVisible({ timeout: 5000 });
+
+    // 5. Type 500 into price box -> Percentage box should auto-calculate 20% (₹500 of ₹2,500)
+    await discountAmtInput.fill('500');
+    await expect(discountPctInput).toHaveValue('20');
+    await expect(page.locator('text=−₹500.00').first()).toBeVisible({ timeout: 5000 });
+
+    // 6. Clear discount -> Total discount resets
+    await discountAmtInput.fill('');
+    await expect(discountPctInput).toHaveValue('');
+    await expect(page.locator('text=−₹500.00')).not.toBeVisible();
+  });
 });
 

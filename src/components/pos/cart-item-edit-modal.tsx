@@ -27,6 +27,7 @@ export function CartItemEditModal({
   const [quantity, setQuantity] = useState<number>(1);
   const [unitPrice, setUnitPrice] = useState<string>('0.00');
   const [discount, setDiscount] = useState<string>('0.00');
+  const [discountPercent, setDiscountPercent] = useState<string>('');
   const [patientId, setPatientId] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [lensType, setLensType] = useState<string>('');
@@ -37,9 +38,12 @@ export function CartItemEditModal({
 
   useEffect(() => {
     if (item) {
-      setQuantity(item.quantity || 1);
-      setUnitPrice(item.unitPrice || '0.00');
-      setDiscount(item.discount || item.discountPerUnit || '0.00');
+      const q = item.quantity || 1;
+      const p = item.unitPrice || '0.00';
+      const d = item.discount || item.discountPerUnit || '0.00';
+      setQuantity(q);
+      setUnitPrice(p);
+      setDiscount(d);
       setPatientId(item.patientId || '');
       setDescription(item.description || '');
       setLensType(item.lensType || '');
@@ -47,8 +51,59 @@ export function CartItemEditModal({
       setLensMaterial(item.lensMaterial || '');
       setIsCustomerOwnFrame(!!item.isCustomerOwnFrame);
       setFittingNote(item.fittingNote || '');
+
+      try {
+        const sub = new Decimal(p).times(q);
+        const dDec = new Decimal(d);
+        if (sub.greaterThan(0) && dDec.greaterThan(0)) {
+          setDiscountPercent(dDec.dividedBy(sub).times(100).toFixed(2).replace(/\.?0+$/, ''));
+        } else {
+          setDiscountPercent('');
+        }
+      } catch {
+        setDiscountPercent('');
+      }
     }
   }, [item]);
+
+  const handleDiscountAmountChange = (val: string) => {
+    if (!/^\d*(\.\d{0,2})?$/.test(val)) return;
+    setDiscount(val);
+    try {
+      const sub = new Decimal(unitPrice || '0').times(quantity || 1);
+      if (!val || val === '.') {
+        setDiscountPercent('');
+      } else if (sub.greaterThan(0)) {
+        const dDec = new Decimal(val);
+        const pDec = dDec.dividedBy(sub).times(100);
+        setDiscountPercent(pDec.toFixed(2).replace(/\.?0+$/, ''));
+      } else {
+        setDiscountPercent('');
+      }
+    } catch {
+      setDiscountPercent('');
+    }
+  };
+
+  const handleDiscountPercentChange = (val: string) => {
+    if (!/^\d*(\.\d{0,2})?$/.test(val)) return;
+    if (parseFloat(val) > 100) return;
+    setDiscountPercent(val);
+    try {
+      const sub = new Decimal(unitPrice || '0').times(quantity || 1);
+      if (!val || val === '.') {
+        setDiscount('0.00');
+      } else if (sub.greaterThan(0)) {
+        const pDec = new Decimal(val);
+        const amtDec = sub.times(pDec).dividedBy(100);
+        setDiscount(amtDec.toFixed(2));
+      } else {
+        setDiscount('0.00');
+      }
+    } catch {
+      setDiscount('0.00');
+    }
+  };
 
   // Live line calculation using decimal.js
   const liveTotal = useMemo(() => {
@@ -142,7 +197,7 @@ export function CartItemEditModal({
           </div>
 
           {/* Pricing & Qty Grid */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Quantity
@@ -152,7 +207,17 @@ export function CartItemEditModal({
                 min={1}
                 data-testid="edit-cart-item-qty"
                 value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => {
+                  const newQty = Math.max(1, parseInt(e.target.value) || 1);
+                  setQuantity(newQty);
+                  try {
+                    const sub = new Decimal(unitPrice || '0').times(newQty);
+                    const dDec = new Decimal(discount || '0');
+                    if (sub.greaterThan(0) && dDec.greaterThan(0)) {
+                      setDiscountPercent(dDec.dividedBy(sub).times(100).toFixed(2).replace(/\.?0+$/, ''));
+                    }
+                  } catch {}
+                }}
                 className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100"
               />
             </div>
@@ -164,19 +229,42 @@ export function CartItemEditModal({
                 type="text"
                 data-testid="edit-cart-item-price"
                 value={unitPrice}
-                onChange={(e) => setUnitPrice(e.target.value)}
+                onChange={(e) => {
+                  const newPrice = e.target.value;
+                  setUnitPrice(newPrice);
+                  try {
+                    const sub = new Decimal(newPrice || '0').times(quantity || 1);
+                    const dDec = new Decimal(discount || '0');
+                    if (sub.greaterThan(0) && dDec.greaterThan(0)) {
+                      setDiscountPercent(dDec.dividedBy(sub).times(100).toFixed(2).replace(/\.?0+$/, ''));
+                    }
+                  } catch {}
+                }}
                 className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Line Discount (₹)
+                Discount (₹)
               </label>
               <input
                 type="text"
                 data-testid="edit-cart-item-discount"
                 value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
+                onChange={(e) => handleDiscountAmountChange(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Discount (%)
+              </label>
+              <input
+                type="text"
+                data-testid="edit-cart-item-discount-percent"
+                value={discountPercent}
+                placeholder="0%"
+                onChange={(e) => handleDiscountPercentChange(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100"
               />
             </div>
