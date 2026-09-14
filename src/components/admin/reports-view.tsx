@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useRef } from 'react';
 import {
   Receipt,
   TrendingUp,
@@ -17,11 +17,17 @@ import {
   Filter,
   X,
   ChevronRight,
+  ChevronLeft,
+  ChevronDown,
+  ChevronUp,
+  ArrowDown,
+  ArrowUp,
   Loader2,
   SlidersHorizontal,
   PackageCheck,
   Wrench,
   Glasses,
+  ListFilter,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -50,18 +56,50 @@ export function ReportsView() {
     return `${y}-${m}-${day}`;
   };
 
+  // State: Date Filtering
   const [preset, setPreset] = useState<DatePreset>('all');
   const [startDate, setStartDate] = useState<string>(getSevenDaysAgoStr());
   const [endDate, setEndDate] = useState<string>(getTodayStr());
 
+  // State: Granular Ledger Filters
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('ALL');
   const [paymentModeFilter, setPaymentModeFilter] = useState<string>('ALL');
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // State: Pagination & Layout
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [isSummaryCollapsed, setIsSummaryCollapsed] = useState<boolean>(false);
+
+  // State: Report Data & Fetch Status
   const [report, setReport] = useState<DailyFinancialsReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+
+  // Scroll Container & Popover Refs
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const outerContainerRef = useRef<HTMLDivElement>(null);
+  const customPickerRef = useRef<HTMLDivElement>(null);
+  const [isCustomPickerOpen, setIsCustomPickerOpen] = useState(false);
+
+  // Close custom date range popover on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        customPickerRef.current &&
+        !customPickerRef.current.contains(event.target as Node)
+      ) {
+        setIsCustomPickerOpen(false);
+      }
+    };
+    if (isCustomPickerOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCustomPickerOpen]);
 
   const fetchReport = async (filterConfig: FinancialsReportFilter) => {
     try {
@@ -84,7 +122,7 @@ export function ReportsView() {
     }
   };
 
-  // Fetch report whenever filters change
+  // Fetch report whenever main filters change
   useEffect(() => {
     const filterConfig: FinancialsReportFilter = {
       preset,
@@ -96,6 +134,7 @@ export function ReportsView() {
     };
 
     fetchReport(filterConfig);
+    setCurrentPage(1);
   }, [preset, paymentStatusFilter, paymentModeFilter, orderStatusFilter]);
 
   const handleApplyCustomRange = (e: React.FormEvent) => {
@@ -109,6 +148,8 @@ export function ReportsView() {
       return;
     }
     setPreset('custom');
+    setIsCustomPickerOpen(false);
+    setCurrentPage(1);
     fetchReport({
       preset: 'custom',
       startDate,
@@ -120,7 +161,13 @@ export function ReportsView() {
   };
 
   const handlePresetSelect = (selectedPreset: DatePreset) => {
+    if (selectedPreset === 'custom') {
+      setIsCustomPickerOpen((prev) => !prev);
+      return;
+    }
+    setIsCustomPickerOpen(false);
     setPreset(selectedPreset);
+    setCurrentPage(1);
   };
 
   const handleRefresh = () => {
@@ -143,10 +190,39 @@ export function ReportsView() {
     setPaymentModeFilter('ALL');
     setOrderStatusFilter('ALL');
     setPreset('all');
+    setCurrentPage(1);
   };
 
   const handlePrintZReport = () => {
     window.print();
+  };
+
+  // Smooth scroll helper functions
+  const handleScrollDown = () => {
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollBy({ top: 300, behavior: 'smooth' });
+    }
+  };
+
+  const handleScrollUp = () => {
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollBy({ top: -300, behavior: 'smooth' });
+    }
+  };
+
+  const handleScrollToBottom = () => {
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollTo({
+        top: tableContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const handleScrollToTop = () => {
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   // Client-side text search within currently fetched ledger
@@ -163,6 +239,17 @@ export function ReportsView() {
     );
   });
 
+  // Pagination calculation
+  const totalItems = filteredTransactions.length;
+  const isAllPages = pageSize === -1;
+  const totalPages = isAllPages ? 1 : Math.max(1, Math.ceil(totalItems / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = isAllPages ? 0 : (safeCurrentPage - 1) * pageSize;
+  const endIndex = isAllPages ? totalItems : Math.min(startIndex + pageSize, totalItems);
+  const paginatedTransactions = isAllPages
+    ? filteredTransactions
+    : filteredTransactions.slice(startIndex, endIndex);
+
   const hasActiveFilters =
     searchQuery.trim() !== '' ||
     paymentStatusFilter !== 'ALL' ||
@@ -171,19 +258,22 @@ export function ReportsView() {
     preset !== 'all';
 
   return (
-    <div className="flex flex-col w-full h-full flex-1 p-4 md:p-6 overflow-auto bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 space-y-6">
-      {/* ── Top Header & Range Selection Toolbar ── */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 no-print">
+    <div
+      ref={outerContainerRef}
+      className="flex flex-col w-full h-full flex-1 p-2.5 sm:p-3 md:p-4 overflow-hidden bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 gap-2 sm:gap-2.5"
+    >
+      {/* ── Top Header & Action Controls ── */}
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800 no-print">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            <h1 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
               Financial Reports & Order Audit Ledger
             </h1>
-            <span className="rounded bg-blue-100 dark:bg-blue-950/70 px-2 py-0.5 text-[11px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+            <span className="rounded bg-blue-100 dark:bg-blue-950/70 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
               Active Register
             </span>
           </div>
-          <p className="mt-0.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
             Audit store revenue, payment splits, and order transactions for{' '}
             <strong className="text-slate-800 dark:text-slate-200">
               {report?.date || 'Selected Period'}
@@ -192,13 +282,34 @@ export function ReportsView() {
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {/* Collapse/Expand Summary Toggle */}
+          <button
+            type="button"
+            data-testid="btn-toggle-summary"
+            onClick={() => setIsSummaryCollapsed(!isSummaryCollapsed)}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-2xs cursor-pointer"
+            title={isSummaryCollapsed ? 'Expand Metric Cards' : 'Collapse Metric Cards'}
+          >
+            {isSummaryCollapsed ? (
+              <>
+                <ChevronDown className="h-3.5 w-3.5 text-blue-600" />
+                <span>Show Metrics</span>
+              </>
+            ) : (
+              <>
+                <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
+                <span>Compact View</span>
+              </>
+            )}
+          </button>
+
           <button
             type="button"
             data-testid="btn-refresh-report"
             onClick={handleRefresh}
             disabled={isLoading || isPending}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50 shadow-2xs cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50 shadow-2xs cursor-pointer"
             title="Refresh Report Data"
           >
             <RefreshCw
@@ -211,7 +322,7 @@ export function ReportsView() {
             type="button"
             data-testid="btn-print-z-report"
             onClick={handlePrintZReport}
-            className="flex items-center gap-1.5 rounded-lg bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition active:scale-95 cursor-pointer"
           >
             <Printer className="h-3.5 w-3.5 text-emerald-400" />
             <span>Print Report</span>
@@ -220,11 +331,11 @@ export function ReportsView() {
       </div>
 
       {/* ── Date Preset & Custom Range Selection Bar ── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-2xs no-print">
+      <div className="shrink-0 flex items-center justify-between gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 shadow-2xs no-print">
         {/* Presets Pills */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1 flex items-center gap-1">
-            <Calendar className="h-3.5 w-3.5" />
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1 flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
             <span>Range:</span>
           </span>
 
@@ -232,20 +343,20 @@ export function ReportsView() {
             type="button"
             data-testid="preset-all"
             onClick={() => handlePresetSelect('all')}
-            className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer ${
               preset === 'all'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
             }`}
           >
-            All Time
+            All Time ({report?.totalOrders || 0})
           </button>
 
           <button
             type="button"
             data-testid="preset-today"
             onClick={() => handlePresetSelect('today')}
-            className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer ${
               preset === 'today'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
@@ -258,7 +369,7 @@ export function ReportsView() {
             type="button"
             data-testid="preset-yesterday"
             onClick={() => handlePresetSelect('yesterday')}
-            className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer ${
               preset === 'yesterday'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
@@ -271,7 +382,7 @@ export function ReportsView() {
             type="button"
             data-testid="preset-7days"
             onClick={() => handlePresetSelect('last7days')}
-            className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer ${
               preset === 'last7days'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
@@ -284,7 +395,7 @@ export function ReportsView() {
             type="button"
             data-testid="preset-month"
             onClick={() => handlePresetSelect('thisMonth')}
-            className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer ${
               preset === 'thisMonth'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
@@ -293,269 +404,286 @@ export function ReportsView() {
             This Month
           </button>
 
-          <button
-            type="button"
-            data-testid="preset-custom"
-            onClick={() => handlePresetSelect('custom')}
-            className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              preset === 'custom'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            Custom Range
-          </button>
+          {/* Custom Range Button with Popover */}
+          <div className="relative inline-block" ref={customPickerRef}>
+            <button
+              type="button"
+              data-testid="preset-custom"
+              onClick={() => handlePresetSelect('custom')}
+              className={`px-2.5 py-0.5 text-xs font-bold rounded-lg transition flex items-center gap-1 cursor-pointer ${
+                preset === 'custom'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              <span>
+                {preset === 'custom' && startDate && endDate
+                  ? `Custom (${new Date(startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} - ${new Date(endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })})`
+                  : 'Custom Range'}
+              </span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${isCustomPickerOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Custom Range Popover Dropdown */}
+            {isCustomPickerOpen && (
+              <div className="absolute left-0 top-full mt-1.5 z-50 w-72 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    <span>Select Custom Date Range</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomPickerOpen(false)}
+                    className="rounded p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleApplyCustomRange} className="space-y-2.5">
+                  <div className="space-y-1">
+                    <label htmlFor="report-start-date" className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                      From (Start Date)
+                    </label>
+                    <input
+                      id="report-start-date"
+                      data-testid="input-start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-blue-600 cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label htmlFor="report-end-date" className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                      To (End Date)
+                    </label>
+                    <input
+                      id="report-end-date"
+                      data-testid="input-end-date"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-blue-600 cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomPickerOpen(false)}
+                      className="rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      data-testid="btn-apply-custom-range"
+                      className="rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1 text-xs font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
+                    >
+                      Apply Range
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Custom Range Picker Controls */}
-        <form
-          onSubmit={handleApplyCustomRange}
-          className="flex flex-wrap items-center gap-2 border-t lg:border-t-0 pt-2 lg:pt-0 border-slate-100 dark:border-slate-800"
-        >
-          <div className="flex items-center gap-1.5">
-            <label htmlFor="report-start-date" className="text-[11px] font-semibold text-slate-500">
-              From:
-            </label>
-            <input
-              id="report-start-date"
-              data-testid="input-start-date"
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setPreset('custom');
-              }}
-              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-blue-600"
-            />
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <label htmlFor="report-end-date" className="text-[11px] font-semibold text-slate-500">
-              To:
-            </label>
-            <input
-              id="report-end-date"
-              data-testid="input-end-date"
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setPreset('custom');
-              }}
-              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-blue-600"
-            />
-          </div>
-
-          <button
-            type="submit"
-            data-testid="btn-apply-custom-range"
-            className="rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1 text-xs font-bold text-white shadow-2xs transition active:scale-95 cursor-pointer"
-          >
-            Apply Range
-          </button>
-        </form>
       </div>
 
       {isLoading && !report ? (
-        <div className="flex flex-col items-center justify-center p-16 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm text-center">
-          <Loader2 className="h-9 w-9 animate-spin text-blue-600 mb-3" />
-          <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">
+        <div className="flex flex-col items-center justify-center p-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-2" />
+          <p className="font-semibold text-slate-700 dark:text-slate-200 text-xs sm:text-sm">
             Calculating Financial Metrics...
           </p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-[11px] text-slate-400 mt-0.5">
             Aggregating orders, tax liabilities, and payment tenders
           </p>
         </div>
       ) : (
         <>
-          {/* ── TOP ROW: METRIC CARDS ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Total Revenue */}
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Total Gross Revenue
-                </span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
-                  <TrendingUp className="h-4 w-4" />
+          {/* ── TOP ROW: METRIC CARDS (Collapsible & Ultra-Compact Single Row) ── */}
+          {!isSummaryCollapsed && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 shrink-0 animate-in fade-in duration-200">
+              {/* Total Revenue */}
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                    Gross Rev
+                  </span>
+                  <TrendingUp className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
                 </div>
-              </div>
-              <div className="mt-2 flex items-baseline gap-1 font-mono">
-                <span className="text-sm font-bold text-slate-400">₹</span>
-                <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  {Number(report?.totalRevenue || 0).toLocaleString('en-IN', {
+                <div className="font-mono text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                  ₹{Number(report?.totalRevenue || 0).toLocaleString('en-IN', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                Gross value of all billed sales in selected range
-              </p>
-            </div>
-
-            {/* Total Invoices Count */}
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Total Invoices
-                </span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
-                  <Receipt className="h-4 w-4" />
                 </div>
               </div>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span
-                  data-testid="total-orders-metric"
-                  className="text-2xl font-bold font-mono text-slate-900 dark:text-slate-100"
-                >
-                  {report?.totalOrders || 0}
-                </span>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  orders placed
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                Cumulative optical dispensing orders
-              </p>
-            </div>
 
-            {/* Collections / Advance Paid */}
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Total Collected
-                </span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="h-4 w-4" />
+              {/* Total Invoices Count */}
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                    Invoices
+                  </span>
+                  <Receipt className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                </div>
+                <div className="flex items-baseline gap-1 font-mono text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <span data-testid="total-orders-metric">
+                    {report?.totalOrders || 0}
+                  </span>
+                  <span className="text-[10px] font-normal text-slate-400 font-sans">orders</span>
                 </div>
               </div>
-              <div className="mt-2 flex items-baseline gap-1 font-mono">
-                <span className="text-sm font-bold text-slate-400">₹</span>
-                <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {Number(report?.totalAdvancePaid || 0).toLocaleString('en-IN', {
+
+              {/* Total Collected */}
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                    Collected
+                  </span>
+                  <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                </div>
+                <div className="font-mono text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 truncate">
+                  ₹{Number(report?.totalAdvancePaid || 0).toLocaleString('en-IN', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                Cash, UPI & Card payments received
-              </p>
-            </div>
-
-            {/* Pending Balance Due */}
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Pending Balance Due
-                </span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
-                  <Clock className="h-4 w-4" />
                 </div>
               </div>
-              <div className="mt-2 flex items-baseline gap-1 font-mono">
-                <span className="text-sm font-bold text-slate-400">₹</span>
-                <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                  {Number(report?.totalBalanceDue || 0).toLocaleString('en-IN', {
+
+              {/* Pending Balance Due */}
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                    Pending Due
+                  </span>
+                  <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                </div>
+                <div className="font-mono text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 truncate">
+                  ₹{Number(report?.totalBalanceDue || 0).toLocaleString('en-IN', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                Receivables upon order collection & delivery
-              </p>
-            </div>
-          </div>
-
-          {/* ── PAYMENT TENDER SPLITS ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Cash Tender */}
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-950/20 p-4 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                  <Banknote className="h-4 w-4" />
-                  <span>Cash Collections</span>
                 </div>
-                <div className="mt-1 font-mono text-xl font-bold text-foreground">
+              </div>
+
+              {/* Cash Tender */}
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-950/20 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 truncate">
+                    Cash
+                  </span>
+                  <Banknote className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                </div>
+                <div className="font-mono text-xs sm:text-sm font-bold text-foreground truncate">
                   ₹{Number(report?.paymentSplits?.cash || 0).toLocaleString('en-IN', {
                     minimumFractionDigits: 2,
                   })}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Physical currency register
-                </p>
               </div>
-            </div>
 
-            {/* UPI Tender */}
-            <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 dark:bg-blue-950/20 p-4 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-1.5 text-xs font-bold text-blue-700 dark:text-blue-400">
-                  <QrCode className="h-4 w-4" />
-                  <span>UPI / QR Digital</span>
+              {/* UPI Tender */}
+              <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 dark:bg-blue-950/20 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 truncate">
+                    UPI Digital
+                  </span>
+                  <QrCode className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
                 </div>
-                <div className="mt-1 font-mono text-xl font-bold text-foreground">
+                <div className="font-mono text-xs sm:text-sm font-bold text-foreground truncate">
                   ₹{Number(report?.paymentSplits?.upi || 0).toLocaleString('en-IN', {
                     minimumFractionDigits: 2,
                   })}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Direct bank instant settlements
-                </p>
               </div>
-            </div>
 
-            {/* Card Tender */}
-            <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 dark:bg-purple-950/20 p-4 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-400">
-                  <CreditCard className="h-4 w-4" />
-                  <span>Card POS Terminal</span>
+              {/* Card Tender */}
+              <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 dark:bg-purple-950/20 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] font-bold text-purple-700 dark:text-purple-400 truncate">
+                    Card Terminal
+                  </span>
+                  <CreditCard className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
                 </div>
-                <div className="mt-1 font-mono text-xl font-bold text-foreground">
+                <div className="font-mono text-xs sm:text-sm font-bold text-foreground truncate">
                   ₹{Number(report?.paymentSplits?.card || 0).toLocaleString('en-IN', {
                     minimumFractionDigits: 2,
                   })}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Swiped on card terminal machines
-                </p>
               </div>
             </div>
-          </div>
+          )}
 
           {/* ── BOTTOM SECTION: TRANSACTION AUDIT LEDGER ── */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden space-y-3 p-4">
-            {/* Header & Granular Filters Toolbar */}
-            <div className="flex flex-col gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+            {/* Header & Action Toolbar */}
+            <div className="shrink-0 flex flex-col gap-2.5 border-b border-slate-100 dark:border-slate-800 p-3 sm:p-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div>
-                  <h2 className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                    Daily Order & Payment Audit Ledger
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Granular itemization of invoices issued ({filteredTransactions.length} records matching)
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xs sm:text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                      Daily Order & Payment Audit Ledger
+                    </h2>
+                    <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                      {filteredTransactions.length} Orders
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Granular itemization of invoices · Showing {paginatedTransactions.length} on this page
                   </p>
                 </div>
 
-                {/* Quick Search */}
-                <div className="relative w-full sm:w-64">
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                  <input
-                    type="text"
-                    data-testid="input-ledger-search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search invoice, patient, phone..."
-                    className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-1.5 pl-8 pr-2.5 text-xs text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:outline-hidden"
-                  />
+                {/* Action Controls: Down/Up Scroll Buttons & Quick Search */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Dedicated Scroll Down & Up Buttons */}
+                  <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 p-1 rounded-lg border border-slate-200 dark:border-slate-800 no-print">
+                    <button
+                      type="button"
+                      data-testid="btn-scroll-down"
+                      onClick={handleScrollDown}
+                      className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-2 py-1 text-xs font-bold border border-blue-200 dark:border-blue-800 transition cursor-pointer"
+                      title="Scroll Table Down"
+                    >
+                      <ArrowDown className="h-3.5 w-3.5" />
+                      <span>Scroll Down</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      data-testid="btn-scroll-up"
+                      onClick={handleScrollUp}
+                      className="p-1 rounded text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                      title="Scroll Table Up"
+                    >
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Search Input */}
+                  <div className="relative w-full sm:w-60">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      data-testid="input-ledger-search"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      placeholder="Search invoice, patient, phone..."
+                      className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-1.5 pl-8 pr-2.5 text-xs text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:outline-hidden"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Granular Filter Selectors */}
-              <div className="flex flex-wrap items-center gap-2.5 pt-1 no-print">
+              <div className="flex flex-wrap items-center gap-2.5 pt-0.5 no-print">
                 {/* Payment Status Filter */}
                 <div className="flex items-center gap-1.5 text-xs">
                   <span className="text-[11px] font-semibold text-slate-400">Payment:</span>
@@ -623,29 +751,33 @@ export function ReportsView() {
               </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
+            {/* Scrollable Table Container with Sticky Header */}
+            <div
+              ref={tableContainerRef}
+              data-testid="audit-ledger-table-container"
+              className="flex-1 min-h-0 relative overflow-x-auto overflow-y-auto scroll-smooth"
+            >
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    <th className="py-2.5 px-3">Invoice #</th>
-                    <th className="py-2.5 px-3">Date & Time</th>
-                    <th className="py-2.5 px-3">Patient Name</th>
-                    <th className="py-2.5 px-3">Payment Mode</th>
-                    <th className="py-2.5 px-3 text-center">Order Status</th>
-                    <th className="py-2.5 px-3 text-center">Payment Status</th>
-                    <th className="py-2.5 px-3 text-right">Advance Paid</th>
-                    <th className="py-2.5 px-3 text-right">Balance Due</th>
-                    <th className="py-2.5 px-3 text-right">Grand Total</th>
+                <thead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs">
+                  <tr className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    <th className="py-2.5 px-3 bg-slate-100 dark:bg-slate-900">Invoice #</th>
+                    <th className="py-2.5 px-3 bg-slate-100 dark:bg-slate-900">Date & Time</th>
+                    <th className="py-2.5 px-3 bg-slate-100 dark:bg-slate-900">Patient Name</th>
+                    <th className="py-2.5 px-3 bg-slate-100 dark:bg-slate-900">Payment Mode</th>
+                    <th className="py-2.5 px-3 text-center bg-slate-100 dark:bg-slate-900">Order Status</th>
+                    <th className="py-2.5 px-3 text-center bg-slate-100 dark:bg-slate-900">Payment Status</th>
+                    <th className="py-2.5 px-3 text-right bg-slate-100 dark:bg-slate-900">Advance Paid</th>
+                    <th className="py-2.5 px-3 text-right bg-slate-100 dark:bg-slate-900">Balance Due</th>
+                    <th className="py-2.5 px-3 text-right bg-slate-100 dark:bg-slate-900">Grand Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-                  {filteredTransactions.length === 0 ? (
+                  {paginatedTransactions.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="py-12 text-center">
                         <Receipt className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
                         <p className="mt-2 font-medium text-slate-600 dark:text-slate-300 text-xs">
-                          No transactions match the selected date range and filter criteria
+                          No transactions match the selected filters
                         </p>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
                           Try switching to &quot;All Time&quot; or selecting a broader custom date range.
@@ -661,7 +793,7 @@ export function ReportsView() {
                       </td>
                     </tr>
                   ) : (
-                    filteredTransactions.map((tx) => {
+                    paginatedTransactions.map((tx) => {
                       const createdDate = new Date(tx.createdAt);
                       const dateStr = createdDate.toLocaleDateString('en-IN', {
                         day: '2-digit',
@@ -680,21 +812,21 @@ export function ReportsView() {
                         <tr
                           key={tx.id}
                           data-testid="audit-ledger-row"
-                          className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 text-slate-900 dark:text-slate-100 transition"
+                          className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-900 dark:text-slate-100 transition"
                         >
                           {/* Invoice # */}
-                          <td className="py-2.5 px-3 font-mono font-bold text-blue-700 dark:text-blue-400 whitespace-nowrap">
+                          <td className="py-2 px-3 font-mono font-bold text-blue-700 dark:text-blue-400 whitespace-nowrap">
                             {tx.invoiceNumber}
                           </td>
 
                           {/* Date & Time */}
-                          <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 font-mono text-[11px] whitespace-nowrap">
+                          <td className="py-2 px-3 text-slate-500 dark:text-slate-400 font-mono text-[11px] whitespace-nowrap">
                             <span>{dateStr}</span>
                             <span className="text-[10px] text-muted-foreground block">{timeStr}</span>
                           </td>
 
                           {/* Patient Name */}
-                          <td className="py-2.5 px-3">
+                          <td className="py-2 px-3">
                             <span className="font-semibold text-slate-900 dark:text-slate-100 block">
                               {tx.customerName}
                             </span>
@@ -704,7 +836,7 @@ export function ReportsView() {
                           </td>
 
                           {/* Payment Mode */}
-                          <td className="py-2.5 px-3 whitespace-nowrap">
+                          <td className="py-2 px-3 whitespace-nowrap">
                             <span
                               className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold ${
                                 tx.paymentMode.includes('CASH')
@@ -719,7 +851,7 @@ export function ReportsView() {
                           </td>
 
                           {/* Order Status */}
-                          <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <td className="py-2 px-3 text-center whitespace-nowrap">
                             <span
                               className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
                                 tx.orderStatus === 'DELIVERED_AND_CLOSED'
@@ -740,7 +872,7 @@ export function ReportsView() {
                           </td>
 
                           {/* Payment Status */}
-                          <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <td className="py-2 px-3 text-center whitespace-nowrap">
                             <span
                               className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
                                 isPaid
@@ -755,17 +887,17 @@ export function ReportsView() {
                           </td>
 
                           {/* Advance Paid */}
-                          <td className="py-2.5 px-3 text-right font-mono font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                          <td className="py-2 px-3 text-right font-mono font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                             ₹{Number(tx.advancePaid).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                           </td>
 
                           {/* Balance Due */}
-                          <td className="py-2.5 px-3 text-right font-mono font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                          <td className="py-2 px-3 text-right font-mono font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
                             ₹{Number(tx.balanceDue).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                           </td>
 
                           {/* Grand Total */}
-                          <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                          <td className="py-2 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                             ₹{Number(tx.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                           </td>
                         </tr>
@@ -776,24 +908,66 @@ export function ReportsView() {
               </table>
             </div>
 
-            {/* Ledger Footer */}
-            {filteredTransactions.length > 0 && (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-3 text-xs text-slate-500 dark:text-slate-400 gap-2">
+            {/* ── PAGINATION & LEDGER CONTROLS FOOTER ── */}
+            <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-200 dark:border-slate-800 px-3.5 py-2 bg-slate-50/70 dark:bg-slate-950/40 text-xs text-slate-500 dark:text-slate-400 gap-2 no-print">
+              <div className="flex items-center gap-3 flex-wrap">
                 <span>
-                  Showing <strong className="text-slate-800 dark:text-slate-200">{filteredTransactions.length}</strong> of{' '}
-                  <strong className="text-slate-800 dark:text-slate-200">{report?.totalOrders || 0}</strong> orders in this period
+                  Showing <strong className="text-slate-800 dark:text-slate-200">{totalItems > 0 ? startIndex + 1 : 0}</strong> to{' '}
+                  <strong className="text-slate-800 dark:text-slate-200">{endIndex}</strong> of{' '}
+                  <strong className="text-slate-800 dark:text-slate-200">{totalItems}</strong> matching orders
                 </span>
-                <div className="flex items-center gap-3 font-mono">
-                  <span>
-                    Collected: <strong className="text-emerald-600 dark:text-emerald-400">₹{report?.totalAdvancePaid}</strong>
-                  </span>
-                  <span>·</span>
-                  <span>
-                    Total Value: <strong className="text-slate-900 dark:text-slate-100">₹{report?.totalRevenue}</strong>
-                  </span>
+
+                {/* Rows per page selector */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-400">Rows:</span>
+                  <select
+                    data-testid="select-page-size"
+                    aria-label="Rows per page"
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-0.5 text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={-1}>All ({totalItems})</option>
+                  </select>
                 </div>
               </div>
-            )}
+
+              {/* Navigation Pagination Buttons */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  data-testid="btn-prev-page"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={safeCurrentPage <= 1}
+                  className="flex items-center gap-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition cursor-pointer"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <span>Prev</span>
+                </button>
+
+                <span className="px-2 font-mono font-semibold text-slate-700 dark:text-slate-300">
+                  Page {safeCurrentPage} of {totalPages}
+                </span>
+
+                <button
+                  type="button"
+                  data-testid="btn-next-page"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safeCurrentPage >= totalPages}
+                  className="flex items-center gap-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition cursor-pointer"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
           </div>
         </>
       )}
