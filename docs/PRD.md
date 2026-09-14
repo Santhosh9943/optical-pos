@@ -327,7 +327,7 @@ Following validation, `graphify .` is executed to synchronize the architectural 
 
 ---
 
-## 7. Master Implementation Roadmap (Phases 1 to 13)
+## 7. Master Implementation Roadmap (Phases 1 to 14)
 
 | Phase | Module / Capability | Status | Core Deliverables & Technical Scope |
 | :---: | :--- | :---: | :--- |
@@ -340,7 +340,8 @@ Following validation, `graphify .` is executed to synchronize the architectural 
 | **Phase 7** | **Lab Orders & Workshop Pipeline** | ✅ Completed | Workshop state machine (`ORDERED` -> `SENT_TO_LAB` -> `IN_FITTING` -> `READY_FOR_COLLECTION`), interactive 4-column Kanban board, sortable/searchable Table view, workshop job slip generator. |
 | **Phase 8** | **Order Settlement & Final Delivery** | ✅ Completed | Atomic `collectBalance` action inside `db.transaction`, `SettleBalanceModal` with WCAG AA contrast, balance collection upon customer pickup, automatic transition to `DELIVERED_AND_CLOSED`, e2e verification. |
 | **Phase 9** | **Store Settings & Print Engine Customization** | ✅ Completed | Singleton `store_profile` PostgreSQL table & enum, Server Actions (`getStoreProfile`, `updateStoreProfile`, `getInvoicePrintData`), `/admin/settings` page with General Profile & Print Configuration tabs, modular print components (`ThermalReceipt`, `A4TaxInvoice`, `WorkshopLabSlip`), POS & Patient history print buttons, and dedicated Playwright E2E suite (`settings-print.spec.ts`). |
-| **Phase 10** | **Workshop Glazing & Lens Edging Integration** | 🟡 Next Up | Optical lens edging tickets, lab batch dispatch, outside lab job tracking, automated SMS/WhatsApp alerts upon transition to `READY_FOR_COLLECTION`. |
-| **Phase 11** | **Multi-Branch Inventory & Stock Audits** | ⚪ Roadmap | Inter-branch stock transfer orders, in-transit stock ledger, physical stock discrepancy adjustments, barcode scanner batch intake, automated reorder threshold triggers. |
-| **Phase 12** | **Clinical Appointments & Patient Recalls** | ⚪ Roadmap | Optometrist appointment scheduling calendar, exam room slot booking, annual eye examination recall reminders via WhatsApp/SMS, expanded clinical notes & visual acuity charts. |
-| **Phase 13** | **Multi-Tenant SaaS Hardening & Enterprise ERP** | ⚪ Roadmap | Row-Level Security (RLS) policies for multi-tenant optical chains, consolidated corporate tax reporting, Indian GST 2.0 inverted duty credit reconciliation (HSN 9001 vs 9003/9004), immutable audit log stream. |
+| **Phase 10** | **Infrastructure, Caching & Search Performance** | ✅ Completed | Official Upstash Redis integration (`@upstash/redis`), singleton client (`src/lib/redis.ts`) with zero-crash DB fallback, store profile caching (24h TTL) with invalidation on save, 5-minute search query result caching (`/api/inventory/search`, `/api/patients/search`), 300ms frontend debouncing, and automated E2E testing (`caching-performance.spec.ts`). |
+| **Phase 11** | **Workshop Glazing & Lens Edging Integration** | 🟡 Next Up | Optical lens edging tickets, lab batch dispatch, outside lab job tracking, automated SMS/WhatsApp alerts upon transition to `READY_FOR_COLLECTION`. |
+| **Phase 12** | **Multi-Branch Inventory & Stock Audits** | ⚪ Roadmap | Inter-branch stock transfer orders, in-transit stock ledger, physical stock discrepancy adjustments, barcode scanner batch intake, automated reorder threshold triggers. |
+| **Phase 13** | **Clinical Appointments & Patient Recalls** | ⚪ Roadmap | Optometrist appointment scheduling calendar, exam room slot booking, annual eye examination recall reminders via WhatsApp/SMS, expanded clinical notes & visual acuity charts. |
+| **Phase 14** | **Multi-Tenant SaaS Hardening & Enterprise ERP** | ⚪ Roadmap | Row-Level Security (RLS) policies for multi-tenant optical chains, consolidated corporate tax reporting, Indian GST 2.0 inverted duty credit reconciliation (HSN 9001 vs 9003/9004), immutable audit log stream. |

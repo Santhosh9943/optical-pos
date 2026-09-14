@@ -66,10 +66,10 @@
     "semantic_hash": "69831bf948317514cb968e1ad8dd71b2"
   },
   "package.json": {
-    "mtime": 1789351893.6465838,
-    "seen": 1789352510.8420079,
-    "ast_hash": "91c6b75d59ec7d45d02989c6241da260",
-    "semantic_hash": "91c6b75d59ec7d45d02989c6241da260"
+    "mtime": 1789359460.7932477,
+    "seen": 1789360002.4210613,
+    "ast_hash": "5d5357596a5fc36730892f273b2678d2",
+    "semantic_hash": "5d5357596a5fc36730892f273b2678d2"
   },
   "playwright.config.ts": {
     "mtime": 1789332374.9083858,
@@ -156,16 +156,16 @@
     "semantic_hash": "10f5f6a446b5fbf206414755ae8b6896"
   },
   "src/app/api/inventory/search/route.ts": {
-    "mtime": 1789335623.721231,
-    "seen": 1789352510.8420079,
-    "ast_hash": "970ada20f2adf3dfa44fd36cb6f6c7f8",
-    "semantic_hash": "970ada20f2adf3dfa44fd36cb6f6c7f8"
+    "mtime": 1789359504.0550697,
+    "seen": 1789360002.4240613,
+    "ast_hash": "88db2197669ee583ac6e0dc0f886d615",
+    "semantic_hash": "88db2197669ee583ac6e0dc0f886d615"
   },
   "src/app/api/patients/search/route.ts": {
-    "mtime": 1789332454.723869,
-    "seen": 1789352510.8420079,
-    "ast_hash": "26a7048be10430f32a20dc5e11cc3e4b",
-    "semantic_hash": "26a7048be10430f32a20dc5e11cc3e4b"
+    "mtime": 1789359523.19883,
+    "seen": 1789360002.4240613,
+    "ast_hash": "a62b8610edf38065b763c0c1125a4da8",
+    "semantic_hash": "a62b8610edf38065b763c0c1125a4da8"
   },
   "src/app/layout.tsx": {
     "mtime": 1789320633.2693987,
@@ -258,10 +258,10 @@
     "semantic_hash": "436fc8bbe82ca668d580133118f11e3c"
   },
   "src/components/pos/inventory-search.tsx": {
-    "mtime": 1789349453.4420476,
-    "seen": 1789352510.8420079,
-    "ast_hash": "e0c4addc0bec3009b3eb3c5917ec306d",
-    "semantic_hash": "e0c4addc0bec3009b3eb3c5917ec306d"
+    "mtime": 1789359533.1819327,
+    "seen": 1789360002.4260614,
+    "ast_hash": "e9e4045a2a18868ca68288cfbd3d3369",
+    "semantic_hash": "e9e4045a2a18868ca68288cfbd3d3369"
   },
   "src/components/pos/invoice-details-modal.tsx": {
     "mtime": 1789349766.3217893,
@@ -270,10 +270,10 @@
     "semantic_hash": "c0fe93b542085501df7fa52948892d2c"
   },
   "src/components/pos/patient-search.tsx": {
-    "mtime": 1789352169.8204875,
-    "seen": 1789352510.8420079,
-    "ast_hash": "207f442769fbfe1e973dd3aa6170c07d",
-    "semantic_hash": "207f442769fbfe1e973dd3aa6170c07d"
+    "mtime": 1789359541.2339323,
+    "seen": 1789360002.4260614,
+    "ast_hash": "fd467b06b513993335e9cfc9ffd3d422",
+    "semantic_hash": "fd467b06b513993335e9cfc9ffd3d422"
   },
   "src/components/pos/payment-panel.tsx": {
     "mtime": 1789349509.3521445,
@@ -405,7 +405,7 @@
     "mtime": 1789358821.2671363,
     "seen": 1789358960.9256382,
     "ast_hash": "d3e6666f96ff7460d577662f1182f8b3",
-    "semantic_hash": "d3e6666f96ff7460d577662f1182f8b3"
+    "semantic_hash": ""
   },
   "e2e/settings-print.spec.ts": {
     "mtime": 1789358085.3726454,
@@ -414,10 +414,10 @@
     "semantic_hash": "f299c59b658fdc544980e4aad88302f0"
   },
   "src/actions/settings-actions.ts": {
-    "mtime": 1789357016.3551137,
-    "seen": 1789358207.5208473,
-    "ast_hash": "465762ab1aea997c121b5f9be23a4339",
-    "semantic_hash": "465762ab1aea997c121b5f9be23a4339"
+    "mtime": 1789359491.96324,
+    "seen": 1789360002.4230618,
+    "ast_hash": "25b367ea80d97543157d723abe92e209",
+    "semantic_hash": "25b367ea80d97543157d723abe92e209"
   },
   "src/app/(dashboard)/admin/settings/page.tsx": {
     "mtime": 1789356913.960578,
@@ -454,5 +454,17 @@
     "seen": 1789358207.524846,
     "ast_hash": "6bfc98760cdac3a360c5c53ed0fe2dac",
     "semantic_hash": "6bfc98760cdac3a360c5c53ed0fe2dac"
+  },
+  "e2e/caching-performance.spec.ts": {
+    "mtime": 1789359856.0095985,
+    "seen": 1789360002.4210613,
+    "ast_hash": "156eb574e82f3a4117906dd0a9402e64",
+    "semantic_hash": "156eb574e82f3a4117906dd0a9402e64"
+  },
+  "src/lib/redis.ts": {
+    "mtime": 1789359477.5593934,
+    "seen": 1789360002.4280612,
+    "ast_hash": "e103aea1b7e8358d346fdc2e57cf3f8a",
+    "semantic_hash": "e103aea1b7e8358d346fdc2e57cf3f8a"
   }
 }

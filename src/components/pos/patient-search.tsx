@@ -108,7 +108,7 @@ export function PatientSearch({
     } finally {
       setIsSearching(false);
     }
-  }, 150);
+  }, 300);
 
   const handleClear = () => {
     setQuery('');

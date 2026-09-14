@@ -6,6 +6,10 @@ import { storeProfile, type StoreProfile, type ReceiptType } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import Decimal from 'decimal.js';
+import { cacheGet, cacheSet, cacheDel } from '@/lib/redis';
+
+const STORE_PROFILE_CACHE_KEY = 'store_profile';
+const STORE_PROFILE_CACHE_TTL = 86400; // 24 hours
 
 const storeProfileSchema = z.object({
   storeName: z.string().min(1, 'Store Name is required'),
@@ -30,14 +34,27 @@ export interface StoreProfileResult {
 
 /**
  * Fetch the singleton store profile row.
- * If none exists, creates a default row and returns it.
+ * Checks Upstash Redis cache first (TTL: 24h); falls back to database on cache miss or Redis bypass.
  */
 export async function getStoreProfile(): Promise<StoreProfile> {
   try {
+    // 1. Check Redis cache
+    const cached = await cacheGet<StoreProfile>(STORE_PROFILE_CACHE_KEY);
+    if (cached) {
+      return {
+        ...cached,
+        createdAt: new Date(cached.createdAt),
+        updatedAt: new Date(cached.updatedAt),
+      };
+    }
+
+    // 2. Cache miss: Query database
     const existing = await db.select().from(storeProfile).limit(1);
 
     if (existing && existing.length > 0) {
-      return existing[0];
+      const profile = existing[0];
+      await cacheSet(STORE_PROFILE_CACHE_KEY, profile, STORE_PROFILE_CACHE_TTL);
+      return profile;
     }
 
     // Initialize default profile row if table is empty
@@ -53,6 +70,7 @@ export async function getStoreProfile(): Promise<StoreProfile> {
       })
       .returning();
 
+    await cacheSet(STORE_PROFILE_CACHE_KEY, newProfile, STORE_PROFILE_CACHE_TTL);
     return newProfile;
   } catch (error) {
     console.error('Failed to get or initialize store profile:', error);
@@ -73,6 +91,7 @@ export async function getStoreProfile(): Promise<StoreProfile> {
 
 /**
  * Update the singleton store profile row.
+ * Invalidates the Redis cache key on success.
  */
 export async function updateStoreProfile(
   input: StoreProfileInput
@@ -97,6 +116,9 @@ export async function updateStoreProfile(
       })
       .where(eq(storeProfile.id, currentProfile.id))
       .returning();
+
+    // Invalidate Redis cache
+    await cacheDel(STORE_PROFILE_CACHE_KEY);
 
     revalidatePath('/admin/settings');
     revalidatePath('/pos/new-bill');

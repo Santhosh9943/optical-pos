@@ -95,7 +95,7 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
     } finally {
       setIsSearching(false);
     }
-  }, 150);
+  }, 300);
 
   const handleSelectItem = (item: InventoryItem) => {
     if (item.category === 'FRAME' && onSelectFrame) {

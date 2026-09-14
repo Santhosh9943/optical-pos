@@ -2,8 +2,11 @@ import { db } from '@/db';
 import { customers } from '@/db/schema';
 import { like, or, eq, ilike } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+import { cacheGet, cacheSet } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
+
+const PATIENTS_SEARCH_CACHE_TTL = 300; // 5 minutes
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,7 +16,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ patients: [] });
   }
 
-  const start = performance.now();
+  // Cache key: cache:patients:search:{query}
+  const cacheKey = `cache:patients:search:${query.toLowerCase()}`;
+
+  try {
+    // 1. Check Redis cache first
+    const cachedPatients = await cacheGet<any[]>(cacheKey);
+    if (cachedPatients) {
+      return NextResponse.json({ patients: cachedPatients, cached: true });
+    }
+
+    const start = performance.now();
 
   const matchingPatients = await db
     .select({
@@ -71,5 +84,15 @@ export async function GET(request: Request) {
     console.warn(`[patient-search] Query took ${elapsed.toFixed(1)}ms`);
   }
 
-  return NextResponse.json({ patients: allPatients });
+  // Set Redis cache with 5-minute TTL
+  await cacheSet(cacheKey, allPatients, PATIENTS_SEARCH_CACHE_TTL);
+
+  return NextResponse.json({ patients: allPatients, cached: false });
+} catch (err) {
+  console.error('[patient-search] Failed to search patients:', err);
+  return NextResponse.json(
+    { error: 'Failed to search patients', patients: [] },
+    { status: 500 }
+  );
+}
 }

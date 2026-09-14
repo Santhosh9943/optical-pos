@@ -3,15 +3,27 @@ import { db } from '@/db';
 import { inventoryItems } from '@/db/schema';
 import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+import { cacheGet, cacheSet } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
+
+const INVENTORY_SEARCH_CACHE_TTL = 300; // 5 minutes
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get('q') ?? '').trim();
   const category = (searchParams.get('category') ?? '').trim();
 
+  // Cache key: cache:inventory:search:{category}:{query}
+  const cacheKey = `cache:inventory:search:${category || 'all'}:${q.toLowerCase()}`;
+
   try {
+    // 1. Check Redis cache first
+    const cachedItems = await cacheGet<any[]>(cacheKey);
+    if (cachedItems) {
+      return NextResponse.json({ items: cachedItems, cached: true });
+    }
+
     const conditions = [eq(inventoryItems.isActive, true)];
 
     if (category) {
@@ -55,7 +67,10 @@ export async function GET(request: Request) {
       .where(and(...conditions))
       .limit(30);
 
-    return NextResponse.json({ items });
+    // Set Redis cache with 5-minute TTL
+    await cacheSet(cacheKey, items, INVENTORY_SEARCH_CACHE_TTL);
+
+    return NextResponse.json({ items, cached: false });
   } catch (err) {
     console.error('[inventory-search] Failed to query items:', err);
     return NextResponse.json(
