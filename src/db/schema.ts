@@ -95,6 +95,12 @@ export const lensMaterialEnum = pgEnum('lens_material', [
   'HIGH_INDEX_174',
 ]);
 
+export const receiptTypeEnum = pgEnum('receipt_type', [
+  'THERMAL_80MM',
+  'A4_INVOICE',
+]);
+export type ReceiptType = (typeof receiptTypeEnum.enumValues)[number];
+
 // ─────────────────────────────────────────────────────────────
 // SEQUENCES
 // ─────────────────────────────────────────────────────────────
@@ -463,6 +469,42 @@ export const payments = pgTable(
     modeIdx: index('payment_mode_idx').on(table.paymentMode),
   })
 );
+
+// ─────────────────────────────────────────────────────────────
+// STORE PROFILE (SINGLETON CONFIGURATION)
+// ─────────────────────────────────────────────────────────────
+
+export const storeProfile = pgTable('store_profile', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  storeName: varchar('store_name', { length: 200 })
+    .notNull()
+    .default('Santhosh Optical Center'),
+  gstin: varchar('gstin', { length: 15 }),
+  phone: varchar('phone', { length: 20 })
+    .notNull()
+    .default('+91 98765 43210'),
+  address: text('address')
+    .notNull()
+    .default('123 Optical Plaza, MG Road, Bengaluru - 560001'),
+  defaultTaxRate: numeric('default_tax_rate', {
+    precision: 5,
+    scale: 2,
+  })
+    .notNull()
+    .default('18.00'),
+  receiptType: receiptTypeEnum('receipt_type')
+    .notNull()
+    .default('THERMAL_80MM'),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type StoreProfile = typeof storeProfile.$inferSelect;
+export type NewStoreProfile = typeof storeProfile.$inferInsert;
 
 // ─────────────────────────────────────────────────────────────
 // RELATIONS (for Drizzle query API)

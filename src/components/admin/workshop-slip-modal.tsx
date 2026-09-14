@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { X, Printer, ClipboardList, Download } from 'lucide-react';
-import { WorkshopSlip, type PrintOrderData } from '@/components/pos/print-layouts';
+import type { PrintOrderData } from '@/components/pos/print-layouts';
+import { WorkshopLabSlip } from '@/components/print';
 
 interface WorkshopSlipModalProps {
   isOpen: boolean;
@@ -260,7 +261,7 @@ export function WorkshopSlipModal({
         </div>
 
         {/* Hidden strictly formatted print container for @media print */}
-        <WorkshopSlip order={order} />
+        <WorkshopLabSlip order={order} />
       </div>
     </div>
   );

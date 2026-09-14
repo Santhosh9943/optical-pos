@@ -61,6 +61,23 @@ export function PatientSearch({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleSelect = (patient: Patient, allResults = results) => {
+    // Collect all family members in this search matching the same phone or primaryCustomerId
+    const primaryId = patient.primaryCustomerId || patient.id;
+    const familyGroup = allResults.filter(
+      (p) =>
+        p.id === patient.id ||
+        p.primaryCustomerId === primaryId ||
+        p.id === primaryId ||
+        p.phone === patient.phone
+    );
+
+    onPatientSelect(patient, familyGroup.length > 0 ? familyGroup : [patient]);
+    setQuery(patient.phone);
+    setIsOpen(false);
+    setResults([]);
+  };
+
   const search = useDebouncedCallback(async (phone: string) => {
     const trimmed = phone.trim();
     if (trimmed.length < 3) {
@@ -92,23 +109,6 @@ export function PatientSearch({
       setIsSearching(false);
     }
   }, 150);
-
-  const handleSelect = (patient: Patient, allResults = results) => {
-    // Collect all family members in this search matching the same phone or primaryCustomerId
-    const primaryId = patient.primaryCustomerId || patient.id;
-    const familyGroup = allResults.filter(
-      (p) =>
-        p.id === patient.id ||
-        p.primaryCustomerId === primaryId ||
-        p.id === primaryId ||
-        p.phone === patient.phone
-    );
-
-    onPatientSelect(patient, familyGroup.length > 0 ? familyGroup : [patient]);
-    setQuery(patient.phone);
-    setIsOpen(false);
-    setResults([]);
-  };
 
   const handleClear = () => {
     setQuery('');

@@ -133,6 +133,7 @@ export function ReportsView() {
 
     fetchReport(filterConfig);
     setCurrentPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preset, paymentStatusFilter, paymentModeFilter, orderStatusFilter]);
 
   const handleApplyCustomRange = (e: React.FormEvent) => {
@@ -230,10 +231,10 @@ export function ReportsView() {
   return (
     <div
       ref={outerContainerRef}
-      className="flex flex-col w-full h-full flex-1 p-2.5 sm:p-3 md:p-4 overflow-hidden bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 gap-2 sm:gap-2.5"
+      className="flex flex-col h-full w-full p-4 md:p-6 gap-6"
     >
       {/* ── Top Header & Action Controls ── */}
-      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800 no-print">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0 no-print">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -478,7 +479,7 @@ export function ReportsView() {
         <>
           {/* ── TOP ROW: METRIC CARDS (Collapsible & Ultra-Compact Single Row) ── */}
           {!isSummaryCollapsed && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 shrink-0 animate-in fade-in duration-200">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 shrink-0 animate-in fade-in duration-200">
               {/* Total Revenue */}
               <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
                 <div className="flex items-center justify-between gap-1">

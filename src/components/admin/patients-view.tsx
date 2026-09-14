@@ -108,9 +108,9 @@ export function PatientsView() {
   };
 
   return (
-    <div className="flex flex-col w-full h-full flex-1 p-4 md:p-6 space-y-5 overflow-auto bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100">
+    <div className="flex flex-col h-full w-full p-4 md:p-6 gap-6">
       {/* ── Page Header & Controls ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -168,7 +168,7 @@ export function PatientsView() {
       </div>
 
       {/* ── KPI Summary Cards Strip ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 shrink-0">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0">
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-300">

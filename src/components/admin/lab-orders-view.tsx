@@ -265,9 +265,9 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
   };
 
   return (
-    <div className="flex h-full w-full flex-1 flex-col overflow-hidden bg-background text-foreground p-4 md:p-6 font-sans">
+    <div className="flex flex-col h-full w-full p-4 md:p-6 gap-6">
       {/* ── Page Top Header & Metrics Bar ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-border">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
         <div className="shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
@@ -346,7 +346,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
 
       {/* ── Table View Navigation Bar (Search + Status Filter Tabs) ── */}
       {viewMode === 'table' && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 pb-1">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 shrink-0">
           {/* Search Input for Table */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -443,7 +443,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
       )}
 
       {/* ── Main Content Area (Kanban or Table) ── */}
-      <div className="flex-1 overflow-hidden mt-2">
+      <div className="flex-1 overflow-hidden">
         {viewMode === 'kanban' ? (
           /* ── Kanban Board View (4 Columns) ── */
           <div className="grid h-full grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-y-auto pb-4">

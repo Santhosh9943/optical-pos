@@ -28,6 +28,7 @@ export default function DashboardLayout({
   const isReports = pathname?.startsWith('/admin/reports');
   const isPatients = pathname?.startsWith('/admin/patients');
   const isLabOrders = pathname?.startsWith('/admin/lab-orders');
+  const isSettings = pathname?.startsWith('/admin/settings');
 
   // Global Keyboard Shortcuts (F1 for POS Billing, F3 for Inventory)
   useEffect(() => {
@@ -199,17 +200,29 @@ export default function DashboardLayout({
                 Audit
               </span>
             </Link>
-            <button
-              type="button"
-              disabled
-              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-slate-400 dark:text-slate-400 cursor-not-allowed"
+            <Link
+              href="/admin/settings"
+              data-testid="nav-settings"
+              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                isSettings
+                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
             >
               <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
+                <Settings
+                  className={`h-4 w-4 ${
+                    isSettings
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : 'text-slate-400 dark:text-slate-400'
+                  }`}
+                />
                 <span>Settings</span>
               </div>
-              <span className="text-[9px] text-slate-400 dark:text-slate-400 italic">Soon</span>
-            </button>
+              <span className="rounded bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-mono text-slate-600 dark:text-slate-300">
+                Cfg
+              </span>
+            </Link>
           </div>
         </nav>
 
@@ -309,7 +322,7 @@ export default function DashboardLayout({
         </header>
 
         {/* ── Active Route View Area ── */}
-        <main className="flex-1 overflow-hidden relative flex flex-col min-h-0 w-full h-full">
+        <main className="flex-1 flex flex-col overflow-auto bg-background">
           {children}
         </main>
       </div>

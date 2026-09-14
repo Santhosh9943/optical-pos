@@ -139,6 +139,20 @@ export function SpectacleWizardModal({
   const [osAdd, setOsAdd] = useState<string>('');
   const [osPd, setOsPd] = useState<string>('31.5');
 
+  const loadPrescriptionIntoState = (rx: PrescriptionValues) => {
+    if (rx.odSphere !== null) setOdSphere(rx.odSphere.toFixed(2));
+    if (rx.odCylinder !== null) setOdCylinder(rx.odCylinder.toFixed(2));
+    if (rx.odAxis !== null) setOdAxis(rx.odAxis.toString());
+    if (rx.odAdd !== null) setOdAdd(rx.odAdd.toFixed(2));
+    if (rx.odPd !== null) setOdPd(rx.odPd.toFixed(1));
+
+    if (rx.osSphere !== null) setOsSphere(rx.osSphere.toFixed(2));
+    if (rx.osCylinder !== null) setOsCylinder(rx.osCylinder.toFixed(2));
+    if (rx.osAxis !== null) setOsAxis(rx.osAxis.toString());
+    if (rx.osAdd !== null) setOsAdd(rx.osAdd.toFixed(2));
+    if (rx.osPd !== null) setOsPd(rx.osPd.toFixed(1));
+  };
+
   // Initialize target patient when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -153,21 +167,8 @@ export function SpectacleWizardModal({
         loadPrescriptionIntoState(currentPrescriptions[defaultPatientId]);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, frameItem?.id]);
-
-  const loadPrescriptionIntoState = (rx: PrescriptionValues) => {
-    if (rx.odSphere !== null) setOdSphere(rx.odSphere.toFixed(2));
-    if (rx.odCylinder !== null) setOdCylinder(rx.odCylinder.toFixed(2));
-    if (rx.odAxis !== null) setOdAxis(rx.odAxis.toString());
-    if (rx.odAdd !== null) setOdAdd(rx.odAdd.toFixed(2));
-    if (rx.odPd !== null) setOdPd(rx.odPd.toFixed(1));
-
-    if (rx.osSphere !== null) setOsSphere(rx.osSphere.toFixed(2));
-    if (rx.osCylinder !== null) setOsCylinder(rx.osCylinder.toFixed(2));
-    if (rx.osAxis !== null) setOsAxis(rx.osAxis.toString());
-    if (rx.osAdd !== null) setOsAdd(rx.osAdd.toFixed(2));
-    if (rx.osPd !== null) setOsPd(rx.osPd.toFixed(1));
-  };
 
   if (!isOpen || !frameItem) return null;
 

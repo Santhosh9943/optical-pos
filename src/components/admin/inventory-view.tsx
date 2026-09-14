@@ -96,11 +96,11 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
   }, [items]);
 
   return (
-    <div className="flex flex-col w-full h-full flex-1 p-4 overflow-auto bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 space-y-4">
+    <div className="flex flex-col h-full w-full p-4 md:p-6 gap-6">
       {/* ── Page Header & Action Controls ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
               Inventory Management
             </h1>
             <p className="mt-0.5 text-xs sm:text-sm text-slate-500 dark:text-slate-300">
@@ -134,7 +134,7 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
         </div>
 
         {/* ── KPI Summary Cards ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total SKUs */}
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
             <div className="flex items-center justify-between">

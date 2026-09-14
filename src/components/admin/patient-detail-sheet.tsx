@@ -24,6 +24,7 @@ import {
   Crown,
   Plus,
   Banknote,
+  Printer,
 } from 'lucide-react';
 import {
   getPatientHistory,
@@ -31,6 +32,9 @@ import {
   type PatientDetailHistory,
   type PatientPrescriptionHistory,
 } from '@/actions/patient-actions';
+import { getInvoicePrintData } from '@/actions/settings-actions';
+import { ThermalReceipt, A4TaxInvoice } from '@/components/print';
+import type { PrintOrderData } from '@/components/pos/print-layouts';
 import { toast } from 'sonner';
 import { SettleBalanceModal, type SettleInvoiceData } from './settle-balance-modal';
 
@@ -64,6 +68,54 @@ export function PatientDetailSheet({
   // Balance settlement modal state
   const [selectedOrderForSettlement, setSelectedOrderForSettlement] =
     useState<SettleInvoiceData | null>(null);
+
+  // Printing state for past invoices
+  const [printableOrder, setPrintableOrder] = useState<PrintOrderData | null>(null);
+  const [printReceiptType, setPrintReceiptType] = useState<'THERMAL_80MM' | 'A4_INVOICE'>('THERMAL_80MM');
+  const [isPrintingInvoiceId, setIsPrintingInvoiceId] = useState<string | null>(null);
+
+  const handlePrintInvoice = async (invoiceId: string) => {
+    try {
+      setIsPrintingInvoiceId(invoiceId);
+      const res = await getInvoicePrintData(invoiceId);
+      if (res.success && res.order) {
+        setPrintableOrder(res.order);
+        const mode = res.receiptType || 'THERMAL_80MM';
+        setPrintReceiptType(mode);
+
+        const className = mode === 'THERMAL_80MM' ? 'print-mode-thermal' : 'print-mode-a4';
+        document.body.classList.add(className);
+
+        const styleEl = document.createElement('style');
+        styleEl.id = 'print-page-style';
+        styleEl.innerHTML =
+          mode === 'THERMAL_80MM'
+            ? '@page { size: 80mm auto; margin: 0; }'
+            : '@page { size: A4; margin: 15mm; }';
+        document.head.appendChild(styleEl);
+
+        const handleAfterPrint = () => {
+          document.body.classList.remove(className);
+          const s = document.getElementById('print-page-style');
+          if (s) s.remove();
+          setPrintableOrder(null);
+          window.removeEventListener('afterprint', handleAfterPrint);
+        };
+        window.addEventListener('afterprint', handleAfterPrint);
+
+        setTimeout(() => {
+          window.print();
+        }, 100);
+      } else {
+        toast.error(res.error || 'Failed to prepare invoice for printing');
+      }
+    } catch (err) {
+      console.error('Error preparing invoice print:', err);
+      toast.error('Could not load invoice print data');
+    } finally {
+      setIsPrintingInvoiceId(null);
+    }
+  };
 
   const handleBalanceSettled = () => {
     if (patientId) {
@@ -702,35 +754,53 @@ export function PatientDetailSheet({
                                     )}
                                   </td>
                                   <td className="py-3 px-3 text-right whitespace-nowrap">
-                                    {order.paymentStatus === 'PARTIAL' ||
-                                    order.paymentStatus === 'UNPAID' ||
-                                    Number(order.balanceDue) > 0 ? (
+                                    <div className="flex items-center justify-end gap-1.5">
                                       <button
                                         type="button"
-                                        data-testid="btn-collect-balance"
-                                        onClick={() =>
-                                          setSelectedOrderForSettlement({
-                                            id: order.id,
-                                            invoiceNumber: order.invoiceNumber,
-                                            customerName:
-                                              order.billedToName || data.patient.fullName,
-                                            grandTotal: order.grandTotal,
-                                            advancePaid: order.advancePaid,
-                                            balanceDue: order.balanceDue,
-                                            orderStatus: order.orderStatus,
-                                            paymentStatus: order.paymentStatus,
-                                          })
-                                        }
-                                        className="inline-flex items-center gap-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2 py-1 text-[10px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500"
+                                        data-testid="btn-print-invoice"
+                                        onClick={() => handlePrintInvoice(order.id)}
+                                        disabled={isPrintingInvoiceId === order.id}
+                                        className="inline-flex items-center gap-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-2 py-1 text-[10px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
+                                        title="Print Receipt / Invoice"
                                       >
-                                        <Banknote className="h-3 w-3" />
-                                        <span>Collect Balance</span>
+                                        {isPrintingInvoiceId === order.id ? (
+                                          <Loader2 className="h-3 w-3 animate-spin" />
+                                        ) : (
+                                          <Printer className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                        )}
+                                        <span>Print</span>
                                       </button>
-                                    ) : (
-                                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                                        Settled
-                                      </span>
-                                    )}
+
+                                      {order.paymentStatus === 'PARTIAL' ||
+                                      order.paymentStatus === 'UNPAID' ||
+                                      Number(order.balanceDue) > 0 ? (
+                                        <button
+                                          type="button"
+                                          data-testid="btn-collect-balance"
+                                          onClick={() =>
+                                            setSelectedOrderForSettlement({
+                                              id: order.id,
+                                              invoiceNumber: order.invoiceNumber,
+                                              customerName:
+                                                order.billedToName || data.patient.fullName,
+                                              grandTotal: order.grandTotal,
+                                              advancePaid: order.advancePaid,
+                                              balanceDue: order.balanceDue,
+                                              orderStatus: order.orderStatus,
+                                              paymentStatus: order.paymentStatus,
+                                            })
+                                          }
+                                          className="inline-flex items-center gap-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2 py-1 text-[10px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500"
+                                        >
+                                          <Banknote className="h-3 w-3" />
+                                          <span>Collect Balance</span>
+                                        </button>
+                                      ) : (
+                                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold px-1">
+                                          Settled
+                                        </span>
+                                      )}
+                                    </div>
                                   </td>
                                 </tr>
                               );
@@ -956,6 +1026,17 @@ export function PatientDetailSheet({
         invoice={selectedOrderForSettlement}
         onSuccess={handleBalanceSettled}
       />
+
+      {/* ── Mounted Print Template for Past Invoices ── */}
+      {printableOrder && (
+        <>
+          {printReceiptType === 'THERMAL_80MM' ? (
+            <ThermalReceipt order={printableOrder} />
+          ) : (
+            <A4TaxInvoice order={printableOrder} />
+          )}
+        </>
+      )}
     </div>
   );
 }

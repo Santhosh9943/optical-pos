@@ -17,6 +17,11 @@ You are an expert full-stack engineer building a high-performance, cloud-native 
     - **Label in Name (WCAG 2.5.3):** If an interactive element (`<button>`, `<Link>`) has visible text, its `aria-label` MUST begin with or exactly match that visible text. If the visible text is fully descriptive, omit the `aria-label` entirely.
     - **Semantic HTML & Form Labels:** Always use `<button>` for actions, never `<div onClick>`. Every `<input>` or `<Select>` must have a programmatic `<label>` or an explicit `aria-label`.
     - **Focus States:** All interactive elements must have visible focus rings (`focus-visible:ring`).
+  - **Global Spacing & UI Uniformity:** All dashboard pages MUST follow a strict, unified spacing architecture. 
+    - **Page Wrapper:** Every page root must use EXACTLY `className="flex flex-col h-full w-full p-4 md:p-6 gap-6"`. Do not use arbitrary `mt-*` or `pt-*` to push content down.
+    - **Page Headers:** Use a standardized header block for admin pages: `<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">`. 
+    - **Card & Table Gaps:** Internal component spacing should consistently use `gap-4`. 
+    - **Layout Delegation:** The shared `layout.tsx` is responsible for the top navigation bar and sidebar; it must provide a clean `flex-1 overflow-auto` container for the children. Pages must NEVER try to adjust for the navigation bar using margins.
 - **Validation:** Zod v3+
 - **Math Library:** `decimal.js` for all financial calculations
 
@@ -122,9 +127,11 @@ if (updated.length === 0) throw new InsufficientStockError(item.id);
 
 ---
 
-## 10. AI Agent Operational Constraints
-- **Manual Verification Priority & Targeted Testing:** Until explicitly requested, DO NOT attempt to run dev servers or test the application in the browser yourself. **Exception:** You ARE permitted and expected to run automated tests (e.g., Playwright E2E tests) to verify your syntax and logic, but you must ONLY execute the specific test files associated with the code or features you just modified. Do not run the entire global test suite to save time and resources. Notify me when the targeted tests pass so I can manually verify the UI.
-- **Token-Optimized Log Evaluation:** When executing targeted automated tests, do not ingest or analyze the full verbose terminal logs if the test suite passes successfully. If the tests pass, acknowledge the success briefly (using minimal tokens) and stop, waiting for my manual verification. ONLY ingest, read, and analyze the detailed logs if a test fails, crashes, or produces abnormal output.
+## 10. AI Agent Operational Constraints & CI Pipeline
+- **The Validation Loop:** You are strictly forbidden from declaring a feature 'complete' without passing the local CI pipeline. Once you finish writing code for a task, you MUST run `npm run validate` (or `npm run check` for minor static updates).
+- **On Success (Token Optimization):** If the validation script passes with exit code 0, DO NOT ingest or analyze the terminal logs. Output a brief confirmation token (e.g., '✅ CI Passed') and stop. Wait for my manual UI verification. Do NOT run dev servers or open browsers yourself.
+- **On Failure (Auto-Correction):** If the validation script fails, you are authorized to ingest the error logs. You must independently analyze the TypeScript, ESLint, or Playwright errors, apply the necessary code fixes, and re-run `npm run validate` until it passes completely.
+- **Continuous Graphify Updates:** To keep the architectural knowledge graph perfectly synced with the codebase, you MUST automatically run the `graphify .` command at the very end of every completed feature, task, or significant refactor. Execute this step immediately after the CI validation (`npm run validate`) passes, right before notifying the user that the task is complete.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

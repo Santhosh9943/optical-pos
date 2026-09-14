@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Decimal from 'decimal.js';
 import { toast } from 'sonner';
 import { PatientSearch, type Patient } from '@/components/pos/patient-search';
@@ -22,12 +22,12 @@ import {
   type PaymentMode,
 } from '@/components/pos/payment-panel';
 import { processOpticalOrder } from '@/actions/process-optical-order';
+import { type PrintOrderData } from '@/components/pos/print-layouts';
 import {
   ThermalReceipt,
-  WorkshopSlip,
-  type PrintOrderData,
-} from '@/components/pos/print-layouts';
-import { A4Invoice } from '@/components/pos/print-a4-invoice';
+  A4TaxInvoice,
+  WorkshopLabSlip,
+} from '@/components/print';
 import { usePOSStore, type POSPatient } from '@/store/pos-store';
 import { AddFamilyMemberModal } from '@/components/pos/add-family-member-modal';
 import {
@@ -504,14 +504,19 @@ export function PosView() {
     }
   };
 
+  const handleCheckoutRef = useRef(handleCheckout);
+  handleCheckoutRef.current = handleCheckout;
+  const resetOrderRef = useRef(resetOrder);
+  resetOrderRef.current = resetOrder;
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'F10') {
         e.preventDefault();
-        handleCheckout();
+        handleCheckoutRef.current();
       } else if (e.key === 'F1') {
         e.preventDefault();
-        resetOrder();
+        resetOrderRef.current();
       } else if (e.key === 'F2') {
         e.preventDefault();
         setIsAddProductModalOpen(true);
@@ -524,7 +529,7 @@ export function PosView() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleCheckout, resetOrder, completedOrder]);
+  }, [completedOrder, setPrintMode]);
 
   const handleConfigureSpectaclePair = (config: SpectaclePairConfig) => {
     // 1. If prescription was entered/confirmed, save to store
@@ -594,9 +599,9 @@ export function PosView() {
   };
 
   return (
-    <div className="flex flex-1 flex-col w-full h-full overflow-hidden bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100">
+    <div className="flex flex-col h-full w-full p-4 md:p-6 gap-4 md:gap-6">
       {/* ── POS Sub-header: Quick Patient Search & New Order Action ── */}
-      <div className="flex h-13 items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 shrink-0">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 shrink-0">
         {/* Mounted Patient Search Component */}
         <div className="w-96 max-w-md">
           <PatientSearch
@@ -673,11 +678,11 @@ export function PosView() {
       </div>
 
       {/* ── POS Two-Column Split Layout ── */}
-      <main className="grid flex-1 grid-cols-12 gap-3 overflow-hidden p-3 min-h-0 w-full">
+      <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full">
         {/* ══════════════════════════════════════════════════════════════════
             LEFT WORKSPACE PANE (Cols 1-7): Patient Summary & Clinical Specs
             ══════════════════════════════════════════════════════════════════ */}
-        <div className="col-span-7 flex flex-col gap-3 overflow-y-auto">
+        <div className="col-span-7 flex flex-col gap-4 overflow-y-auto">
           {/* Patient Header / Card with Family Support */}
           <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
@@ -1080,7 +1085,7 @@ export function PosView() {
         {/* ══════════════════════════════════════════════════════════════════
             RIGHT CHECKOUT LEDGER (Cols 8-12): Billing Cart & Payment Settlement
             ══════════════════════════════════════════════════════════════════ */}
-        <div className="col-span-5 flex flex-col gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm overflow-y-auto">
+        <div className="col-span-5 flex flex-col gap-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm overflow-y-auto">
           <div className="flex flex-col">
             {/* Cart Header */}
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
@@ -1309,7 +1314,7 @@ export function PosView() {
             </div>
           </div>
         </div>
-      </main>
+      </div>
 
       {/* ── ORDER SUCCESS MODAL OVERLAY (PRD SECTION 3.4) ── */}
       {completedOrder && (
@@ -1353,34 +1358,47 @@ export function PosView() {
               </div>
             </div>
 
-            {/* Print Action Buttons (Thermal, A4 Invoice, Lab Slip) */}
+            {/* Print Action Buttons (Primary Print Receipt, Thermal, A4 Invoice, Lab Slip) */}
             <div className="space-y-2">
+              <button
+                type="button"
+                data-testid="btn-print-receipt"
+                onClick={() => setPrintMode('thermal')}
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 py-3 px-4 text-xs font-bold text-white shadow-md transition active:scale-[0.98] cursor-pointer"
+              >
+                <Printer className="h-4 w-4" />
+                <span>Print Receipt</span>
+              </button>
+
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
+                  data-testid="btn-print-thermal-receipt"
                   onClick={() => setPrintMode('thermal')}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 dark:bg-slate-800 py-2.5 px-3 text-xs font-bold text-white shadow-sm hover:bg-slate-800 dark:hover:bg-slate-700 transition active:scale-[0.98]"
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 dark:bg-slate-800 py-2 px-3 text-xs font-bold text-white shadow-xs hover:bg-slate-800 dark:hover:bg-slate-700 transition active:scale-[0.98] cursor-pointer"
                 >
-                  <Printer className="h-4 w-4 text-emerald-400" />
-                  <span>Print Thermal Receipt</span>
+                  <Receipt className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>Thermal (80mm)</span>
                 </button>
 
                 <button
                   type="button"
+                  data-testid="btn-print-a4-invoice"
                   onClick={() => setPrintMode('a4')}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 py-2.5 px-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition active:scale-[0.98]"
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 py-2 px-3 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition active:scale-[0.98] cursor-pointer"
                 >
-                  <FileText className="h-4 w-4 text-white" />
-                  <span>Print A4 Invoice</span>
+                  <FileText className="h-3.5 w-3.5 text-white" />
+                  <span>A4 Invoice</span>
                 </button>
               </div>
 
               <button
                 type="button"
+                data-testid="btn-print-lab-slip"
                 onClick={() => setPrintMode('workshop')}
-                className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 px-3 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-750 transition active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-border bg-card hover:bg-muted py-2 px-3 text-xs font-bold text-foreground transition active:scale-[0.98] cursor-pointer"
               >
-                <ClipboardList className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                <ClipboardList className="h-4 w-4 text-indigo-500" />
                 <span>Print Lab Slip</span>
               </button>
             </div>
@@ -1459,8 +1477,8 @@ export function PosView() {
       {completedOrder && (
         <>
           <ThermalReceipt order={completedOrder} />
-          <WorkshopSlip order={completedOrder} />
-          <A4Invoice order={completedOrder} />
+          <WorkshopLabSlip order={completedOrder} />
+          <A4TaxInvoice order={completedOrder} />
         </>
       )}
     </div>

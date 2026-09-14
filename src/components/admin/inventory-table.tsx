@@ -71,7 +71,7 @@ export function InventoryTable({ items }: InventoryTableProps) {
   }, [items, searchQuery, selectedCategory, filterLowStockOnly]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Search and Filters Toolbar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
         {/* Search input */}

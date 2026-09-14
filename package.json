@@ -6,7 +6,9 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/db/seed.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check": "next lint && tsc --noEmit",
+    "validate": "next lint && tsc --noEmit && npm run test:e2e"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -32,6 +34,8 @@
     "autoprefixer": "^10.6.0",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.5",
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.19",
     "tsx": "^4.23.13",
