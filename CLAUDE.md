@@ -12,6 +12,11 @@ You are an expert full-stack engineer building a high-performance, cloud-native 
 - **Styling & UI:** Tailwind CSS, Radix Primitives via shadcn/ui, Lucide Icons
   - **Theme Mandate:** All UI components MUST support dark mode natively. Use shadcn/ui CSS variables (e.g., `bg-background`, `text-foreground`, `border-border`) instead of hardcoded colors. If hardcoded utility classes are required, you must include the `dark:` variant (e.g., `bg-white dark:bg-zinc-900`).
   - **Fluid Full-Width Layouts:** All primary views (e.g., POS, Inventory, Reports) must utilize the full available width of the main content area. Use `w-full`, `h-full`, and `flex-1` with consistent padding (e.g., `p-4` or `p-6`). NEVER use `container`, `max-w-7xl`, or `mx-auto` wrapper classes on main dashboard views. Constrained widths are strictly reserved for standalone auth screens or modal dialogs.
+  - **Strict WCAG AA Compliance:** 
+    - **Color Contrast (4.5:1 Minimum):** All text must maintain a 4.5:1 contrast ratio. In dark mode, strictly avoid `opacity-*` classes on text. Never use muted grays like `dark:text-slate-500` or `dark:text-zinc-500` for readable text; use `dark:text-slate-300` or `dark:text-zinc-300` minimum.
+    - **Label in Name (WCAG 2.5.3):** If an interactive element (`<button>`, `<Link>`) has visible text, its `aria-label` MUST begin with or exactly match that visible text. If the visible text is fully descriptive, omit the `aria-label` entirely.
+    - **Semantic HTML & Form Labels:** Always use `<button>` for actions, never `<div onClick>`. Every `<input>` or `<Select>` must have a programmatic `<label>` or an explicit `aria-label`.
+    - **Focus States:** All interactive elements must have visible focus rings (`focus-visible:ring`).
 - **Validation:** Zod v3+
 - **Math Library:** `decimal.js` for all financial calculations
 

@@ -712,7 +712,7 @@ export function PosView() {
                         id="select-invoice-account"
                         disabled
                         data-testid="select-invoice-account"
-                        className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/60 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-70 ml-1"
+                        className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/60 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-300 cursor-not-allowed ml-1"
                         title="Only 1 member on order. Add family members to change invoice account."
                       >
                         <option value="">(Only 1 Member)</option>
@@ -721,7 +721,7 @@ export function PosView() {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center space-x-2 text-xs text-slate-400 dark:text-slate-500">
+                <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-300">
                   <UserCheck className="h-4 w-4" />
                   <span>Search or enter phone to populate patient</span>
                 </div>
@@ -732,9 +732,8 @@ export function PosView() {
                   <button
                     type="button"
                     data-testid="add-family-member-btn"
-                    aria-label="Add Family Member"
                     onClick={() => setIsAddFamilyModalOpen(true)}
-                    className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition active:scale-95"
+                    className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition active:scale-95"
                   >
                     <UserPlus className="h-3.5 w-3.5" />
                     <span>+ Add Family Member</span>
@@ -747,7 +746,7 @@ export function PosView() {
               <div className="space-y-3">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                   <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] uppercase font-medium text-slate-400 dark:text-slate-500 block">
+                    <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
                       Active Customer
                     </span>
                     <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm truncate block">
@@ -755,7 +754,7 @@ export function PosView() {
                     </span>
                   </div>
                   <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] uppercase font-medium text-slate-400 dark:text-slate-500 block">
+                    <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
                       Contact Phone
                     </span>
                     <span className="font-semibold text-slate-900 dark:text-slate-100 font-mono">
@@ -763,7 +762,7 @@ export function PosView() {
                     </span>
                   </div>
                   <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] uppercase font-medium text-slate-400 dark:text-slate-500 block">
+                    <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
                       Demographics
                     </span>
                     <span className="font-semibold text-slate-900 dark:text-slate-100">
@@ -775,7 +774,7 @@ export function PosView() {
                     type="button"
                     data-testid="btn-patient-past-purchases"
                     onClick={() => setActiveLeftTab('orders')}
-                    className="rounded-md bg-purple-50/80 dark:bg-purple-950/40 p-2 border border-purple-200 dark:border-purple-800/60 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition text-left"
+                    className="rounded-md bg-purple-50/80 dark:bg-purple-950/40 p-2 border border-purple-200 dark:border-purple-800/60 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500"
                     title="Click to view purchase order history"
                   >
                     <span className="text-[10px] uppercase font-medium text-purple-600 dark:text-purple-400 flex items-center justify-between">
@@ -788,7 +787,7 @@ export function PosView() {
                   </button>
                   {selectedPatient.city && (
                     <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                      <span className="text-[10px] uppercase font-medium text-slate-400 dark:text-slate-500 block">
+                      <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
                         Location
                       </span>
                       <span className="font-medium text-slate-800 dark:text-slate-200">
@@ -809,12 +808,12 @@ export function PosView() {
                 </div>
               </div>
             ) : (
-              <div className="mt-4 flex flex-col items-center justify-center rounded-md border border-dashed border-slate-200 dark:border-slate-800 py-6 text-center text-slate-400 dark:text-slate-500">
+              <div className="mt-4 flex flex-col items-center justify-center rounded-md border border-dashed border-slate-200 dark:border-slate-800 py-6 text-center text-slate-500 dark:text-slate-300">
                 <UserCheck className="h-8 w-8 text-slate-300 dark:text-slate-600" />
                 <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
                   No patient selected
                 </p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                <p className="text-[11px] text-slate-500 dark:text-slate-300">
                   Search above or type phone to lookup previous prescriptions & orders
                 </p>
               </div>
@@ -831,7 +830,7 @@ export function PosView() {
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition ${
                   activeLeftTab === 'rx'
                     ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-950/30'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                    : 'border-transparent text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100'
                 }`}
               >
                 <Eye className="h-4 w-4" />
@@ -845,7 +844,7 @@ export function PosView() {
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition ${
                   activeLeftTab === 'orders'
                     ? 'border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400 bg-purple-50/40 dark:bg-purple-950/30'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                    : 'border-transparent text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100'
                 }`}
               >
                 <Receipt className="h-4 w-4" />
@@ -943,7 +942,7 @@ export function PosView() {
                     Purchase Invoices for {selectedPatient.fullName}
                   </h3>
                 </div>
-                <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                <span className="text-[11px] font-mono text-slate-600 dark:text-slate-300">
                   {(patientOrderHistories[selectedPatient.id] || []).length} Past Invoices
                 </span>
               </div>
@@ -959,7 +958,7 @@ export function PosView() {
                   <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     No Previous Purchase Orders
                   </p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-300">
                     This customer does not have any prior purchase invoices on record.
                   </p>
                 </div>
@@ -997,7 +996,7 @@ export function PosView() {
                               </span>
                             )}
                           </div>
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                          <span className="text-[11px] text-slate-600 dark:text-slate-300 font-mono">
                             {orderDate.toLocaleDateString('en-IN', {
                               day: '2-digit',
                               month: 'short',
@@ -1009,7 +1008,7 @@ export function PosView() {
                         {/* Items preview */}
                         {order.itemDescriptions.length > 0 && (
                           <div className="space-y-1">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
+                            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-300 tracking-wider">
                               Purchased Items ({order.itemDescriptions.length})
                             </span>
                             <ul className="text-xs text-slate-700 dark:text-slate-300 space-y-0.5 pl-3 list-disc">
@@ -1023,27 +1022,33 @@ export function PosView() {
                         )}
 
                         {/* Amounts Strip */}
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs font-mono">
-                          <div>
-                            <span className="text-slate-400 text-[10px] mr-1">Paid:</span>
-                            <span className="font-semibold text-slate-700 dark:text-slate-300">
-                              ₹{order.advancePaid}
+                        <div className="flex flex-wrap items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
+                          <div className="flex items-center gap-3">
+                            <span className="text-slate-600 dark:text-slate-300">
+                              Total:{' '}
+                              <strong className="text-slate-900 dark:text-slate-100 font-mono">
+                                ₹{order.grandTotal}
+                              </strong>
                             </span>
-                          </div>
-                          {Number(order.balanceDue) > 0 && (
-                            <div>
-                              <span className="text-amber-500 text-[10px] mr-1">Due:</span>
-                              <span className="font-bold text-amber-600 dark:text-amber-400">
-                                ₹{order.balanceDue}
+                            <span className="text-slate-600 dark:text-slate-300">
+                              Advance:{' '}
+                              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium">
+                                ₹{order.advancePaid}
                               </span>
-                            </div>
-                          )}
-                          <div>
-                            <span className="text-slate-400 text-[10px] mr-1">Total:</span>
-                            <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                              ₹{order.grandTotal}
                             </span>
                           </div>
+                          <span className="text-slate-600 dark:text-slate-300">
+                            Balance:{' '}
+                            <span
+                              className={`font-mono font-bold ${
+                                Number(order.balanceDue) > 0
+                                  ? 'text-amber-600 dark:text-amber-400'
+                                  : 'text-slate-600 dark:text-slate-300'
+                              }`}
+                            >
+                              ₹{order.balanceDue}
+                            </span>
+                          </span>
                         </div>
                       </div>
                     );
@@ -1062,11 +1067,11 @@ export function PosView() {
                   Ophthalmic Lens Specification
                 </h3>
               </div>
-              <span className="rounded bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-500 dark:text-slate-400">
+              <span className="rounded bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-600 dark:text-slate-300">
                 Type · Coating · Material
               </span>
             </div>
-            <div className="mt-3 flex items-center justify-center py-4 text-xs text-slate-400 dark:text-slate-500 italic">
+            <div className="mt-3 flex items-center justify-center py-4 text-xs text-slate-500 dark:text-slate-300 italic">
               Lens type selection (Single Vision, Progressive, Blue-Cut) and lab attributes
             </div>
           </div>
@@ -1137,7 +1142,7 @@ export function PosView() {
 
           {/* Financial Totals & Summary Breakdown */}
           <div className="border-t border-slate-200 dark:border-slate-800 pt-3 mt-3 flex-shrink-0">
-            <div className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
+            <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
               <div className="flex justify-between">
                 <span>Cart Subtotal</span>
                 <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
@@ -1150,7 +1155,7 @@ export function PosView() {
                   className={`font-mono font-medium ${
                     totals.totalDiscount.greaterThan(0)
                       ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-slate-600 dark:text-slate-400'
+                      : 'text-slate-600 dark:text-slate-300'
                   }`}
                 >
                   {totals.totalDiscount.greaterThan(0)
@@ -1164,11 +1169,11 @@ export function PosView() {
                   ₹{totals.taxableValue.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between text-slate-500 dark:text-slate-400 text-[11px]">
+              <div className="flex justify-between text-slate-600 dark:text-slate-300 text-[11px]">
                 <span>CGST</span>
                 <span className="font-mono">₹{totals.cgst.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-slate-500 dark:text-slate-400 text-[11px]">
+              <div className="flex justify-between text-slate-600 dark:text-slate-300 text-[11px]">
                 <span>SGST</span>
                 <span className="font-mono">₹{totals.sgst.toFixed(2)}</span>
               </div>
@@ -1190,7 +1195,7 @@ export function PosView() {
             <div className="mt-2.5 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 flex items-center justify-between">
               <div className="flex flex-col text-xs">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Invoice To:</span>
+                  <span className="text-[11px] text-slate-600 dark:text-slate-300">Invoice To:</span>
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
                     {invoiceBillingDetails.billingName || selectedPatient?.fullName || 'Primary Patient'}
                   </span>
@@ -1210,7 +1215,7 @@ export function PosView() {
                 type="button"
                 data-testid="edit-invoice-details-btn"
                 onClick={() => setIsInvoiceDetailsModalOpen(true)}
-                className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition"
               >
                 <Edit3 className="h-3 w-3 text-blue-600 dark:text-blue-400" />
                 <span>Edit Invoice Details</span>
@@ -1248,7 +1253,7 @@ export function PosView() {
                         className="flex items-center justify-center gap-1.5 rounded-md bg-slate-900 py-2 px-2 text-[11px] font-bold text-white shadow-sm hover:bg-slate-800 active:scale-[0.99] transition"
                       >
                         <Printer className="h-3.5 w-3.5 text-emerald-400" />
-                        <span>Print Thermal</span>
+                        <span>Print Thermal Receipt</span>
                       </button>
 
                       <button
@@ -1256,7 +1261,7 @@ export function PosView() {
                         onClick={() => setPrintMode('a4')}
                         className="flex items-center justify-center gap-1.5 rounded-md bg-blue-600 py-2 px-2 text-[11px] font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] transition"
                       >
-                        <FileText className="h-3.5 w-3.5 text-white" />
+                        <FileText className="h-3.5 w-3.5" />
                         <span>Print A4 Invoice</span>
                       </button>
                     </div>
@@ -1264,21 +1269,21 @@ export function PosView() {
                     <button
                       type="button"
                       onClick={() => setPrintMode('workshop')}
-                      className="w-full flex items-center justify-center gap-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-1.5 px-2 text-[11px] font-bold text-slate-800 dark:text-slate-200 shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99] transition"
+                      className="w-full flex items-center justify-center gap-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-1.5 px-2 text-[11px] font-bold text-slate-800 dark:text-slate-200 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-750 active:scale-[0.99] transition"
                     >
                       <ClipboardList className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                      <span>Print Lab Slip</span>
+                      <span>Print Lab / Workshop Slip</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={resetOrder}
+                      className="w-full flex items-center justify-center gap-1 rounded-md bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.99] transition"
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      <span>Start New Order (F1)</span>
                     </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={resetOrder}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-md bg-blue-600 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] transition"
-                  >
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    <span>Start New Order (F1)</span>
-                  </button>
                 </div>
               ) : (
                 <button
@@ -1286,7 +1291,7 @@ export function PosView() {
                   data-testid="btn-complete-order"
                   disabled={cartItems.length === 0 || !selectedPatient || isSubmitting}
                   onClick={handleCheckout}
-                  className="w-full flex items-center justify-center gap-2 rounded-md bg-blue-600 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 transition"
+                  className="w-full flex items-center justify-center gap-2 rounded-md bg-blue-600 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-300 transition"
                 >
                   {isSubmitting ? (
                     <>
@@ -1318,7 +1323,7 @@ export function PosView() {
                 <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                   Order Successfully Completed
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-600 dark:text-slate-300">
                   Invoice <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{completedOrder.invoiceNumber}</span> generated and inventory updated.
                 </p>
               </div>
@@ -1327,19 +1332,19 @@ export function PosView() {
             {/* Quick Financial Summary */}
             <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3 text-xs space-y-1.5 border border-slate-200 dark:border-slate-800">
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Patient:</span>
+                <span className="text-slate-600 dark:text-slate-300">Patient:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">{completedOrder.customer.name} ({completedOrder.customer.phone})</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Items Ordered:</span>
+                <span className="text-slate-600 dark:text-slate-300">Items Ordered:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">{completedOrder.items.length} line item(s)</span>
               </div>
               <div className="flex justify-between border-t border-slate-200 dark:border-slate-800 pt-1.5">
-                <span className="text-slate-500 dark:text-slate-400">Grand Total:</span>
+                <span className="text-slate-600 dark:text-slate-300">Grand Total:</span>
                 <span className="font-mono font-bold text-slate-900 dark:text-slate-100">₹{completedOrder.grandTotal}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Advance Paid:</span>
+                <span className="text-slate-600 dark:text-slate-300">Advance Paid:</span>
                 <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">₹{completedOrder.advancePaid}</span>
               </div>
               <div className="flex justify-between font-bold">

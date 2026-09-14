@@ -140,7 +140,7 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <div className="relative flex items-center">
-        <div className="pointer-events-none absolute left-3 flex items-center text-slate-400 dark:text-slate-500">
+        <div className="pointer-events-none absolute left-3 flex items-center text-slate-500 dark:text-slate-300">
           <Search className="h-4 w-4" />
         </div>
         <input
@@ -166,12 +166,13 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
           {query && !isSearching && (
             <button
               type="button"
+              aria-label="Clear inventory search"
               onClick={() => {
                 setQuery('');
                 setResults([]);
                 setIsOpen(false);
               }}
-              className="rounded p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              className="rounded p-0.5 text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -179,15 +180,15 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
         </div>
       </div>
 
-      {/* Floating Dropdown Results */}
+      {/* Results Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
+        <div className="absolute z-50 mt-1 max-h-96 w-full overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
           {results.length > 0 ? (
             <div className="p-1">
-              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex justify-between items-center">
-                <span>Matching Inventory ({results.length})</span>
-                <span className="text-slate-400 dark:text-slate-500 font-normal">
-                  Frames open Spectacle Wizard · Other items add directly
+              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 flex justify-between items-center">
+                <span>Matching Items ({results.length})</span>
+                <span className="text-slate-500 dark:text-slate-300 font-normal">
+                  Press Esc to close
                 </span>
               </div>
               <ul className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -223,12 +224,12 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
                         <div className="mt-0.5 truncate text-xs font-semibold text-slate-900 dark:text-slate-100">
                           {item.brand ? `${item.brand} ` : ''}
                           {item.model ? `${item.model} — ` : ''}
-                          <span className="font-normal text-slate-600 dark:text-slate-400">
+                          <span className="font-normal text-slate-600 dark:text-slate-300">
                             {item.description}
                           </span>
                         </div>
 
-                        <div className="mt-1 flex items-center space-x-3 text-[11px] text-slate-500 dark:text-slate-400">
+                        <div className="mt-1 flex items-center space-x-3 text-[11px] text-slate-600 dark:text-slate-300">
                           <span className="flex items-center">
                             {isOutOfStock ? (
                               <span className="flex items-center text-red-600 dark:text-red-400 font-semibold">
@@ -261,7 +262,7 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
                             })}
                           </div>
                           {item.mrp && Number(item.mrp) > Number(item.sellingPrice) && (
-                            <div className="text-[10px] text-slate-400 dark:text-slate-500 line-through font-mono">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-300 line-through font-mono">
                               MRP ₹{item.mrp}
                             </div>
                           )}
@@ -270,12 +271,13 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
                         {/* Quick detail view button */}
                         <button
                           type="button"
+                          aria-label="View product details"
                           title="View product details"
                           onClick={(e) => {
                             e.stopPropagation();
                             setDetailItem(item);
                           }}
-                          className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                          className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition"
                         >
                           <Eye className="h-3.5 w-3.5" />
                         </button>
@@ -287,7 +289,7 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
                               type="button"
                               title="Direct add frame only"
                               onClick={(e) => handleDirectAdd(e, item)}
-                              className="px-2 py-1 text-[10px] font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                              className="px-2 py-1 text-[10px] font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                             >
                               + Frame Only
                             </button>
@@ -306,14 +308,14 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
                 })}
               </ul>
             </div>
-          ) : query.trim() && !isSearching ? (
+          ) : query.trim().length >= 2 && !isSearching ? (
             <div className="p-4 text-center">
               <Package className="mx-auto h-6 w-6 text-slate-300 dark:text-slate-600" />
               <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-                No inventory item found matching &quot;{query}&quot;
+                No items matching &quot;{query}&quot;
               </p>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                Check SKU or try searching by brand name
+              <p className="text-[11px] text-slate-500 dark:text-slate-300">
+                Check SKU or try searching by category/brand.
               </p>
             </div>
           ) : null}
@@ -349,7 +351,7 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
               </button>
             </div>
 
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-slate-600 dark:text-slate-300">
               {detailItem.description || 'No description provided.'}
             </p>
 

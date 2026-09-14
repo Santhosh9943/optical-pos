@@ -121,7 +121,7 @@ export function PatientSearch({
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <div className="relative flex items-center">
-        <div className="pointer-events-none absolute left-3 flex items-center text-slate-400 dark:text-slate-500">
+        <div className="pointer-events-none absolute left-3 flex items-center text-slate-500 dark:text-slate-300">
           <Search className="h-4 w-4" />
         </div>
         <input
@@ -156,8 +156,9 @@ export function PatientSearch({
           {(query || selectedPatient) && !isSearching && (
             <button
               type="button"
+              aria-label="Clear patient search"
               onClick={handleClear}
-              className="rounded p-0.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300"
+              className="rounded p-0.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               title="Clear Search"
             >
               <X className="h-4 w-4" />
@@ -171,9 +172,9 @@ export function PatientSearch({
         <div className="absolute z-50 mt-1 max-h-80 w-full overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
           {results.length > 0 ? (
             <div className="p-1">
-              <div className="flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <div className="flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-300">
                 <span>Matching Patients ({results.length})</span>
-                <span className="text-[10px] lowercase text-slate-400">
+                <span className="text-[10px] lowercase text-slate-500 dark:text-slate-300">
                   family group linked
                 </span>
               </div>
@@ -221,14 +222,14 @@ export function PatientSearch({
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center space-x-3 text-xs text-slate-500 dark:text-slate-400">
+                          <div className="flex items-center space-x-3 text-xs text-slate-600 dark:text-slate-300">
                             <span className="flex items-center font-mono">
-                              <Phone className="mr-1 h-3 w-3 text-slate-400 dark:text-slate-500" />
+                              <Phone className="mr-1 h-3 w-3 text-slate-500 dark:text-slate-300" />
                               {patient.phone}
                             </span>
                             {patient.city && (
                               <span className="flex items-center">
-                                <MapPin className="mr-1 h-3 w-3 text-slate-400 dark:text-slate-500" />
+                                <MapPin className="mr-1 h-3 w-3 text-slate-500 dark:text-slate-300" />
                                 {patient.city}
                               </span>
                             )}
@@ -252,11 +253,11 @@ export function PatientSearch({
             </div>
           ) : query.trim().length >= 3 && !isSearching ? (
             <div className="p-4 text-center">
-              <AlertCircle className="mx-auto h-5 w-5 text-slate-400 dark:text-slate-500" />
+              <AlertCircle className="mx-auto h-5 w-5 text-slate-500 dark:text-slate-300" />
               <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
                 No patient found with phone matching &quot;{query}&quot;
               </p>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+              <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-0.5">
                 Click &quot;+ Add Family Member&quot; or register a new patient below.
               </p>
             </div>

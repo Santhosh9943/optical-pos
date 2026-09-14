@@ -243,7 +243,7 @@ export function ReportsView() {
               Active Register
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+          <p className="text-[11px] text-slate-500 dark:text-slate-300">
             Audit store revenue, payment splits, and order transactions for{' '}
             <strong className="text-slate-800 dark:text-slate-200">
               {report?.date || 'Selected Period'}
@@ -258,7 +258,7 @@ export function ReportsView() {
             type="button"
             data-testid="btn-toggle-summary"
             onClick={() => setIsSummaryCollapsed(!isSummaryCollapsed)}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-2xs cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-2xs cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
             title={isSummaryCollapsed ? 'Expand Metric Cards' : 'Collapse Metric Cards'}
           >
             {isSummaryCollapsed ? (
@@ -268,7 +268,7 @@ export function ReportsView() {
               </>
             ) : (
               <>
-                <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
+                <ChevronUp className="h-3.5 w-3.5 text-slate-400 dark:text-slate-300" />
                 <span>Compact View</span>
               </>
             )}
@@ -279,7 +279,7 @@ export function ReportsView() {
             data-testid="btn-refresh-report"
             onClick={handleRefresh}
             disabled={isLoading || isPending}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50 shadow-2xs cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed shadow-2xs cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
             title="Refresh Report Data"
           >
             <RefreshCw
@@ -292,7 +292,7 @@ export function ReportsView() {
             type="button"
             data-testid="btn-print-z-report"
             onClick={handlePrintZReport}
-            className="flex items-center gap-1.5 rounded-lg bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition active:scale-95 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <Printer className="h-3.5 w-3.5 text-emerald-400" />
             <span>Print Report</span>
@@ -304,7 +304,7 @@ export function ReportsView() {
       <div className="shrink-0 flex items-center justify-between gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 shadow-2xs no-print">
         {/* Presets Pills */}
         <div className="flex flex-wrap items-center gap-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1 flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 mr-1 flex items-center gap-1">
             <Calendar className="h-3 w-3" />
             <span>Range:</span>
           </span>
@@ -313,7 +313,7 @@ export function ReportsView() {
             type="button"
             data-testid="preset-all"
             onClick={() => handlePresetSelect('all')}
-            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
               preset === 'all'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
@@ -326,7 +326,7 @@ export function ReportsView() {
             type="button"
             data-testid="preset-today"
             onClick={() => handlePresetSelect('today')}
-            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
               preset === 'today'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
@@ -339,7 +339,7 @@ export function ReportsView() {
             type="button"
             data-testid="preset-yesterday"
             onClick={() => handlePresetSelect('yesterday')}
-            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
               preset === 'yesterday'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
@@ -352,7 +352,7 @@ export function ReportsView() {
             type="button"
             data-testid="preset-7days"
             onClick={() => handlePresetSelect('last7days')}
-            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
               preset === 'last7days'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
@@ -365,7 +365,7 @@ export function ReportsView() {
             type="button"
             data-testid="preset-month"
             onClick={() => handlePresetSelect('thisMonth')}
-            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-0.5 text-xs font-bold rounded-lg transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
               preset === 'thisMonth'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
@@ -380,7 +380,7 @@ export function ReportsView() {
               type="button"
               data-testid="preset-custom"
               onClick={() => handlePresetSelect('custom')}
-              className={`px-2.5 py-0.5 text-xs font-bold rounded-lg transition flex items-center gap-1 cursor-pointer ${
+              className={`px-2.5 py-0.5 text-xs font-bold rounded-lg transition flex items-center gap-1 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 preset === 'custom'
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
@@ -405,7 +405,8 @@ export function ReportsView() {
                   <button
                     type="button"
                     onClick={() => setIsCustomPickerOpen(false)}
-                    className="rounded p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+                    aria-label="Close custom date picker"
+                    className="rounded p-0.5 text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-slate-100 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -413,7 +414,7 @@ export function ReportsView() {
 
                 <form onSubmit={handleApplyCustomRange} className="space-y-2.5">
                   <div className="space-y-1">
-                    <label htmlFor="report-start-date" className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    <label htmlFor="report-start-date" className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                       From (Start Date)
                     </label>
                     <input
@@ -422,12 +423,12 @@ export function ReportsView() {
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-blue-600 cursor-pointer"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-blue-600 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label htmlFor="report-end-date" className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    <label htmlFor="report-end-date" className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                       To (End Date)
                     </label>
                     <input
@@ -436,7 +437,7 @@ export function ReportsView() {
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-blue-600 cursor-pointer"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-blue-600 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                     />
                   </div>
 
@@ -444,14 +445,14 @@ export function ReportsView() {
                     <button
                       type="button"
                       onClick={() => setIsCustomPickerOpen(false)}
-                      className="rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                      className="rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       data-testid="btn-apply-custom-range"
-                      className="rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1 text-xs font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
+                      className="rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1 text-xs font-bold text-white shadow-xs transition active:scale-95 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                     >
                       Apply Range
                     </button>
@@ -469,7 +470,7 @@ export function ReportsView() {
           <p className="font-semibold text-slate-700 dark:text-slate-200 text-xs sm:text-sm">
             Calculating Financial Metrics...
           </p>
-          <p className="text-[11px] text-slate-400 mt-0.5">
+          <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-0.5">
             Aggregating orders, tax liabilities, and payment tenders
           </p>
         </div>
@@ -481,7 +482,7 @@ export function ReportsView() {
               {/* Total Revenue */}
               <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 truncate">
                     Gross Rev
                   </span>
                   <TrendingUp className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
@@ -497,7 +498,7 @@ export function ReportsView() {
               {/* Total Invoices Count */}
               <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 truncate">
                     Invoices
                   </span>
                   <Receipt className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -506,14 +507,14 @@ export function ReportsView() {
                   <span data-testid="total-orders-metric">
                     {report?.totalOrders || 0}
                   </span>
-                  <span className="text-[10px] font-normal text-slate-400 font-sans">orders</span>
+                  <span className="text-[10px] font-normal text-slate-500 dark:text-slate-300 font-sans">orders</span>
                 </div>
               </div>
 
               {/* Total Collected */}
               <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 truncate">
                     Collected
                   </span>
                   <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -529,7 +530,7 @@ export function ReportsView() {
               {/* Pending Balance Due */}
               <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 shadow-2xs flex flex-col justify-center">
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 truncate">
                     Pending Due
                   </span>
                   <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -603,7 +604,7 @@ export function ReportsView() {
                       {filteredTransactions.length} Orders
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-300">
                     Granular itemization of invoices · Showing {paginatedTransactions.length} on this page
                   </p>
                 </div>
@@ -612,17 +613,18 @@ export function ReportsView() {
                 <div className="flex items-center gap-2 flex-wrap">
                   {/* Search Input */}
                   <div className="relative w-full sm:w-60">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-slate-300" />
                     <input
                       type="text"
                       data-testid="input-ledger-search"
+                      aria-label="Search ledger transactions by invoice, patient, or phone"
                       value={searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
                         setCurrentPage(1);
                       }}
                       placeholder="Search invoice, patient, phone..."
-                      className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-1.5 pl-8 pr-2.5 text-xs text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:outline-hidden"
+                      className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-1.5 pl-8 pr-2.5 text-xs text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:outline-hidden focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -632,13 +634,13 @@ export function ReportsView() {
               <div className="flex flex-wrap items-center gap-2.5 pt-0.5 no-print">
                 {/* Payment Status Filter */}
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[11px] font-semibold text-slate-400">Payment:</span>
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-300">Payment:</span>
                   <select
                     aria-label="Payment Status"
                     data-testid="filter-payment-status"
                     value={paymentStatusFilter}
                     onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                    className="rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1 text-xs font-semibold text-foreground focus:outline-hidden cursor-pointer"
+                    className="rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1 text-xs font-semibold text-foreground focus:outline-hidden cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
                     <option value="ALL">All Payment Statuses</option>
                     <option value="PAID">Paid in Full</option>
@@ -649,13 +651,13 @@ export function ReportsView() {
 
                 {/* Payment Mode Filter */}
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[11px] font-semibold text-slate-400">Mode:</span>
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-300">Mode:</span>
                   <select
                     aria-label="Payment Mode"
                     data-testid="filter-payment-mode"
                     value={paymentModeFilter}
                     onChange={(e) => setPaymentModeFilter(e.target.value)}
-                    className="rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1 text-xs font-semibold text-foreground focus:outline-hidden cursor-pointer"
+                    className="rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1 text-xs font-semibold text-foreground focus:outline-hidden cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
                     <option value="ALL">All Modes</option>
                     <option value="CASH">Cash</option>
@@ -666,13 +668,13 @@ export function ReportsView() {
 
                 {/* Order Status Filter */}
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[11px] font-semibold text-slate-400">Order:</span>
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-300">Order:</span>
                   <select
                     aria-label="Order Status"
                     data-testid="filter-order-status"
                     value={orderStatusFilter}
                     onChange={(e) => setOrderStatusFilter(e.target.value)}
-                    className="rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1 text-xs font-semibold text-foreground focus:outline-hidden cursor-pointer"
+                    className="rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1 text-xs font-semibold text-foreground focus:outline-hidden cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
                     <option value="ALL">All Order Statuses</option>
                     <option value="ORDERED">Action Required</option>
@@ -688,7 +690,7 @@ export function ReportsView() {
                     type="button"
                     data-testid="btn-reset-filters"
                     onClick={handleResetFilters}
-                    className="flex items-center gap-1 text-[11px] font-bold text-red-600 dark:text-red-400 hover:underline px-1.5 py-1 cursor-pointer"
+                    className="flex items-center gap-1 text-[11px] font-bold text-red-600 dark:text-red-400 hover:underline px-1.5 py-1 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500 rounded"
                   >
                     <X className="h-3 w-3" />
                     <span>Reset Filters</span>
@@ -725,13 +727,13 @@ export function ReportsView() {
                         <p className="mt-2 font-medium text-slate-600 dark:text-slate-300 text-xs">
                           No transactions match the selected filters
                         </p>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-0.5">
                           Try switching to &quot;All Time&quot; or selecting a broader custom date range.
                         </p>
                         <button
                           type="button"
                           onClick={() => handlePresetSelect('all')}
-                          className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer"
+                          className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                         >
                           <span>Switch to All Time</span>
                           <ChevronRight className="h-3.5 w-3.5" />
@@ -766,9 +768,9 @@ export function ReportsView() {
                           </td>
 
                           {/* Date & Time */}
-                          <td className="py-2 px-3 text-slate-500 dark:text-slate-400 font-mono text-[11px] whitespace-nowrap">
+                          <td className="py-2 px-3 text-slate-600 dark:text-slate-300 font-mono text-[11px] whitespace-nowrap">
                             <span>{dateStr}</span>
-                            <span className="text-[10px] text-muted-foreground block">{timeStr}</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-300 block">{timeStr}</span>
                           </td>
 
                           {/* Patient Name */}
@@ -776,7 +778,7 @@ export function ReportsView() {
                             <span className="font-semibold text-slate-900 dark:text-slate-100 block">
                               {tx.customerName}
                             </span>
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                            <span className="text-[10px] text-slate-500 dark:text-slate-300 font-mono">
                               {tx.customerPhone}
                             </span>
                           </td>
@@ -789,7 +791,7 @@ export function ReportsView() {
                                   ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
                                   : tx.paymentMode.includes('UPI')
                                     ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
-                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                               }`}
                             >
                               {tx.paymentMode}
@@ -855,7 +857,7 @@ export function ReportsView() {
             </div>
 
             {/* ── PAGINATION & LEDGER CONTROLS FOOTER ── */}
-            <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-200 dark:border-slate-800 px-3.5 py-2 bg-slate-50/70 dark:bg-slate-950/40 text-xs text-slate-500 dark:text-slate-400 gap-2 no-print">
+            <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-200 dark:border-slate-800 px-3.5 py-2 bg-slate-50/70 dark:bg-slate-950/40 text-xs text-slate-600 dark:text-slate-300 gap-2 no-print">
               <div className="flex items-center gap-3 flex-wrap">
                 <span>
                   Showing <strong className="text-slate-800 dark:text-slate-200">{totalItems > 0 ? startIndex + 1 : 0}</strong> to{' '}
@@ -865,7 +867,7 @@ export function ReportsView() {
 
                 {/* Rows per page selector */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-slate-400">Rows:</span>
+                  <span className="text-slate-500 dark:text-slate-300">Rows:</span>
                   <select
                     data-testid="select-page-size"
                     aria-label="Rows per page"
@@ -874,7 +876,7 @@ export function ReportsView() {
                       setPageSize(Number(e.target.value));
                       setCurrentPage(1);
                     }}
-                    className="rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-0.5 text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                    className="rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-0.5 text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
                     <option value={5}>5</option>
                     <option value={10}>10</option>
@@ -892,7 +894,7 @@ export function ReportsView() {
                   data-testid="btn-prev-page"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={safeCurrentPage <= 1}
-                  className="flex items-center gap-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition cursor-pointer"
+                  className="flex items-center gap-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                   <span>Prev</span>
@@ -907,7 +909,7 @@ export function ReportsView() {
                   data-testid="btn-next-page"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={safeCurrentPage >= totalPages}
-                  className="flex items-center gap-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition cursor-pointer"
+                  className="flex items-center gap-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <span>Next</span>
                   <ChevronRight className="h-3.5 w-3.5" />

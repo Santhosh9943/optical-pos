@@ -152,7 +152,8 @@ export function SettleBalanceModal({
             data-testid="btn-close-settle-modal"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition cursor-pointer"
+            aria-label="Close settle balance dialog"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           >
             <X className="h-4 w-4" />
           </button>
@@ -265,7 +266,7 @@ export function SettleBalanceModal({
                 data-testid="payment-mode-cash"
                 onClick={() => setPaymentMode('CASH')}
                 disabled={isSubmitting}
-                className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold border transition cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold border transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                   paymentMode === 'CASH'
                     ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                     : 'border-border bg-card text-muted-foreground hover:bg-muted'
@@ -280,7 +281,7 @@ export function SettleBalanceModal({
                 data-testid="payment-mode-upi"
                 onClick={() => setPaymentMode('UPI')}
                 disabled={isSubmitting}
-                className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold border transition cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold border transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                   paymentMode === 'UPI'
                     ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                     : 'border-border bg-card text-muted-foreground hover:bg-muted'
@@ -295,7 +296,7 @@ export function SettleBalanceModal({
                 data-testid="payment-mode-card"
                 onClick={() => setPaymentMode('CARD')}
                 disabled={isSubmitting}
-                className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold border transition cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold border transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                   paymentMode === 'CARD'
                     ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                     : 'border-border bg-card text-muted-foreground hover:bg-muted'
@@ -344,7 +345,7 @@ export function SettleBalanceModal({
               data-testid="btn-cancel-settle"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-lg border border-border bg-background hover:bg-muted px-4 py-2 text-xs font-bold text-foreground transition cursor-pointer"
+              className="rounded-lg border border-border bg-background hover:bg-muted px-4 py-2 text-xs font-bold text-foreground transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             >
               Cancel
             </button>
@@ -352,7 +353,7 @@ export function SettleBalanceModal({
               type="submit"
               data-testid="btn-confirm-settle-balance"
               disabled={isSubmitting || !amount || Number(amount) <= 0}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-4 py-2 text-xs font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed px-4 py-2 text-xs font-bold text-white shadow-xs transition active:scale-95 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
               {isSubmitting ? (
                 <>

@@ -61,7 +61,7 @@ export function PaymentPanel({
             type="button"
             onClick={handleQuickFullPay}
             disabled={disabled || grandTotal.isZero()}
-            className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-950/60 disabled:opacity-50 transition"
+            className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-950/60 disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition"
           >
             Pay Full
           </button>
@@ -70,7 +70,7 @@ export function PaymentPanel({
             type="button"
             onClick={handleQuickZeroPay}
             disabled={disabled}
-            className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 transition"
+            className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition"
           >
             Zero Adv
           </button>
@@ -87,15 +87,15 @@ export function PaymentPanel({
 
       {/* Payment Mode Selector Tabs */}
       <div>
-        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 block">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1 block">
           Payment Mode
-        </label>
+        </span>
         <div className="grid grid-cols-3 gap-1.5">
           <button
             type="button"
             onClick={() => onPaymentModeChange('CASH')}
             disabled={disabled}
-            className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition ${
+            className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               paymentMode === 'CASH'
                 ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                 : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
@@ -108,7 +108,7 @@ export function PaymentPanel({
             type="button"
             onClick={() => onPaymentModeChange('UPI')}
             disabled={disabled}
-            className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition ${
+            className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               paymentMode === 'UPI'
                 ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                 : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
@@ -121,7 +121,7 @@ export function PaymentPanel({
             type="button"
             onClick={() => onPaymentModeChange('CARD')}
             disabled={disabled}
-            className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition ${
+            className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               paymentMode === 'CARD'
                 ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                 : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
@@ -136,14 +136,15 @@ export function PaymentPanel({
       {/* Advance Paid Input & Transaction Ref */}
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 block">
+          <label htmlFor="pos-advance-paid" className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1 block">
             Advance Paid (₹)
           </label>
           <div className="relative flex items-center">
-            <span className="pointer-events-none absolute left-2.5 text-xs text-slate-400 dark:text-slate-500 font-mono">
+            <span className="pointer-events-none absolute left-2.5 text-xs text-slate-500 dark:text-slate-300 font-mono">
               ₹
             </span>
             <input
+              id="pos-advance-paid"
               type="text"
               inputMode="decimal"
               value={advancePaid}
@@ -161,10 +162,11 @@ export function PaymentPanel({
         </div>
 
         <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 block">
+          <label htmlFor="pos-transaction-ref" className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1 block">
             {paymentMode === 'CASH' ? 'Note (Optional)' : 'Transaction Ref'}
           </label>
           <input
+            id="pos-transaction-ref"
             type="text"
             value={reference}
             disabled={disabled}

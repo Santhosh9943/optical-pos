@@ -76,24 +76,26 @@ export function InventoryTable({ items }: InventoryTableProps) {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
         {/* Search input */}
         <div className="relative flex-1 max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-300" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search inventory by SKU, brand, or model"
             placeholder="Search SKU, brand, model..."
-            className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-1.5 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600/20"
+            className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-1.5 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-600/20"
           />
         </div>
 
         {/* Category & Status Filters */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
-            <Filter className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+            <Filter className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-1.5 px-2 text-xs font-medium text-slate-700 dark:text-slate-200 focus:border-blue-600 focus:outline-none"
+              aria-label="Filter by inventory category"
+              className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-1.5 px-2 text-xs font-medium text-slate-700 dark:text-slate-200 focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-600/20"
             >
               <option value="ALL">All Categories</option>
               <option value="FRAME">Frames</option>
@@ -108,10 +110,11 @@ export function InventoryTable({ items }: InventoryTableProps) {
           <button
             type="button"
             onClick={() => setFilterLowStockOnly(!filterLowStockOnly)}
-            className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium border transition ${
+            aria-pressed={filterLowStockOnly}
+            className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium border transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
               filterLowStockOnly
                 ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700 font-semibold'
-                : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
+                : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
             }`}
           >
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
@@ -125,7 +128,7 @@ export function InventoryTable({ items }: InventoryTableProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                 <th className="py-2.5 px-3">SKU</th>
                 <th className="py-2.5 px-3">Category</th>
                 <th className="py-2.5 px-3">Brand</th>
@@ -142,7 +145,7 @@ export function InventoryTable({ items }: InventoryTableProps) {
                     <p className="mt-2 font-medium text-slate-600 dark:text-slate-300">
                       No inventory items found
                     </p>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-300">
                       {searchQuery || selectedCategory !== 'ALL' || filterLowStockOnly
                         ? 'Try clearing filters or adjusting your search term.'
                         : 'Click "Add New Item" to populate your inventory.'}
@@ -225,7 +228,7 @@ export function InventoryTable({ items }: InventoryTableProps) {
         </div>
 
         {/* Table Footer Count */}
-        <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 px-4 py-2 text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 px-4 py-2 text-xs text-slate-600 dark:text-slate-300">
           <span>
             Showing <strong className="font-semibold text-slate-800 dark:text-slate-200">{filteredItems.length}</strong> of{' '}
             <strong className="font-semibold text-slate-800 dark:text-slate-200">{items.length}</strong> items

@@ -244,7 +244,7 @@ export function PatientDetailSheet({
               >
                 Clinical History & Profile
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-300">
                 Patient record & segregated family longitudinal history
               </p>
             </div>
@@ -252,7 +252,7 @@ export function PatientDetailSheet({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition"
+            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
             aria-label="Close sheet"
           >
             <X className="h-5 w-5" />
@@ -264,7 +264,7 @@ export function PatientDetailSheet({
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-24 space-y-3">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
                 Loading clinical records...
               </p>
             </div>
@@ -293,7 +293,7 @@ export function PatientDetailSheet({
                     });
                   }
                 }}
-                className="mt-2 text-xs font-semibold underline hover:no-underline"
+                className="mt-2 text-xs font-semibold underline hover:no-underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500 rounded"
               >
                 Try Again
               </button>
@@ -311,12 +311,12 @@ export function PatientDetailSheet({
                         {data.patient.fullName}
                       </h3>
                       {data.patient.gender && (
-                        <span className="rounded-full bg-slate-200 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600 dark:text-slate-400">
+                        <span className="rounded-full bg-slate-200 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600 dark:text-slate-300">
                           {data.patient.gender}
                         </span>
                       )}
                       {data.patient.age !== null && (
-                        <span className="rounded-full bg-slate-200 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-400">
+                        <span className="rounded-full bg-slate-200 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300">
                           {data.patient.age} yrs
                         </span>
                       )}
@@ -354,14 +354,14 @@ export function PatientDetailSheet({
                             value={phoneInput}
                             onChange={(e) => setPhoneInput(e.target.value)}
                             placeholder="Enter personal phone"
-                            className="w-32 px-1.5 py-0.5 text-xs font-mono font-semibold bg-transparent focus:outline-hidden"
+                            className="w-32 px-1.5 py-0.5 text-xs font-mono font-semibold bg-transparent focus:outline-hidden focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
                             autoFocus
                           />
                           <button
                             type="button"
                             disabled={isSavingPhone}
                             onClick={handleSavePhone}
-                            className="rounded bg-blue-600 p-1 text-white hover:bg-blue-700 disabled:opacity-50"
+                            className="rounded bg-blue-600 p-1 text-white hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                             title="Save Phone"
                           >
                             {isSavingPhone ? (
@@ -376,7 +376,7 @@ export function PatientDetailSheet({
                               setIsEditingPhone(false);
                               setPhoneInput(data.patient.ownPhone || data.patient.phone);
                             }}
-                            className="rounded bg-slate-200 dark:bg-slate-700 p-1 text-slate-600 dark:text-slate-300 hover:bg-slate-300"
+                            className="rounded bg-slate-200 dark:bg-slate-700 p-1 text-slate-600 dark:text-slate-300 hover:bg-slate-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                             title="Cancel"
                           >
                             <X className="h-3.5 w-3.5" />
@@ -386,8 +386,8 @@ export function PatientDetailSheet({
                         // Dependent Own Phone Status
                         data.patient.hasOwnPhone && data.patient.ownPhone ? (
                           <div className="flex items-center gap-1.5 rounded-md bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 border border-slate-200 dark:border-slate-700">
-                            <Phone className="h-3.5 w-3.5 text-slate-400" />
-                            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">
+                            <Phone className="h-3.5 w-3.5 text-slate-400 dark:text-slate-300" />
+                            <span className="text-[10px] uppercase font-bold text-slate-600 dark:text-slate-300">
                               Own Number:
                             </span>
                             <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
@@ -400,7 +400,7 @@ export function PatientDetailSheet({
                                 setPhoneInput(data.patient.ownPhone || '');
                                 setIsEditingPhone(true);
                               }}
-                              className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 transition ml-1"
+                              className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 transition ml-1 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                               title="Edit personal phone number"
                             >
                               <Edit3 className="h-3 w-3" />
@@ -409,7 +409,7 @@ export function PatientDetailSheet({
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
-                            <span className="text-[11px] text-slate-400 dark:text-slate-500 italic">
+                            <span className="text-[11px] text-slate-500 dark:text-slate-300 italic">
                               No own phone registered
                             </span>
                             <button
@@ -419,7 +419,7 @@ export function PatientDetailSheet({
                                 setPhoneInput('');
                                 setIsEditingPhone(true);
                               }}
-                              className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition"
+                              className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                             >
                               <Plus className="h-3 w-3" />
                               <span>+ Update Own Number</span>
@@ -430,7 +430,7 @@ export function PatientDetailSheet({
                         // Primary Account Phone
                         <div className="flex items-center gap-1.5">
                           <span className="flex items-center gap-1">
-                            <Phone className="h-3.5 w-3.5 text-slate-400" />
+                            <Phone className="h-3.5 w-3.5 text-slate-400 dark:text-slate-300" />
                             <span className="font-mono text-slate-700 dark:text-slate-300 font-semibold">
                               {data.patient.phone}
                             </span>
@@ -441,7 +441,7 @@ export function PatientDetailSheet({
                               setPhoneInput(data.patient.phone);
                               setIsEditingPhone(true);
                             }}
-                            className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 transition"
+                            className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                             title="Update patient contact number safely"
                           >
                             <Edit3 className="h-3 w-3" />
@@ -452,7 +452,7 @@ export function PatientDetailSheet({
 
                       {data.patient.city && (
                         <span className="flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                          <MapPin className="h-3.5 w-3.5 text-slate-400 dark:text-slate-300" />
                           <span>
                             {data.patient.city}
                             {data.patient.state ? `, ${data.patient.state}` : ''}
@@ -461,7 +461,7 @@ export function PatientDetailSheet({
                       )}
 
                       <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                        <Calendar className="h-3.5 w-3.5 text-slate-400 dark:text-slate-300" />
                         <span>
                           Since{' '}
                           {new Date(data.patient.createdAt).toLocaleDateString(
@@ -492,7 +492,7 @@ export function PatientDetailSheet({
                 {/* Sub-metrics strip */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-800/80 text-xs">
                   <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wider block">
                       Total Orders
                     </span>
                     <span className="text-sm font-bold font-mono text-slate-800 dark:text-slate-200">
@@ -501,7 +501,7 @@ export function PatientDetailSheet({
                   </div>
 
                   <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wider block">
                       Advance Credit
                     </span>
                     <span className="text-sm font-bold font-mono text-blue-600 dark:text-blue-400">
@@ -510,14 +510,14 @@ export function PatientDetailSheet({
                   </div>
 
                   <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wider block">
                       Outstanding Due
                     </span>
                     <span
                       className={`text-sm font-bold font-mono ${
                         Number(data.totalBalanceDue) > 0
                           ? 'text-amber-600 dark:text-amber-400'
-                          : 'text-slate-500 dark:text-slate-400'
+                          : 'text-slate-600 dark:text-slate-300'
                       }`}
                     >
                       ₹{Number(data.totalBalanceDue).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -525,7 +525,7 @@ export function PatientDetailSheet({
                   </div>
 
                   <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wider block">
                       Linked Family
                     </span>
                     <span className="text-sm font-bold font-mono text-purple-600 dark:text-purple-400">
@@ -541,10 +541,10 @@ export function PatientDetailSheet({
                   type="button"
                   data-testid="tab-personal-rx"
                   onClick={() => setActiveTab('personal')}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition ${
+                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     activeTab === 'personal'
                       ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                      : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                      : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
                   }`}
                 >
                   <Eye className="h-4 w-4" />
@@ -555,10 +555,10 @@ export function PatientDetailSheet({
                   type="button"
                   data-testid="tab-patient-orders"
                   onClick={() => setActiveTab('orders')}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition ${
+                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     activeTab === 'orders'
                       ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                      : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                      : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
                   }`}
                 >
                   <Receipt className="h-4 w-4" />
@@ -569,10 +569,10 @@ export function PatientDetailSheet({
                   type="button"
                   data-testid="tab-family-history"
                   onClick={() => setActiveTab('family')}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition ${
+                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 ${
                     activeTab === 'family'
                       ? 'border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400'
-                      : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                      : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
                   }`}
                 >
                   <Users className="h-4 w-4" />
@@ -585,11 +585,11 @@ export function PatientDetailSheet({
                 <div className="space-y-4">
                   {data.personalPrescriptions.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-8 text-center">
-                      <FileText className="mx-auto h-8 w-8 text-slate-400 dark:text-slate-600" />
+                      <FileText className="mx-auto h-8 w-8 text-slate-400 dark:text-slate-500" />
                       <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
                         No Personal Prescriptions On File
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-slate-500 dark:text-slate-300">
                         This patient has not yet had an eye examination recorded under their personal account.
                       </p>
                     </div>
@@ -611,11 +611,11 @@ export function PatientDetailSheet({
                 <div className="space-y-4">
                   {data.orders.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-8 text-center">
-                      <Receipt className="mx-auto h-8 w-8 text-slate-400 dark:text-slate-600" />
+                      <Receipt className="mx-auto h-8 w-8 text-slate-400 dark:text-slate-500" />
                       <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
                         No Invoices Found
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-slate-500 dark:text-slate-300">
                         This patient has not completed any retail or optical purchases yet.
                       </p>
                     </div>
@@ -624,7 +624,7 @@ export function PatientDetailSheet({
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left">
                           <thead>
-                            <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
+                            <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 text-[10px] uppercase font-bold text-slate-500 dark:text-slate-300">
                               <th className="py-2.5 px-3">Date</th>
                               <th className="py-2.5 px-3">Invoice #</th>
                               <th className="py-2.5 px-3">Items Purchased</th>
@@ -643,7 +643,7 @@ export function PatientDetailSheet({
                                   key={order.id}
                                   className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition"
                                 >
-                                  <td className="py-3 px-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                  <td className="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                                     {orderDate.toLocaleDateString('en-IN', {
                                       day: '2-digit',
                                       month: 'short',
@@ -666,7 +666,7 @@ export function PatientDetailSheet({
                                         ))}
                                       </div>
                                     ) : (
-                                      <span className="text-slate-400 italic">
+                                      <span className="text-slate-500 dark:text-slate-300 italic">
                                         Standard Optical Dispense
                                       </span>
                                     )}
@@ -721,7 +721,7 @@ export function PatientDetailSheet({
                                             paymentStatus: order.paymentStatus,
                                           })
                                         }
-                                        className="inline-flex items-center gap-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2 py-1 text-[10px] font-bold transition cursor-pointer"
+                                        className="inline-flex items-center gap-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2 py-1 text-[10px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500"
                                       >
                                         <Banknote className="h-3 w-3" />
                                         <span>Collect Balance</span>
@@ -753,13 +753,13 @@ export function PatientDetailSheet({
                         <Users className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
                         <span>Connected Family Members ({data.familyMembers.length})</span>
                       </h4>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-300">
                         Linked via account hierarchy
                       </span>
                     </div>
 
                     {data.familyMembers.length === 0 ? (
-                      <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-6 text-center text-slate-500 dark:text-slate-400 text-xs">
+                      <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-6 text-center text-slate-500 dark:text-slate-300 text-xs">
                         No family members or dependents are linked to this customer account yet.
                       </div>
                     ) : (
@@ -815,14 +815,16 @@ export function PatientDetailSheet({
                                       value={memberPhoneInput}
                                       onChange={(e) => setMemberPhoneInput(e.target.value)}
                                       placeholder="Enter phone"
-                                      className="w-28 px-1 py-0.5 text-[11px] font-mono font-semibold bg-transparent focus:outline-hidden"
+                                      aria-label="Enter member phone"
+                                      className="w-28 px-1 py-0.5 text-[11px] font-mono font-semibold bg-transparent focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-blue-500 rounded"
                                       autoFocus
                                     />
                                     <button
                                       type="button"
                                       disabled={isSavingMemberPhone}
                                       onClick={() => handleSaveMemberPhone(member.id)}
-                                      className="rounded bg-blue-600 p-0.5 text-white hover:bg-blue-700 disabled:opacity-50"
+                                      className="rounded bg-blue-600 p-0.5 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
+                                      aria-label="Save member phone"
                                       title="Save Phone"
                                     >
                                       {isSavingMemberPhone ? (
@@ -834,7 +836,8 @@ export function PatientDetailSheet({
                                     <button
                                       type="button"
                                       onClick={() => setEditingMemberId(null)}
-                                      className="rounded bg-slate-200 dark:bg-slate-700 p-0.5 text-slate-600 dark:text-slate-300"
+                                      className="rounded bg-slate-200 dark:bg-slate-700 p-0.5 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
+                                      aria-label="Cancel editing phone"
                                       title="Cancel"
                                     >
                                       <X className="h-3 w-3" />
@@ -850,7 +853,7 @@ export function PatientDetailSheet({
                                     </div>
                                     {/* Personal number */}
                                     <div className="flex items-center justify-between gap-1 text-[11px]">
-                                      <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                                      <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
                                         <Phone className="h-3 w-3 text-slate-400" />
                                         <span>Own Number:</span>
                                         <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
@@ -863,7 +866,7 @@ export function PatientDetailSheet({
                                           setEditingMemberId(member.id);
                                           setMemberPhoneInput(hasOwnNumber ? member.phone : '');
                                         }}
-                                        className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                                        className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                                       >
                                         {hasOwnNumber ? 'Edit' : '+ Add Number'}
                                       </button>
@@ -881,7 +884,7 @@ export function PatientDetailSheet({
                                         setEditingMemberId(member.id);
                                         setMemberPhoneInput(member.phone);
                                       }}
-                                      className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                                      className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                                     >
                                       Edit
                                     </button>
@@ -889,7 +892,7 @@ export function PatientDetailSheet({
                                 )}
                               </div>
 
-                              <div className="flex items-center gap-3 text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center gap-3 text-[11px] text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-100 dark:border-slate-800">
                                 <span>
                                   Demographics: {member.gender || '—'}, {member.age ? `${member.age} yrs` : '—'}
                                 </span>
@@ -909,7 +912,7 @@ export function PatientDetailSheet({
                     </h4>
 
                     {data.familyPrescriptions.length === 0 ? (
-                      <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-6 text-center text-slate-500 dark:text-slate-400 text-xs">
+                      <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-6 text-center text-slate-500 dark:text-slate-300 text-xs">
                         No clinical refraction records found for linked family members.
                       </div>
                     ) : (
@@ -933,13 +936,13 @@ export function PatientDetailSheet({
 
         {/* Footer */}
         <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 px-6 py-3 shrink-0 flex items-center justify-between">
-          <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+          <div className="text-[11px] text-slate-500 dark:text-slate-300 font-mono">
             Press ESC to close
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg bg-slate-200 dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 transition"
+            className="rounded-lg bg-slate-200 dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-500"
           >
             Close Sheet
           </button>
@@ -994,7 +997,7 @@ function PrescriptionCard({
           >
             <User className="h-2.5 w-2.5" />
             <span>{rx.patientName}</span>
-            <span className="opacity-75 text-[9px] uppercase tracking-wider font-mono">
+            <span className="text-[9px] uppercase tracking-wider font-mono">
               ({rx.relationType && rx.relationType !== 'Self' ? rx.relationType : (rx.isDependent ? 'Dependent' : 'Primary Account')})
             </span>
           </span>
@@ -1004,7 +1007,7 @@ function PrescriptionCard({
             </span>
           )}
         </div>
-        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-300">
           {rxDate.toLocaleTimeString('en-IN', {
             hour: '2-digit',
             minute: '2-digit',
@@ -1017,7 +1020,7 @@ function PrescriptionCard({
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-bold text-slate-500 dark:text-slate-300">
                 <th className="py-1.5 px-2 font-mono">Eye</th>
                 <th className="py-1.5 px-2 font-mono text-center">SPH</th>
                 <th className="py-1.5 px-2 font-mono text-center">CYL</th>
@@ -1077,7 +1080,7 @@ function PrescriptionCard({
         {/* Additional metadata: Binocular PD & Clinical Remarks */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
           {rx.binocularPd && (
-            <div className="text-slate-500 dark:text-slate-400">
+            <div className="text-slate-500 dark:text-slate-300">
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Binocular PD:
               </span>{' '}
@@ -1085,7 +1088,7 @@ function PrescriptionCard({
             </div>
           )}
           {rx.clinicalRemarks && (
-            <div className="w-full rounded-md bg-slate-50 dark:bg-slate-950 p-2 text-slate-600 dark:text-slate-400 italic">
+            <div className="w-full rounded-md bg-slate-50 dark:bg-slate-950 p-2 text-slate-700 dark:text-slate-300 italic">
               &ldquo;{rx.clinicalRemarks}&rdquo;
             </div>
           )}

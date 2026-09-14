@@ -166,15 +166,16 @@ export function CartItemEditModal({
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Edit Cart Line Item
               </h3>
-              <p className="text-[11px] font-mono text-slate-400">
+              <p className="text-[11px] font-mono text-slate-500 dark:text-slate-300">
                 SKU: {item.sku} {item.hsnCode ? `· HSN ${item.hsnCode}` : ''}
               </p>
             </div>
           </div>
           <button
             type="button"
+            aria-label="Close edit line item modal"
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition"
+            className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition"
           >
             <X className="h-4 w-4" />
           </button>
@@ -184,25 +185,27 @@ export function CartItemEditModal({
         <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
           {/* Description */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label htmlFor="edit-item-desc" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Item Description
             </label>
             <input
+              id="edit-item-desc"
               type="text"
               data-testid="edit-cart-item-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100"
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Pricing & Qty Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="edit-item-qty" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Quantity
               </label>
               <input
+                id="edit-item-qty"
                 type="number"
                 min={1}
                 data-testid="edit-cart-item-qty"
@@ -218,14 +221,15 @@ export function CartItemEditModal({
                     }
                   } catch {}
                 }}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="edit-item-price" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Unit Price (₹)
               </label>
               <input
+                id="edit-item-price"
                 type="text"
                 data-testid="edit-cart-item-price"
                 value={unitPrice}
@@ -240,32 +244,34 @@ export function CartItemEditModal({
                     }
                   } catch {}
                 }}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="edit-item-discount" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Discount (₹)
               </label>
               <input
+                id="edit-item-discount"
                 type="text"
                 data-testid="edit-cart-item-discount"
                 value={discount}
                 onChange={(e) => handleDiscountAmountChange(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="edit-item-discount-percent" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Discount (%)
               </label>
               <input
+                id="edit-item-discount-percent"
                 type="text"
                 data-testid="edit-cart-item-discount-percent"
                 value={discountPercent}
                 placeholder="0%"
                 onChange={(e) => handleDiscountPercentChange(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -369,7 +375,7 @@ export function CartItemEditModal({
           {/* Live Line Total Calculation Summary */}
           <div className="rounded-lg bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 p-3 text-xs flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-slate-500 dark:text-slate-400 block text-[11px]">
+              <span className="text-slate-600 dark:text-slate-300 block text-[11px]">
                 Calculated Line Total ({item.taxRate}% GST)
               </span>
               <span className="text-[11px] font-mono text-slate-600 dark:text-slate-300">
@@ -387,7 +393,7 @@ export function CartItemEditModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="rounded-lg px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             Cancel
           </button>
@@ -395,7 +401,7 @@ export function CartItemEditModal({
             type="button"
             data-testid="btn-save-cart-item-edit"
             onClick={handleSave}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700"
+            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <Save className="h-3.5 w-3.5" />
             <span>Save Changes</span>

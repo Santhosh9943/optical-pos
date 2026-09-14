@@ -199,8 +199,9 @@ function StepField({
         type="button"
         tabIndex={-1}
         disabled={disabled}
+        aria-label={`Decrease ${ariaLabel || 'value'}`}
         onClick={handleDecrement}
-        className="flex h-7 w-6 items-center justify-center rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-200 dark:active:bg-slate-600 disabled:opacity-40"
+        className="flex h-7 w-6 items-center justify-center rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-200 dark:active:bg-slate-600 disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       >
         −
       </button>
@@ -226,8 +227,9 @@ function StepField({
         type="button"
         tabIndex={-1}
         disabled={disabled}
+        aria-label={`Increase ${ariaLabel || 'value'}`}
         onClick={handleIncrement}
-        className="flex h-7 w-6 items-center justify-center rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-200 dark:active:bg-slate-600 disabled:opacity-40"
+        className="flex h-7 w-6 items-center justify-center rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-200 dark:active:bg-slate-600 disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       >
         +
       </button>
@@ -349,11 +351,11 @@ export function PrescriptionGrid({
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
                   isActive
                     ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
                 <span>{p.fullName}</span>
-                <span className="text-[10px] opacity-75 font-normal">
+                <span className="text-[10px] font-normal text-slate-500 dark:text-slate-300">
                   ({p.relationType || 'Current'})
                 </span>
                 {isFilled && (
@@ -437,7 +439,7 @@ export function PrescriptionGrid({
                       type="button"
                       data-testid="btn-use-rx-history"
                       onClick={() => onUsePrescriptionHistory?.(item)}
-                      className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition active:scale-95"
+                      className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition active:scale-95 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       <span>Use in Order</span>
@@ -446,7 +448,7 @@ export function PrescriptionGrid({
 
                   {/* OD/OS Compact Metric Table */}
                   <div className="mt-2 text-xs">
-                    <div className="grid grid-cols-6 text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 pb-1 border-b border-slate-100 dark:border-slate-800/50">
+                    <div className="grid grid-cols-6 text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-300 pb-1 border-b border-slate-100 dark:border-slate-800/50">
                       <span>Eye</span>
                       <span className="text-center">SPH</span>
                       <span className="text-center">CYL</span>
@@ -501,7 +503,7 @@ export function PrescriptionGrid({
                   </div>
 
                   {item.clinicalRemarks && (
-                    <div className="mt-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/40 text-[11px] text-slate-500 dark:text-slate-400 italic">
+                    <div className="mt-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/40 text-[11px] text-slate-500 dark:text-slate-300 italic">
                       Remarks: {item.clinicalRemarks}
                     </div>
                   )}
@@ -543,18 +545,18 @@ export function PrescriptionGrid({
                 type="button"
                 onClick={copyODtoOS}
                 title="Copy Right Eye (OD) values to Left Eye (OS)"
-                className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 active:scale-95"
+                className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
-                <Copy className="h-3 w-3 text-slate-500 dark:text-slate-400" />
+                <Copy className="h-3 w-3 text-slate-500 dark:text-slate-300" />
                 <span>Copy OD → OS</span>
               </button>
               <button
                 type="button"
                 onClick={clearGrid}
                 title="Reset prescription values"
-                className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 transition hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-400 active:scale-95"
+                className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 transition hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
-                <RotateCcw className="h-3 w-3 text-slate-500 dark:text-slate-400" />
+                <RotateCcw className="h-3 w-3 text-slate-500 dark:text-slate-300" />
                 <span>Clear</span>
               </button>
             </div>
@@ -564,7 +566,7 @@ export function PrescriptionGrid({
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300">
                   <th className="pb-2 pl-1 w-28">Eye</th>
                   <th className="pb-2 text-center">Sphere (SPH)</th>
                   <th className="pb-2 text-center">Cylinder (CYL)</th>
@@ -760,7 +762,7 @@ export function PrescriptionGrid({
                   isPd
                 />
               </div>
-              <span className="text-slate-400 dark:text-slate-500 text-[11px]">
+              <span className="text-slate-500 dark:text-slate-300 text-[11px]">
                 mm
               </span>
             </div>
@@ -769,7 +771,7 @@ export function PrescriptionGrid({
               <button
                 type="button"
                 onClick={() => setShowNotes(!showNotes)}
-                className="flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
+                className="flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <span>{showNotes ? 'Hide Clinical Notes' : 'Add Clinical Notes'}</span>
                 {showNotes ? (
@@ -785,7 +787,7 @@ export function PrescriptionGrid({
                   data-testid="btn-save-new-power"
                   disabled={isSaving}
                   onClick={handleSaveNewPower}
-                  className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-95 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-blue-400 dark:disabled:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   {isSaving ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -803,10 +805,11 @@ export function PrescriptionGrid({
             <div className="mt-3 space-y-2 border-t border-slate-100 dark:border-slate-800 pt-3 text-xs">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block font-medium text-slate-700 dark:text-slate-300">
+                  <label htmlFor="rx-visual-acuity" className="mb-1 block font-medium text-slate-700 dark:text-slate-300">
                     Visual Acuity Notes
                   </label>
                   <input
+                    id="rx-visual-acuity"
                     type="text"
                     placeholder="e.g. OD 6/6, OS 6/9"
                     value={value.visualAcuityNotes || ''}
@@ -815,10 +818,11 @@ export function PrescriptionGrid({
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block font-medium text-slate-700 dark:text-slate-300">
+                  <label htmlFor="rx-prism-notes" className="mb-1 block font-medium text-slate-700 dark:text-slate-300">
                     Prism Notes
                   </label>
                   <input
+                    id="rx-prism-notes"
                     type="text"
                     placeholder="e.g. 1.5Δ Base Out OD"
                     value={value.prismNotes || ''}
@@ -828,10 +832,11 @@ export function PrescriptionGrid({
                 </div>
               </div>
               <div>
-                <label className="mb-1 block font-medium text-slate-700 dark:text-slate-300">
+                <label htmlFor="rx-clinical-remarks" className="mb-1 block font-medium text-slate-700 dark:text-slate-300">
                   Clinical Remarks & Dispensing Instructions
                 </label>
                 <textarea
+                  id="rx-clinical-remarks"
                   rows={2}
                   placeholder="e.g. Patient prefers progressive corridor height 17mm; high photophobia, blue-cut recommended."
                   value={value.clinicalRemarks || ''}

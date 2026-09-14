@@ -334,8 +334,9 @@ export function AddProductModal({
             {selectedCategory && (
               <button
                 type="button"
+                aria-label="Back to categories"
                 onClick={() => setSelectedCategory(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition"
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
@@ -349,7 +350,7 @@ export function AddProductModal({
                   ? CATEGORIES.find((c) => c.id === selectedCategory)?.title
                   : 'Add Product to Cart'}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-600 dark:text-slate-300">
                 {selectedCategory
                   ? CATEGORIES.find((c) => c.id === selectedCategory)?.subtitle
                   : 'Select a product category to launch its specialized dispensing flow'}
@@ -361,11 +362,12 @@ export function AddProductModal({
             {/* Target Patient Selector */}
             {activePatients.length > 1 && (
               <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-slate-500 dark:text-slate-400 font-medium">For:</span>
+                <span className="text-slate-600 dark:text-slate-300 font-medium">For:</span>
                 <select
+                  aria-label="Target Patient"
                   value={targetPatientId}
                   onChange={(e) => setTargetPatientId(e.target.value)}
-                  className="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none"
+                  className="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {activePatients.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -378,8 +380,9 @@ export function AddProductModal({
 
             <button
               type="button"
+              aria-label="Close add product modal"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition"
+              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition"
             >
               <X className="h-5 w-5" />
             </button>
@@ -429,7 +432,7 @@ export function AddProductModal({
                       <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
                         {cat.title}
                       </h3>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
                         {cat.subtitle}
                       </p>
                     </div>
@@ -453,7 +456,7 @@ export function AddProductModal({
             <div className="space-y-6">
               {/* Step 1: Select Frame */}
               <div>
-                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 block mb-2">
+                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-300 block mb-2">
                   Step 1: Select Spectacle Frame from Inventory
                 </label>
                 <div className="relative mb-3">
@@ -509,12 +512,12 @@ export function AddProductModal({
 
               {/* Step 2: Lens Specification */}
               <div className="border-t border-slate-200 dark:border-slate-800 pt-4 space-y-4">
-                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 block">
+                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-300 block">
                   Step 2: Choose Prescription Lens Type & Material
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
                       Lens Type
                     </label>
                     <select
@@ -529,7 +532,7 @@ export function AddProductModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
                       Material Index
                     </label>
                     <select
@@ -544,7 +547,7 @@ export function AddProductModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
                       Lens Price (₹)
                     </label>
                     <input
@@ -571,7 +574,7 @@ export function AddProductModal({
                   data-testid="btn-confirm-power-glasses"
                   disabled={!selectedFrame}
                   onClick={handleConfirmPowerGlasses}
-                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <Check className="h-4 w-4" />
                   <span>Add Frame + Lenses to Cart</span>
@@ -584,7 +587,7 @@ export function AddProductModal({
           {selectedCategory === 'BLUE_CUT' && (
             <div className="space-y-6">
               <div>
-                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 block mb-2">
+                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-300 block mb-2">
                   Select Frame for Blue-Cut Glasses
                 </label>
                 <div className="relative mb-3">
@@ -627,7 +630,7 @@ export function AddProductModal({
 
               {/* Power Mode Toggle */}
               <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
-                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 block mb-3">
+                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-300 block mb-3">
                   Lens Power Mode
                 </label>
                 <div className="flex gap-4">
@@ -671,7 +674,7 @@ export function AddProductModal({
                   data-testid="btn-confirm-bluecut"
                   disabled={!selectedFrame}
                   onClick={handleConfirmBlueCut}
-                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <Check className="h-4 w-4" />
                   <span>Add Blue-Cut Glasses</span>
@@ -714,7 +717,7 @@ export function AddProductModal({
                             UV400
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">
                           {item.description || 'Designer Sunglasses with Polarized Protection'}
                         </p>
                         <span className="block mt-2 font-mono text-xs text-slate-400">
@@ -751,7 +754,7 @@ export function AddProductModal({
           {selectedCategory === 'CONTACT_LENSES' && (
             <div className="space-y-6">
               <div>
-                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 block mb-2">
+                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-300 block mb-2">
                   Select Contact Lens Pack
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-40 overflow-y-auto pr-1">
@@ -783,12 +786,12 @@ export function AddProductModal({
 
               {/* Contact Lens Clinical Parameters */}
               <div className="border-t border-slate-200 dark:border-slate-800 pt-4 space-y-4">
-                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 block">
+                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-300 block">
                   Contact Lens Prescription & Pack Parameters
                 </label>
                 <div className="grid grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
                       Right Eye (OD) Power
                     </label>
                     <input
@@ -800,7 +803,7 @@ export function AddProductModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
                       Left Eye (OS) Power
                     </label>
                     <input
@@ -812,7 +815,7 @@ export function AddProductModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
                       Base Curve (BC)
                     </label>
                     <input
@@ -824,7 +827,7 @@ export function AddProductModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
                       Boxes Quantity
                     </label>
                     <input
@@ -851,7 +854,7 @@ export function AddProductModal({
                   data-testid="btn-confirm-contact-lens"
                   disabled={!selectedContactLens}
                   onClick={handleConfirmContactLens}
-                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <Check className="h-4 w-4" />
                   <span>Add Contact Lenses to Cart</span>
@@ -904,18 +907,18 @@ export function AddProductModal({
 
               {/* Step 2: Lens Specifications */}
               <div className="space-y-4">
-                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 block">
+                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-300 block">
                   Step 2: Choose Custom Lab Lenses
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
                       Lens Type
                     </label>
                     <select
                       value={lensType}
                       onChange={(e) => setLensType(e.target.value)}
-                      className="w-full rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs"
+                      className="w-full rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200"
                     >
                       <option value="SINGLE_VISION">Single Vision (Distance/Reading)</option>
                       <option value="PROGRESSIVE">Progressive (Corridor fit)</option>
@@ -925,13 +928,13 @@ export function AddProductModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
                       Material Index
                     </label>
                     <select
                       value={lensMaterial}
                       onChange={(e) => setLensMaterial(e.target.value)}
-                      className="w-full rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs"
+                      className="w-full rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200"
                     >
                       <option value="CR39">CR-39 Standard (1.50)</option>
                       <option value="POLYCARBONATE">Polycarbonate Impact (1.59)</option>
@@ -940,7 +943,7 @@ export function AddProductModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
                       Lens Selling Price (₹)
                     </label>
                     <input
@@ -966,7 +969,7 @@ export function AddProductModal({
                   type="button"
                   data-testid="btn-confirm-lens-only"
                   onClick={handleConfirmLensOnly}
-                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700"
+                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <Check className="h-4 w-4" />
                   <span>Add Customer Frame + Lenses to Cart</span>
@@ -1009,7 +1012,7 @@ export function AddProductModal({
                             Frame Only
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">
                           {item.description || 'Optical frame direct purchase without lenses'}
                         </p>
                         <span className="block mt-2 font-mono text-xs text-slate-400">

@@ -291,16 +291,18 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             <input
               type="text"
               data-testid="input-lab-orders-search"
+              aria-label="Search lab orders by invoice number, customer name, phone, or SKU"
               placeholder="Search by invoice #, customer name, phone, or SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-border bg-card pl-9 pr-8 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs"
+              className="w-full rounded-lg border border-border bg-card pl-9 pr-8 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded"
+                aria-label="Clear search"
+                className="absolute right-2.5 top-2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                 title="Clear search"
               >
                 <X className="h-3.5 w-3.5" />
@@ -316,7 +318,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               type="button"
               data-testid="view-toggle-kanban"
               onClick={() => setViewMode('kanban')}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 viewMode === 'kanban'
                   ? 'bg-card text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
@@ -329,7 +331,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               type="button"
               data-testid="view-toggle-table"
               onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 viewMode === 'table'
                   ? 'bg-card text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
@@ -351,16 +353,18 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             <input
               type="text"
               data-testid="input-lab-orders-search"
+              aria-label="Search lab orders by invoice number, customer name, phone, or SKU"
               placeholder="Search by invoice #, customer name, phone, or SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-border bg-card pl-9 pr-8 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs"
+              className="w-full rounded-lg border border-border bg-card pl-9 pr-8 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded"
+                aria-label="Clear search"
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                 title="Clear search"
               >
                 <X className="h-3.5 w-3.5" />
@@ -374,7 +378,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               type="button"
               data-testid="tab-all"
               onClick={() => setActiveTab('ALL')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 activeTab === 'ALL'
                   ? 'bg-foreground text-background shadow-xs'
                   : 'bg-card text-muted-foreground border border-border hover:bg-muted hover:text-foreground'
@@ -387,7 +391,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               type="button"
               data-testid="tab-ordered"
               onClick={() => setActiveTab('ORDERED')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 ${
                 activeTab === 'ORDERED'
                   ? 'bg-amber-600 text-white shadow-xs'
                   : 'bg-card text-amber-600 dark:text-amber-400 border border-border hover:bg-amber-500/10'
@@ -400,7 +404,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               type="button"
               data-testid="tab-in-fitting"
               onClick={() => setActiveTab('IN_FITTING')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                 activeTab === 'IN_FITTING'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'bg-card text-indigo-600 dark:text-indigo-400 border border-border hover:bg-indigo-500/10'
@@ -413,7 +417,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               type="button"
               data-testid="tab-ready"
               onClick={() => setActiveTab('READY_FOR_COLLECTION')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                 activeTab === 'READY_FOR_COLLECTION'
                   ? 'bg-emerald-600 text-white shadow-xs'
                   : 'bg-card text-emerald-600 dark:text-emerald-400 border border-border hover:bg-emerald-500/10'
@@ -426,7 +430,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               type="button"
               data-testid="tab-completed"
               onClick={() => setActiveTab('DELIVERED_AND_CLOSED')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 activeTab === 'DELIVERED_AND_CLOSED'
                   ? 'bg-slate-600 text-white shadow-xs'
                   : 'bg-card text-muted-foreground border border-border hover:bg-muted hover:text-foreground'
@@ -702,7 +706,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                                 onChange={(e) =>
                                   handleStatusChange(order.id, e.target.value as OrderStatus)
                                 }
-                                className="rounded border border-border bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground focus:outline-hidden focus:ring-1 focus:ring-ring cursor-pointer"
+                                className="rounded border border-border bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground focus:outline-hidden focus:ring-1 focus:ring-ring cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                               >
                                 <option value="ORDERED">Action Required</option>
                                 <option value="SENT_TO_LAB">Sent to Lab</option>
@@ -724,7 +728,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                                     onClick={() =>
                                       handleStatusChange(order.id, 'READY_FOR_COLLECTION')
                                     }
-                                    className="rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
+                                    className="rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
                                   >
                                     Mark Ready
                                   </button>
@@ -736,7 +740,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                                     type="button"
                                     data-testid="btn-collect-balance"
                                     onClick={() => handleSettleOrder(order)}
-                                    className="rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
+                                    className="rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500"
                                   >
                                     Collect Balance
                                   </button>
@@ -747,7 +751,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                                     onClick={() =>
                                       handleStatusChange(order.id, 'DELIVERED_AND_CLOSED')
                                     }
-                                    className="rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 border border-blue-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
+                                    className="rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 border border-blue-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                                   >
                                     Mark Delivered
                                   </button>
@@ -758,7 +762,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                                 type="button"
                                 data-testid="btn-view-lab-slip"
                                 onClick={() => setSelectedOrderForSlip(order)}
-                                className="flex items-center gap-1 rounded bg-muted hover:bg-muted/80 text-foreground border border-border px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
+                                className="flex items-center gap-1 rounded bg-muted hover:bg-muted/80 text-foreground border border-border px-2.5 py-1 text-[11px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
                               >
                                 <Printer className="h-3 w-3 text-indigo-500" />
                                 <span>Lab Slip</span>
@@ -867,7 +871,7 @@ function OrderCard({
           type="button"
           data-testid="btn-view-lab-slip"
           onClick={() => onViewSlip(order)}
-          className="flex items-center gap-1 rounded border border-border bg-background text-foreground hover:bg-muted px-2 py-1 text-[10px] font-bold transition cursor-pointer"
+          className="flex items-center gap-1 rounded border border-border bg-background text-foreground hover:bg-muted px-2 py-1 text-[10px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
           <Printer className="h-3 w-3 text-indigo-500" />
           <span>Slip</span>
@@ -880,7 +884,7 @@ function OrderCard({
               type="button"
               data-testid="btn-status-sent-lab"
               onClick={() => onStatusChange(order.id, 'IN_FITTING')}
-              className="flex items-center gap-1 rounded bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-600 dark:text-indigo-400 px-2 py-1 text-[10px] font-bold border border-indigo-500/30 transition cursor-pointer"
+              className="flex items-center gap-1 rounded bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-600 dark:text-indigo-400 px-2 py-1 text-[10px] font-bold border border-indigo-500/30 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               <span>Fit</span>
               <ArrowRight className="h-2.5 w-2.5" />
@@ -893,7 +897,7 @@ function OrderCard({
                 type="button"
                 data-testid="btn-mark-ready"
                 onClick={() => onStatusChange(order.id, 'READY_FOR_COLLECTION')}
-                className="flex items-center gap-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 px-2 py-1 text-[10px] font-bold border border-emerald-500/30 transition cursor-pointer"
+                className="flex items-center gap-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 px-2 py-1 text-[10px] font-bold border border-emerald-500/30 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
                 <span>Ready</span>
                 <Check className="h-2.5 w-2.5" />
@@ -906,7 +910,7 @@ function OrderCard({
                 type="button"
                 data-testid="btn-collect-balance"
                 onClick={() => onSettleBalance(order)}
-                className="flex items-center gap-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 px-2 py-1 text-[10px] font-bold border border-amber-500/30 transition cursor-pointer"
+                className="flex items-center gap-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 px-2 py-1 text-[10px] font-bold border border-amber-500/30 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500"
               >
                 <span>Collect Balance</span>
                 <PackageCheck className="h-2.5 w-2.5" />
@@ -916,7 +920,7 @@ function OrderCard({
                 type="button"
                 data-testid="btn-mark-delivered"
                 onClick={() => onStatusChange(order.id, 'DELIVERED_AND_CLOSED')}
-                className="flex items-center gap-1 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 px-2 py-1 text-[10px] font-bold border border-blue-500/30 transition cursor-pointer"
+                className="flex items-center gap-1 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 px-2 py-1 text-[10px] font-bold border border-blue-500/30 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <span>Mark Delivered</span>
                 <PackageCheck className="h-2.5 w-2.5" />
@@ -930,7 +934,7 @@ function OrderCard({
             data-testid="select-order-status"
             value={order.orderStatus}
             onChange={(e) => onStatusChange(order.id, e.target.value as OrderStatus)}
-            className="rounded border border-border bg-background px-1.5 py-1 text-[10px] font-semibold text-foreground focus:outline-hidden cursor-pointer"
+            className="rounded border border-border bg-background px-1.5 py-1 text-[10px] font-semibold text-foreground focus:outline-hidden cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <option value="ORDERED">Ordered</option>
             <option value="SENT_TO_LAB">At Lab</option>

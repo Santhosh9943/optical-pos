@@ -161,7 +161,7 @@ export function AddInventoryForm({
               <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
                 Add Inventory Item
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-300">
                 Create a new optical SKU, frame, lens, or accessory
               </p>
             </div>
@@ -170,7 +170,8 @@ export function AddInventoryForm({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition"
+            aria-label="Close dialog"
+            className="rounded-lg p-1.5 text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-100 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -188,10 +189,11 @@ export function AddInventoryForm({
           {/* Row 1: Category & SKU */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="inv-category" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Category <span className="text-red-500">*</span>
               </label>
               <select
+                id="inv-category"
                 value={category}
                 onChange={(e) =>
                   handleCategoryChange(
@@ -211,20 +213,21 @@ export function AddInventoryForm({
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label htmlFor="inv-sku" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   SKU (Stock Keeping Unit)
                 </label>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                <span className="text-[10px] text-slate-500 dark:text-slate-300">
                   Optional (Auto-generated if blank)
                 </span>
               </div>
               <div className="relative">
                 <input
+                  id="inv-sku"
                   type="text"
                   value={sku}
                   onChange={(e) => setSku(e.target.value.toUpperCase())}
                   placeholder="e.g. FRA-7X29-AB41"
-                  className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-mono font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600/20 uppercase"
+                  className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-mono font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600/20 uppercase"
                 />
               </div>
             </div>
@@ -233,57 +236,61 @@ export function AddInventoryForm({
           {/* Row 2: Brand & Model */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="inv-brand" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Brand Name
               </label>
               <input
+                id="inv-brand"
                 type="text"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
                 placeholder="e.g. Titan, Ray-Ban, Essilor, Fastrack"
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600/20"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600/20"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="inv-model" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Model / Variant / Chassis No.
               </label>
               <input
+                id="inv-model"
                 type="text"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="e.g. TI 5001 Matte Black 52-18"
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600/20"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600/20"
               />
             </div>
           </div>
 
           {/* Row 3: Description / Specs */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label htmlFor="inv-desc" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Description / Notes
             </label>
             <input
+              id="inv-desc"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g. Acetate full rim, spring hinges, demo lenses included"
-              className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600/20"
+              className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600/20"
             />
           </div>
 
           {/* Row 4: Pricing (Cost Price, Selling Price, MRP) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-3.5">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="inv-cost-price" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Cost Price (₹)
               </label>
               <div className="relative">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 dark:text-slate-300">
                   ₹
                 </span>
                 <input
+                  id="inv-cost-price"
                   type="text"
                   inputMode="decimal"
                   value={costPrice}
@@ -292,11 +299,11 @@ export function AddInventoryForm({
                   className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-1.5 pl-6 pr-2 text-xs font-mono text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:outline-none"
                 />
               </div>
-              <p className="mt-1 text-[10px] text-slate-400">Wholesale / Landed</p>
+              <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-300">Wholesale / Landed</p>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="inv-selling-price" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Selling Price (₹) <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -304,6 +311,7 @@ export function AddInventoryForm({
                   ₹
                 </span>
                 <input
+                  id="inv-selling-price"
                   type="text"
                   inputMode="decimal"
                   value={sellingPrice}
@@ -313,20 +321,21 @@ export function AddInventoryForm({
                   className="w-full rounded-md border border-blue-300 dark:border-blue-800 bg-white dark:bg-slate-950 py-1.5 pl-6 pr-2 text-xs font-mono font-bold text-blue-700 dark:text-blue-300 focus:border-blue-600 focus:outline-none"
                 />
               </div>
-              <p className="mt-1 text-[10px] text-blue-600/80 dark:text-blue-400/80">
+              <p className="mt-1 text-[10px] text-blue-700 dark:text-blue-300">
                 Billed customer rate
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="inv-mrp" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 MRP (₹)
               </label>
               <div className="relative">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 dark:text-slate-300">
                   ₹
                 </span>
                 <input
+                  id="inv-mrp"
                   type="text"
                   inputMode="decimal"
                   value={mrp}
@@ -335,17 +344,18 @@ export function AddInventoryForm({
                   className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-1.5 pl-6 pr-2 text-xs font-mono text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:outline-none"
                 />
               </div>
-              <p className="mt-1 text-[10px] text-slate-400">Printed Tag Price</p>
+              <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-300">Printed Tag Price</p>
             </div>
           </div>
 
           {/* Row 5: Tax Rate & Stock Qty & Low Stock Alert */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="inv-tax-rate" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 GST Tax Rate <span className="text-red-500">*</span>
               </label>
               <select
+                id="inv-tax-rate"
                 value={taxRate}
                 onChange={(e) => setTaxRate(e.target.value as '5.00' | '18.00')}
                 className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-blue-600 focus:outline-none"
@@ -356,10 +366,11 @@ export function AddInventoryForm({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="inv-stock" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Stock Quantity <span className="text-red-500">*</span>
               </label>
               <input
+                id="inv-stock"
                 type="number"
                 min="0"
                 step="1"
@@ -370,10 +381,11 @@ export function AddInventoryForm({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="inv-low-stock" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Low Stock Threshold
               </label>
               <input
+                id="inv-low-stock"
                 type="number"
                 min="0"
                 step="1"
@@ -387,28 +399,30 @@ export function AddInventoryForm({
           {/* Row 6: Barcode & HSN Code */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="inv-barcode" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Barcode / EAN (Optional)
               </label>
               <input
+                id="inv-barcode"
                 type="text"
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
                 placeholder="Scan or enter barcode"
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-blue-600 focus:outline-none"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-600 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="inv-hsn" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 HSN Code (Optional)
               </label>
               <input
+                id="inv-hsn"
                 type="text"
                 value={hsnCode}
                 onChange={(e) => setHsnCode(e.target.value)}
                 placeholder="e.g. 9003 (Frames), 9001 (Lenses)"
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-blue-600 focus:outline-none"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-600 focus:outline-none"
               />
             </div>
           </div>
@@ -419,14 +433,14 @@ export function AddInventoryForm({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer"
             >
               {isSubmitting ? (
                 <>

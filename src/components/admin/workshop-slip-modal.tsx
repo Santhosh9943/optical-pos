@@ -56,7 +56,7 @@ export function WorkshopSlipModal({
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Optical Workshop Lab Slip
               </h3>
-              <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] font-mono text-slate-500 dark:text-slate-300">
                 Invoice #{order.invoiceNumber} · Patient: {order.customer.name}
               </p>
             </div>
@@ -66,7 +66,7 @@ export function WorkshopSlipModal({
               type="button"
               data-testid="btn-print-lab-slip"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition active:scale-95 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               <Printer className="h-3.5 w-3.5" />
               <span>Print Slip</span>
@@ -75,7 +75,8 @@ export function WorkshopSlipModal({
               type="button"
               data-testid="btn-close-lab-slip"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
+              aria-label="Close lab slip modal"
+              className="rounded-lg p-1.5 text-slate-400 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <X className="h-4 w-4" />
             </button>
