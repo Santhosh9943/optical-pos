@@ -303,6 +303,7 @@ export function PatientDetailSheet({
           </div>
           <button
             type="button"
+            data-testid="btn-close-patient-sheet"
             onClick={onClose}
             className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
             aria-label="Close sheet"

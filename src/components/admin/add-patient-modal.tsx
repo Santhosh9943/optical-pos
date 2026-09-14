@@ -198,6 +198,7 @@ export function AddPatientModal({
                 type="number"
                 min="0"
                 max="130"
+                data-testid="input-patient-age"
                 placeholder="Age in yrs"
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
