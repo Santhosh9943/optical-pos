@@ -8,13 +8,10 @@ import {
   CheckCircle2,
   PackageCheck,
   Search,
-  Filter,
   Kanban,
   List,
   Printer,
   Calendar,
-  AlertCircle,
-  RefreshCw,
   ArrowRight,
   User,
   Phone,
@@ -124,7 +121,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
         return (
           <span
             data-testid="order-status-badge"
-            className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+            className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 border border-amber-500/30"
           >
             <Clock className="h-3 w-3" />
             <span>Action Required</span>
@@ -134,7 +131,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
         return (
           <span
             data-testid="order-status-badge"
-            className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-[11px] font-bold text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+            className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 px-2 py-0.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 border border-blue-500/30"
           >
             <Wrench className="h-3 w-3" />
             <span>Sent to Lab</span>
@@ -144,7 +141,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
         return (
           <span
             data-testid="order-status-badge"
-            className="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 text-[11px] font-bold text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800"
+            className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 px-2 py-0.5 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-500/30"
           >
             <Glasses className="h-3 w-3" />
             <span>In Fitting</span>
@@ -154,7 +151,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
         return (
           <span
             data-testid="order-status-badge"
-            className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
           >
             <CheckCircle2 className="h-3 w-3" />
             <span>Ready for Pickup</span>
@@ -164,7 +161,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
         return (
           <span
             data-testid="order-status-badge"
-            className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
+            className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground border border-border"
           >
             <PackageCheck className="h-3 w-3" />
             <span>Completed</span>
@@ -174,7 +171,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
         return (
           <span
             data-testid="order-status-badge"
-            className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+            className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
           >
             {status}
           </span>
@@ -205,36 +202,36 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
   };
 
   return (
-    <div className="flex h-full w-full flex-1 flex-col overflow-hidden bg-slate-50 dark:bg-slate-950 p-4 md:p-6 font-sans">
+    <div className="flex h-full w-full flex-1 flex-col overflow-hidden bg-background text-foreground p-4 md:p-6 font-sans">
       {/* ── Page Top Header & Metrics Bar ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
               <ClipboardList className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+              <h1 className="text-lg font-bold text-foreground tracking-tight">
                 Lab Order & Workshop Management
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 Track fabrication, surfacing, lens fitting, and customer pickup in real-time.
               </p>
             </div>
           </div>
         </div>
 
-        {/* View Mode Switcher & Stats Badge */}
+        {/* View Mode Switcher */}
         <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0.5 shadow-2xs">
+          <div className="flex rounded-lg border border-border bg-muted/50 p-0.5 shadow-2xs">
             <button
               type="button"
               data-testid="view-toggle-kanban"
               onClick={() => setViewMode('kanban')}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                 viewMode === 'kanban'
-                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Kanban className="h-3.5 w-3.5" />
@@ -246,8 +243,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               onClick={() => setViewMode('table')}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <List className="h-3.5 w-3.5" />
@@ -261,13 +258,13 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 pb-2">
         {/* Search Input */}
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search by invoice #, customer name, phone, or SKU..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs"
+            className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs"
           />
         </div>
 
@@ -279,8 +276,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             onClick={() => setActiveTab('ALL')}
             className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'ALL'
-                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-xs'
-                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+                ? 'bg-foreground text-background shadow-xs'
+                : 'bg-card text-muted-foreground border border-border hover:bg-muted hover:text-foreground'
             }`}
           >
             All Orders ({orders.length})
@@ -293,7 +290,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'ORDERED'
                 ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                : 'bg-card text-amber-600 dark:text-amber-400 border border-border hover:bg-amber-500/10'
             }`}
           >
             Action Required ({orderColumns.actionRequired.length})
@@ -306,7 +303,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'IN_FITTING'
                 ? 'bg-indigo-600 text-white shadow-xs'
-                : 'bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'
+                : 'bg-card text-indigo-600 dark:text-indigo-400 border border-border hover:bg-indigo-500/10'
             }`}
           >
             In Fitting ({orderColumns.atLabFitting.length})
@@ -319,7 +316,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'READY_FOR_COLLECTION'
                 ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+                : 'bg-card text-emerald-600 dark:text-emerald-400 border border-border hover:bg-emerald-500/10'
             }`}
           >
             Ready for Pickup ({orderColumns.readyPickup.length})
@@ -332,7 +329,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'DELIVERED_AND_CLOSED'
                 ? 'bg-slate-600 text-white shadow-xs'
-                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'bg-card text-muted-foreground border border-border hover:bg-muted hover:text-foreground'
             }`}
           >
             Completed ({orderColumns.completed.length})
@@ -346,22 +343,22 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
           /* ── Kanban Board View (4 Columns) ── */
           <div className="grid h-full grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-y-auto pb-4">
             {/* Column 1: Action Required (ORDERED) */}
-            <div className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs overflow-hidden">
-              <div className="flex items-center justify-between border-b border-amber-200 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/40 px-3.5 py-2.5">
+            <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden">
+              <div className="flex items-center justify-between border-b border-amber-500/20 bg-amber-500/10 px-3.5 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
-                  <h2 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                  <h2 className="text-xs font-bold text-amber-700 dark:text-amber-300">
                     1. Action Required
                   </h2>
                 </div>
-                <span className="rounded-full bg-amber-200/80 dark:bg-amber-900/80 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:text-amber-200">
+                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
                   {orderColumns.actionRequired.length}
                 </span>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/20">
                 {orderColumns.actionRequired.length === 0 ? (
-                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
+                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground">
                     No orders awaiting action
                   </div>
                 ) : (
@@ -379,22 +376,22 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             </div>
 
             {/* Column 2: At Lab / In Fitting (SENT_TO_LAB, IN_FITTING) */}
-            <div className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs overflow-hidden">
-              <div className="flex items-center justify-between border-b border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/40 px-3.5 py-2.5">
+            <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden">
+              <div className="flex items-center justify-between border-b border-indigo-500/20 bg-indigo-500/10 px-3.5 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
-                  <h2 className="text-xs font-bold text-indigo-900 dark:text-indigo-200">
+                  <h2 className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
                     2. At Lab / In Fitting
                   </h2>
                 </div>
-                <span className="rounded-full bg-indigo-200/80 dark:bg-indigo-900/80 px-2 py-0.5 text-[10px] font-bold text-indigo-900 dark:text-indigo-200">
+                <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-800 dark:text-indigo-300">
                   {orderColumns.atLabFitting.length}
                 </span>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/20">
                 {orderColumns.atLabFitting.length === 0 ? (
-                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
+                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground">
                     No orders currently in workshop
                   </div>
                 ) : (
@@ -412,22 +409,22 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             </div>
 
             {/* Column 3: Ready for Pickup (READY_FOR_COLLECTION) */}
-            <div className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs overflow-hidden">
-              <div className="flex items-center justify-between border-b border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/40 px-3.5 py-2.5">
+            <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden">
+              <div className="flex items-center justify-between border-b border-emerald-500/20 bg-emerald-500/10 px-3.5 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  <h2 className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                  <h2 className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
                     3. Ready for Pickup
                   </h2>
                 </div>
-                <span className="rounded-full bg-emerald-200/80 dark:bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-emerald-900 dark:text-emerald-200">
+                <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
                   {orderColumns.readyPickup.length}
                 </span>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/20">
                 {orderColumns.readyPickup.length === 0 ? (
-                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
+                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground">
                     No orders ready for pickup
                   </div>
                 ) : (
@@ -445,22 +442,22 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             </div>
 
             {/* Column 4: Completed (DELIVERED_AND_CLOSED) */}
-            <div className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/40 px-3.5 py-2.5">
+            <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden">
+              <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3.5 py-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-slate-400" />
-                  <h2 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground" />
+                  <h2 className="text-xs font-bold text-foreground">
                     4. Completed (Last 50)
                   </h2>
                 </div>
-                <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
                   {orderColumns.completed.length}
                 </span>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/20">
                 {orderColumns.completed.length === 0 ? (
-                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
+                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground">
                     No completed orders
                   </div>
                 ) : (
@@ -479,25 +476,25 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
           </div>
         ) : (
           /* ── Tabbed Table List View ── */
-          <div className="h-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs overflow-hidden flex flex-col">
+          <div className="h-full rounded-xl border border-border bg-card text-card-foreground shadow-2xs overflow-hidden flex flex-col">
             <div className="flex-1 overflow-auto">
               <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-850 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 sticky top-0 z-10">
-                    <th className="py-3 px-4">Invoice / Job #</th>
-                    <th className="py-3 px-4">Customer (Payer)</th>
-                    <th className="py-3 px-4">Items / Prescription</th>
-                    <th className="py-3 px-4">Promised Delivery</th>
-                    <th className="py-3 px-4 text-center">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 border-b border-border">
+                  <tr className="border-b border-border text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <th className="py-3 px-4 sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">Invoice / Job #</th>
+                    <th className="py-3 px-4 sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">Customer (Payer)</th>
+                    <th className="py-3 px-4 sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">Items / Prescription</th>
+                    <th className="py-3 px-4 sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">Promised Delivery</th>
+                    <th className="py-3 px-4 text-center sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">Status</th>
+                    <th className="py-3 px-4 text-right sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-border">
                   {filteredOrders.length === 0 ? (
                     <tr>
                       <td
                         colSpan={6}
-                        className="py-12 text-center text-slate-400 dark:text-slate-500"
+                        className="py-12 text-center text-muted-foreground"
                       >
                         No orders match the selected criteria
                       </td>
@@ -509,24 +506,24 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                         <tr
                           key={order.id}
                           data-testid="order-row"
-                          className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition"
+                          className="hover:bg-muted/40 transition"
                         >
                           {/* Invoice # */}
                           <td className="py-3 px-4 align-top">
-                            <div className="font-mono font-bold text-blue-700 dark:text-blue-400">
+                            <div className="font-mono font-bold text-blue-600 dark:text-blue-400">
                               {order.invoiceNumber}
                             </div>
-                            <div className="text-[10px] text-slate-400 mt-0.5">
+                            <div className="text-[10px] text-muted-foreground mt-0.5">
                               {new Date(order.createdAt).toLocaleDateString('en-IN')}
                             </div>
                           </td>
 
                           {/* Customer */}
                           <td className="py-3 px-4 align-top">
-                            <div className="font-bold text-slate-900 dark:text-slate-100">
+                            <div className="font-bold text-foreground">
                               {order.customerName}
                             </div>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 mt-0.5">
+                            <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-1 mt-0.5">
                               <Phone className="h-3 w-3" />
                               <span>{order.customerPhone}</span>
                             </div>
@@ -536,15 +533,15 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                           <td className="py-3 px-4 align-top">
                             <div className="space-y-1">
                               {order.items.map((item, idx) => (
-                                <div key={idx} className="text-slate-800 dark:text-slate-200">
+                                <div key={idx} className="text-foreground">
                                   <span className="font-semibold">{item.description}</span>
                                   {item.lensType && (
-                                    <span className="ml-1 text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-1 py-0.2 rounded font-mono">
+                                    <span className="ml-1 text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1 py-0.2 rounded font-mono border border-indigo-500/20">
                                       {item.lensType}
                                     </span>
                                   )}
                                   {item.isCustomerOwnFrame && (
-                                    <span className="ml-1 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1 py-0.2 rounded">
+                                    <span className="ml-1 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.2 rounded border border-amber-500/20">
                                       Own Frame
                                     </span>
                                   )}
@@ -556,14 +553,14 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                           {/* Promised Delivery */}
                           <td className="py-3 px-4 align-top">
                             <div className="flex items-center gap-1.5">
-                              <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                               <span
                                 className={`font-medium ${
                                   promised.isOverdue
                                     ? 'text-red-600 dark:text-red-400 font-bold'
                                     : promised.isToday
                                     ? 'text-amber-600 dark:text-amber-400 font-bold'
-                                    : 'text-slate-700 dark:text-slate-300'
+                                    : 'text-foreground'
                                 }`}
                               >
                                 {promised.label}
@@ -588,7 +585,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                                 onChange={(e) =>
                                   handleStatusChange(order.id, e.target.value as OrderStatus)
                                 }
-                                className="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                className="rounded border border-border bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground focus:outline-hidden focus:ring-1 focus:ring-ring cursor-pointer"
                               >
                                 <option value="ORDERED">Action Required</option>
                                 <option value="SENT_TO_LAB">Sent to Lab</option>
@@ -610,7 +607,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                                     onClick={() =>
                                       handleStatusChange(order.id, 'READY_FOR_COLLECTION')
                                     }
-                                    className="rounded bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
+                                    className="rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
                                   >
                                     Mark Ready
                                   </button>
@@ -620,9 +617,9 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                                 type="button"
                                 data-testid="btn-view-lab-slip"
                                 onClick={() => setSelectedOrderForSlip(order)}
-                                className="flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
+                                className="flex items-center gap-1 rounded bg-muted hover:bg-muted/80 text-foreground border border-border px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
                               >
-                                <Printer className="h-3 w-3" />
+                                <Printer className="h-3 w-3 text-indigo-500" />
                                 <span>Lab Slip</span>
                               </button>
                             </div>
@@ -670,21 +667,21 @@ function OrderCard({
   return (
     <div
       data-testid="order-card"
-      className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 p-3 shadow-2xs hover:border-blue-400 dark:hover:border-blue-600 transition flex flex-col justify-between gap-2.5"
+      className="rounded-lg border border-border bg-card text-card-foreground p-3 shadow-xs hover:border-blue-500/50 dark:hover:border-blue-400/50 transition flex flex-col justify-between gap-2.5"
     >
       {/* Top row: Invoice # and Promised Date */}
       <div>
         <div className="flex items-start justify-between gap-1">
-          <span className="font-mono text-xs font-bold text-blue-700 dark:text-blue-400">
+          <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
             {order.invoiceNumber}
           </span>
           <span
             className={`text-[10px] font-semibold px-1.5 py-0.2 rounded ${
               promised.isOverdue
-                ? 'bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-400 border border-red-200 dark:border-red-900'
+                ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30'
                 : promised.isToday
-                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
-                : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                : 'bg-muted text-muted-foreground border border-border'
             }`}
           >
             {promised.label}
@@ -693,19 +690,19 @@ function OrderCard({
 
         {/* Customer / Wearer */}
         <div className="mt-1">
-          <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1">
-            <User className="h-3 w-3 text-slate-400" />
+          <div className="text-xs font-bold text-foreground flex items-center gap-1">
+            <User className="h-3 w-3 text-muted-foreground" />
             <span>{order.customerName}</span>
           </div>
-          <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 pl-4">
+          <div className="text-[10px] font-mono text-muted-foreground pl-4">
             {order.customerPhone}
           </div>
         </div>
 
         {/* Items Summary */}
-        <div className="mt-2 text-[11px] text-slate-700 dark:text-slate-300 space-y-0.5 border-t border-slate-100 dark:border-slate-800 pt-1.5">
+        <div className="mt-2 text-[11px] text-muted-foreground space-y-0.5 border-t border-border pt-1.5">
           {order.items.map((item, idx) => (
-            <div key={idx} className="line-clamp-1">
+            <div key={idx} className="line-clamp-1 text-foreground/90">
               • {item.description}
             </div>
           ))}
@@ -713,13 +710,13 @@ function OrderCard({
       </div>
 
       {/* Action Footer */}
-      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-1.5">
+      <div className="pt-2 border-t border-border flex items-center justify-between gap-1.5">
         {/* View Lab Slip Button */}
         <button
           type="button"
           data-testid="btn-view-lab-slip"
           onClick={() => onViewSlip(order)}
-          className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer"
+          className="flex items-center gap-1 rounded border border-border bg-background text-foreground hover:bg-muted px-2 py-1 text-[10px] font-bold transition cursor-pointer"
         >
           <Printer className="h-3 w-3 text-indigo-500" />
           <span>Slip</span>
@@ -732,7 +729,7 @@ function OrderCard({
               type="button"
               data-testid="btn-status-sent-lab"
               onClick={() => onStatusChange(order.id, 'IN_FITTING')}
-              className="flex items-center gap-1 rounded bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 px-2 py-1 text-[10px] font-bold border border-indigo-200 dark:border-indigo-800 transition cursor-pointer"
+              className="flex items-center gap-1 rounded bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-600 dark:text-indigo-400 px-2 py-1 text-[10px] font-bold border border-indigo-500/30 transition cursor-pointer"
             >
               <span>Fit</span>
               <ArrowRight className="h-2.5 w-2.5" />
@@ -745,7 +742,7 @@ function OrderCard({
                 type="button"
                 data-testid="btn-mark-ready"
                 onClick={() => onStatusChange(order.id, 'READY_FOR_COLLECTION')}
-                className="flex items-center gap-1 rounded bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 px-2 py-1 text-[10px] font-bold border border-emerald-200 dark:border-emerald-800 transition cursor-pointer"
+                className="flex items-center gap-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 px-2 py-1 text-[10px] font-bold border border-emerald-500/30 transition cursor-pointer"
               >
                 <span>Ready</span>
                 <Check className="h-2.5 w-2.5" />
@@ -757,7 +754,7 @@ function OrderCard({
               type="button"
               data-testid="btn-mark-delivered"
               onClick={() => onStatusChange(order.id, 'DELIVERED_AND_CLOSED')}
-              className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-700 dark:text-blue-300 px-2 py-1 text-[10px] font-bold border border-blue-200 dark:border-blue-800 transition cursor-pointer"
+              className="flex items-center gap-1 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 px-2 py-1 text-[10px] font-bold border border-blue-500/30 transition cursor-pointer"
             >
               <span>Deliver</span>
               <PackageCheck className="h-2.5 w-2.5" />
@@ -770,7 +767,7 @@ function OrderCard({
             data-testid="select-order-status"
             value={order.orderStatus}
             onChange={(e) => onStatusChange(order.id, e.target.value as OrderStatus)}
-            className="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1 py-1 text-[10px] font-semibold text-slate-800 dark:text-slate-200 focus:outline-hidden cursor-pointer"
+            className="rounded border border-border bg-background px-1.5 py-1 text-[10px] font-semibold text-foreground focus:outline-hidden cursor-pointer"
           >
             <option value="ORDERED">Ordered</option>
             <option value="SENT_TO_LAB">At Lab</option>
