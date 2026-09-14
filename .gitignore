@@ -48,6 +48,3 @@ temp/
 # Playwright Test Artifacts
 /test-results/
 /playwright-report/
-
-# Knowledge Graph Artifacts
-graphify-out/
