@@ -10,6 +10,7 @@ import {
   Filter,
   Edit,
   Trash2,
+  MapPin,
 } from 'lucide-react';
 import type { InventoryRow } from '@/actions/inventory-actions';
 
@@ -66,6 +67,7 @@ export function InventoryTable({
       const brand = (item.brand || '').toLowerCase();
       const model = (item.model || '').toLowerCase();
       const desc = (item.description || '').toLowerCase();
+      const branch = (item.branchName || '').toLowerCase();
       const combined = `${brand} ${model}`.toLowerCase();
 
       return (
@@ -73,6 +75,7 @@ export function InventoryTable({
         brand.includes(query) ||
         model.includes(query) ||
         desc.includes(query) ||
+        branch.includes(query) ||
         combined.includes(query)
       );
     });
@@ -90,7 +93,7 @@ export function InventoryTable({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             aria-label="Search inventory by SKU, brand, or model"
-            placeholder="Search SKU, brand, model..."
+            placeholder="Search SKU, brand, model, branch..."
             className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-1.5 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-600/20"
           />
         </div>
@@ -141,6 +144,7 @@ export function InventoryTable({
                 <th className="py-2.5 px-3">Category</th>
                 <th className="py-2.5 px-3">Brand</th>
                 <th className="py-2.5 px-3">Model</th>
+                <th className="py-2.5 px-3">Branch</th>
                 <th className="py-2.5 px-3 text-center">Stock Qty</th>
                 <th className="py-2.5 px-3 text-right">Selling Price</th>
                 <th className="py-2.5 px-3 text-right">Actions</th>
@@ -149,7 +153,7 @@ export function InventoryTable({
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
               {filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-10 text-center">
+                  <td colSpan={8} className="py-10 text-center">
                     <Package className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
                     <p className="mt-2 font-medium text-slate-600 dark:text-slate-300">
                       No inventory items found
@@ -200,6 +204,14 @@ export function InventoryTable({
                       {/* Model */}
                       <td className="py-2.5 px-3 text-slate-600 dark:text-slate-300">
                         {item.model || item.description || '—'}
+                      </td>
+
+                      {/* Branch / Store Badge */}
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300">
+                          <MapPin className="h-3 w-3 text-blue-500" />
+                          {item.branchName || 'Main Store'}
+                        </span>
                       </td>
 
                       {/* Stock Quantity */}

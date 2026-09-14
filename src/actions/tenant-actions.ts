@@ -369,11 +369,11 @@ const mockStaffStore: StaffMember[] = [
 ];
 
 /**
- * Fetch staff members for an organization and optional branch filter
+ * Fetch staff members for an organization and optional branch filter (single, multiple, or all)
  */
 export async function getStaffMembersAction(
   organizationId: string,
-  branchId?: string
+  branchFilter?: string | string[]
 ): Promise<{ success: boolean; staff: StaffMember[]; error?: string }> {
   try {
     const isValidUuid = (val: string) =>
@@ -395,6 +395,12 @@ export async function getStaffMembersAction(
 
     const merged: StaffMember[] = [];
 
+    const defaultBranchId = (typeof branchFilter === 'string' && branchFilter !== 'all')
+      ? branchFilter
+      : (Array.isArray(branchFilter) && branchFilter.length > 0 && !branchFilter.includes('all'))
+      ? branchFilter[0]
+      : allBranches[0]?.id || 'default-branch';
+
     for (const u of existingUsers) {
       if (u.email === 'admin@optix.com') continue; // Skip super admin
       merged.push({
@@ -403,8 +409,8 @@ export async function getStaffMembersAction(
         email: u.email,
         role: (u.email.includes('admin') || u.email.includes('manager') ? 'admin' : 'staff') as 'admin' | 'staff',
         organizationId,
-        branchId: branchId && branchId !== 'all' ? branchId : allBranches[0]?.id || 'default-branch',
-        branchName: branchNameMap.get(branchId || '') || allBranches[0]?.name || 'Main Branch',
+        branchId: defaultBranchId,
+        branchName: branchNameMap.get(defaultBranchId) || allBranches[0]?.name || 'Main Branch',
         isActive: true,
         createdAt: u.createdAt.toISOString(),
       });
@@ -421,8 +427,12 @@ export async function getStaffMembersAction(
     }
 
     let filtered = merged;
-    if (branchId && branchId !== 'all') {
-      filtered = merged.filter((s) => s.branchId === branchId);
+    if (Array.isArray(branchFilter)) {
+      if (branchFilter.length > 0 && !branchFilter.includes('all')) {
+        filtered = merged.filter((s) => branchFilter.includes(s.branchId));
+      }
+    } else if (branchFilter && branchFilter !== 'all') {
+      filtered = merged.filter((s) => s.branchId === branchFilter);
     }
 
     return { success: true, staff: filtered };

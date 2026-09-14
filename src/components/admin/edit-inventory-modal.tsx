@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Edit3, Package, Tag, Layers, DollarSign, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Edit3, Package, Tag, Layers, DollarSign, AlertCircle, Loader2, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   updateInventoryItem,
   type InventoryRow,
 } from '@/actions/inventory-actions';
 import type { CreateInventoryItemInput } from '@/lib/validators/inventory';
+import { useTenantStore } from '@/store/tenant-store';
 
 interface EditInventoryModalProps {
   isOpen: boolean;
@@ -22,6 +23,9 @@ export function EditInventoryModal({
   item,
   onItemUpdated,
 }: EditInventoryModalProps) {
+  const branches = useTenantStore((s) => s.branches);
+
+  const [branchId, setBranchId] = useState('');
   const [sku, setSku] = useState('');
   const [barcode, setBarcode] = useState('');
   const [category, setCategory] = useState<CreateInventoryItemInput['category']>('FRAME');
@@ -39,6 +43,7 @@ export function EditInventoryModal({
 
   useEffect(() => {
     if (isOpen && item) {
+      setBranchId(item.branchId || '');
       setSku(item.sku || '');
       setBarcode(item.barcode || '');
       setCategory(item.category as CreateInventoryItemInput['category']);
@@ -72,6 +77,7 @@ export function EditInventoryModal({
     try {
       setIsSubmitting(true);
       const res = await updateInventoryItem(item.id, {
+        branchId: branchId || null,
         sku: sku.trim(),
         barcode: barcode.trim() || null,
         category,
@@ -154,6 +160,29 @@ export function EditInventoryModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+          {/* Branch Location */}
+          {branches.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                <span>Store Location / Branch</span>
+                <span className="text-red-500">*</span>
+              </label>
+              <select
+                data-testid="select-edit-inventory-branch"
+                value={branchId}
+                onChange={(e) => setBranchId(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              >
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Row 1: SKU & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">

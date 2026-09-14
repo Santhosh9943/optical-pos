@@ -1,6 +1,6 @@
 import { db } from '@/db';
-import { inventoryItems } from '@/db/schema';
-import { and, eq, ilike, or, sql } from 'drizzle-orm';
+import { inventoryItems, branches } from '@/db/schema';
+import { and, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { cacheGet, cacheSet } from '@/lib/redis';
 import { getCurrentSession } from '@/lib/auth-utils';
@@ -14,9 +14,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get('q') ?? '').trim();
   const category = (searchParams.get('category') ?? '').trim();
+  const branchParam = (searchParams.get('branchId') ?? '').trim();
 
-  // Cache key: cache:inventory:search:{orgId}:{category}:{query}
-  const cacheKey = `cache:inventory:search:${session.organizationId}:${category || 'all'}:${q.toLowerCase()}`;
+  // Cache key: cache:inventory:search:{orgId}:{branch}:{category}:{query}
+  const cacheKey = `cache:inventory:search:${session.organizationId}:${branchParam || 'all'}:${category || 'all'}:${q.toLowerCase()}`;
 
   try {
     // 1. Check Redis cache first
@@ -32,6 +33,15 @@ export async function GET(request: Request) {
 
     if (category) {
       conditions.push(eq(inventoryItems.category, category as any));
+    }
+
+    if (branchParam && branchParam !== 'all') {
+      const ids = branchParam.split(',').filter(Boolean);
+      if (ids.length === 1) {
+        conditions.push(eq(inventoryItems.branchId, ids[0]));
+      } else if (ids.length > 1) {
+        conditions.push(inArray(inventoryItems.branchId, ids));
+      }
     }
 
     if (q) {
@@ -66,8 +76,11 @@ export async function GET(request: Request) {
         lensType: inventoryItems.lensType,
         coating: inventoryItems.coating,
         lensMaterial: inventoryItems.lensMaterial,
+        branchId: inventoryItems.branchId,
+        branchName: branches.name,
       })
       .from(inventoryItems)
+      .leftJoin(branches, eq(inventoryItems.branchId, branches.id))
       .where(and(...conditions))
       .limit(30);
 

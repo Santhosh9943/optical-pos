@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   X,
   PlusCircle,
@@ -11,6 +11,8 @@ import {
   DollarSign,
   Layers,
   AlertCircle,
+  Building2,
+  MapPin,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -21,6 +23,7 @@ import {
   inventoryCategoryValues,
   type CreateInventoryItemInput,
 } from '@/lib/validators/inventory';
+import { useTenantStore } from '@/store/tenant-store';
 
 interface AddInventoryFormProps {
   isOpen: boolean;
@@ -33,10 +36,14 @@ export function AddInventoryForm({
   onClose,
   onSuccess,
 }: AddInventoryFormProps) {
+  const branches = useTenantStore((s) => s.branches);
+  const selectedBranchId = useTenantStore((s) => s.selectedBranchId);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Form state
+  const [branchId, setBranchId] = useState<string>('');
   const [sku, setSku] = useState('');
   const [barcode, setBarcode] = useState('');
   const [category, setCategory] = useState<(typeof inventoryCategoryValues)[number]>('FRAME');
@@ -51,9 +58,24 @@ export function AddInventoryForm({
   const [taxRate, setTaxRate] = useState<'5.00' | '18.00'>('18.00');
   const [hsnCode, setHsnCode] = useState('');
 
+  useEffect(() => {
+    if (isOpen) {
+      if (selectedBranchId && selectedBranchId !== 'all') {
+        setBranchId(selectedBranchId);
+      } else if (branches.length > 0) {
+        setBranchId(branches[0].id);
+      }
+    }
+  }, [isOpen, selectedBranchId, branches]);
+
   if (!isOpen) return null;
 
   const resetForm = () => {
+    setBranchId(
+      selectedBranchId && selectedBranchId !== 'all'
+        ? selectedBranchId
+        : branches[0]?.id || ''
+    );
     setSku('');
     setBarcode('');
     setCategory('FRAME');
@@ -121,6 +143,7 @@ export function AddInventoryForm({
         lowStockThreshold: Number(lowStockThreshold) || 5,
         taxRate,
         hsnCode: hsnCode.trim() || null,
+        branchId: branchId || null,
       };
 
       const result = await addInventoryItem(payload);
@@ -183,6 +206,28 @@ export function AddInventoryForm({
             <div className="flex items-start gap-2.5 rounded-lg border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 p-3 text-xs text-red-800 dark:text-red-300">
               <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400 mt-0.5" />
               <span>{validationError}</span>
+            </div>
+          )}
+
+          {/* Branch / Store Location Selector */}
+          {branches.length > 0 && (
+            <div>
+              <label htmlFor="inv-branch" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Store Location / Branch <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="inv-branch"
+                data-testid="select-inventory-branch"
+                value={branchId}
+                onChange={(e) => setBranchId(e.target.value)}
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-blue-600 focus:outline-hidden focus:ring-1 focus:ring-blue-600/20"
+              >
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -431,6 +476,7 @@ export function AddInventoryForm({
           <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-slate-800 pt-4 mt-6">
             <button
               type="button"
+              data-testid="btn-cancel-add-inventory"
               onClick={onClose}
               disabled={isSubmitting}
               className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer"

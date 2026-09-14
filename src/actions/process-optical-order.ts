@@ -418,7 +418,7 @@ export async function processOpticalOrder(
               ? `Billed to: ${input.billingDetails.billingName}`
               : null),
           organizationId: session.organizationId,
-          branchId: session.branchId,
+          branchId: input.branchId || session.branchId,
         })
         .returning({ id: invoices.id, invoiceNumber: invoices.invoiceNumber });
 
@@ -453,7 +453,7 @@ export async function processOpticalOrder(
           paymentMode: input.advancePayment.mode,
           transactionReference: input.advancePayment.reference ?? null,
           organizationId: session.organizationId,
-          branchId: session.branchId,
+          branchId: input.branchId || session.branchId,
         });
       }
 

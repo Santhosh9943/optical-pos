@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useTransition } from 'react';
+import React, { useState, useMemo, useTransition, useEffect } from 'react';
 import {
   ClipboardList,
   Clock,
@@ -18,13 +18,19 @@ import {
   Glasses,
   Check,
   X,
+  Building2,
+  MapPin,
+  Store,
+  Layers,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   updateOrderStatus,
+  getActiveLabOrders,
   type LabOrderSummary,
 } from '@/actions/lab-actions';
 import type { OrderStatus } from '@/db/schema';
+import { useTenantStore } from '@/store/tenant-store';
 import { WorkshopSlipModal } from './workshop-slip-modal';
 import { SettleBalanceModal, type SettleInvoiceData } from './settle-balance-modal';
 
@@ -42,6 +48,38 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
   const [selectedOrderForSlip, setSelectedOrderForSlip] = useState<LabOrderSummary | null>(null);
   const [selectedOrderForSettlement, setSelectedOrderForSettlement] = useState<SettleInvoiceData | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const selectedBranchIds = useTenantStore((state) => state.selectedBranchIds);
+  const branches = useTenantStore((state) => state.branches);
+
+  // Dynamic reload based on selected branch(es)
+  useEffect(() => {
+    let isMounted = true;
+    startTransition(async () => {
+      try {
+        const data = await getActiveLabOrders(selectedBranchIds);
+        if (isMounted) {
+          setOrders(data);
+        }
+      } catch (err) {
+        console.error('Failed to load lab orders for branch:', err);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedBranchIds]);
+
+  const activeBranchLabel = useMemo(() => {
+    if (!selectedBranchIds || selectedBranchIds.includes('all') || selectedBranchIds.length === 0) {
+      return 'All Branches';
+    }
+    if (selectedBranchIds.length === 1) {
+      const match = branches.find((b) => b.id === selectedBranchIds[0]);
+      return match ? match.name : 'Selected Store';
+    }
+    return `${selectedBranchIds.length} Stores Selected`;
+  }, [selectedBranchIds, branches]);
 
   const handleSettleOrder = (order: LabOrderSummary) => {
     setSelectedOrderForSettlement({
@@ -274,9 +312,25 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               <ClipboardList className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground tracking-tight">
-                Lab Order & Workshop Management
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold text-foreground tracking-tight">
+                  Lab Order & Workshop Management
+                </h1>
+                <span
+                  data-testid="lab-orders-scope-badge"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                >
+                  {selectedBranchIds?.includes('all') || !selectedBranchIds?.length ? (
+                    <Layers className="h-3 w-3" />
+                  ) : selectedBranchIds.length === 1 ? (
+                    <Store className="h-3 w-3" />
+                  ) : (
+                    <Building2 className="h-3 w-3" />
+                  )}
+                  <span>{activeBranchLabel}</span>
+                  {isPending && <span className="animate-pulse">...</span>}
+                </span>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Track fabrication, surfacing, lens fitting, and customer pickup in real-time.
               </p>
@@ -603,6 +657,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                 <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 border-b border-border">
                   <tr className="border-b border-border text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     <th className="py-3 px-4 sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">Invoice / Job #</th>
+                    <th className="py-3 px-4 sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">Branch</th>
                     <th className="py-3 px-4 sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">Customer (Payer)</th>
                     <th className="py-3 px-4 sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">Items / Prescription</th>
                     <th className="py-3 px-4 sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">Promised Delivery</th>
@@ -614,7 +669,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                   {filteredOrders.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="py-12 text-center text-muted-foreground"
                       >
                         No orders match the selected criteria
@@ -637,6 +692,21 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                             <div className="text-[10px] text-muted-foreground mt-0.5">
                               {new Date(order.createdAt).toLocaleDateString('en-IN')}
                             </div>
+                          </td>
+
+                          {/* Branch Location */}
+                          <td className="py-3 px-4 align-top">
+                            {order.branchName ? (
+                              <span
+                                data-testid="lab-order-branch-badge"
+                                className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                              >
+                                <MapPin className="h-3 w-3 text-slate-400" />
+                                <span>{order.branchName}</span>
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground text-[11px]">-</span>
+                            )}
                           </td>
 
                           {/* Customer */}
@@ -842,6 +912,19 @@ function OrderCard({
             {promised.label}
           </span>
         </div>
+
+        {/* Branch Location Badge */}
+        {order.branchName && (
+          <div className="mt-1">
+            <span
+              data-testid="kanban-card-branch-badge"
+              className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800/90 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+            >
+              <MapPin className="h-2.5 w-2.5 text-slate-400 shrink-0" />
+              <span className="truncate max-w-[140px]">{order.branchName}</span>
+            </span>
+          </div>
+        )}
 
         {/* Customer / Wearer */}
         <div className="mt-1">

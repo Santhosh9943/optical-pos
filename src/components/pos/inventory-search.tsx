@@ -15,12 +15,15 @@ import {
   Info,
   Layers,
   Sparkles,
+  MapPin,
 } from 'lucide-react';
 
 export interface InventoryItem {
   id: string;
   sku: string;
   barcode: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
   category:
     | 'FRAME'
     | 'SUNGLASS'
@@ -45,9 +48,10 @@ export interface InventoryItem {
 interface InventorySearchProps {
   onAdd: (item: InventoryItem) => void;
   onSelectFrame?: (item: InventoryItem) => void;
+  branchId?: string | null;
 }
 
-export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) {
+export function InventorySearch({ onAdd, onSelectFrame, branchId }: InventorySearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<InventoryItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -82,8 +86,12 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
 
     setIsSearching(true);
     try {
+      const branchParam =
+        branchId && branchId !== 'all'
+          ? `&branchId=${encodeURIComponent(branchId)}`
+          : '';
       const res = await fetch(
-        `/api/inventory/search?q=${encodeURIComponent(trimmed)}`
+        `/api/inventory/search?q=${encodeURIComponent(trimmed)}${branchParam}`
       );
       if (!res.ok) throw new Error('Search failed');
       const data = await res.json();
@@ -211,6 +219,15 @@ export function InventorySearch({ onAdd, onSelectFrame }: InventorySearchProps) 
                           <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
                             {categoryLabel(item.category)}
                           </span>
+                          {item.branchName && (
+                            <span
+                              data-testid="search-item-branch-badge"
+                              className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                            >
+                              <MapPin className="h-2.5 w-2.5 text-slate-400 shrink-0" />
+                              <span className="truncate max-w-[100px]">{item.branchName}</span>
+                            </span>
+                          )}
                           <span className="rounded bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.2 text-[10px] font-mono text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
                             GST {item.taxRate}%
                           </span>

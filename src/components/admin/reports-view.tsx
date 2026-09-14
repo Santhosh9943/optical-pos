@@ -26,6 +26,7 @@ import {
   Wrench,
   Glasses,
   ListFilter,
+  Building2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -35,8 +36,12 @@ import {
   type DatePreset,
   type FinancialsReportFilter,
 } from '@/actions/report-actions';
+import { useTenantStore } from '@/store/tenant-store';
 
 export function ReportsView() {
+  const selectedBranchIds = useTenantStore((s) => s.selectedBranchIds);
+  const branches = useTenantStore((s) => s.branches);
+
   const getTodayStr = () => {
     const d = new Date();
     const y = d.getFullYear();
@@ -102,7 +107,10 @@ export function ReportsView() {
   const fetchReport = async (filterConfig: FinancialsReportFilter) => {
     try {
       setIsLoading(true);
-      const res = await getFinancialsReport(filterConfig);
+      const res = await getFinancialsReport({
+        ...filterConfig,
+        branchIds: filterConfig.branchIds ?? selectedBranchIds,
+      });
       if (res.success && res.data) {
         setReport(res.data);
       } else {
@@ -120,7 +128,7 @@ export function ReportsView() {
     }
   };
 
-  // Fetch report whenever main filters change
+  // Fetch report whenever main filters or selected branches change
   useEffect(() => {
     const filterConfig: FinancialsReportFilter = {
       preset,
@@ -129,12 +137,13 @@ export function ReportsView() {
       paymentStatus: paymentStatusFilter,
       paymentMode: paymentModeFilter,
       orderStatus: orderStatusFilter,
+      branchIds: selectedBranchIds,
     };
 
     fetchReport(filterConfig);
     setCurrentPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preset, paymentStatusFilter, paymentModeFilter, orderStatusFilter]);
+  }, [preset, paymentStatusFilter, paymentModeFilter, orderStatusFilter, selectedBranchIds]);
 
   const handleApplyCustomRange = (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,6 +165,7 @@ export function ReportsView() {
       paymentStatus: paymentStatusFilter,
       paymentMode: paymentModeFilter,
       orderStatus: orderStatusFilter,
+      branchIds: selectedBranchIds,
     });
   };
 
@@ -178,6 +188,7 @@ export function ReportsView() {
         paymentStatus: paymentStatusFilter,
         paymentMode: paymentModeFilter,
         orderStatus: orderStatusFilter,
+        branchIds: selectedBranchIds,
       });
       toast.info('Report refreshed', { duration: 2000 });
     });
@@ -250,6 +261,19 @@ export function ReportsView() {
               {report?.date || 'Selected Period'}
             </strong>
           </p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <span
+              data-testid="reports-scope-badge"
+              className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+            >
+              <Building2 className="h-3 w-3" />
+              {selectedBranchIds.includes('all')
+                ? `All Branches (${branches.length > 0 ? `${branches.length} Stores` : 'Consolidated'})`
+                : selectedBranchIds.length === 1
+                  ? branches.find((b) => b.id === selectedBranchIds[0])?.name || 'Single Store'
+                  : `${selectedBranchIds.length} Stores Selected`}
+            </span>
+          </div>
         </div>
 
         {/* Action buttons */}
@@ -706,10 +730,11 @@ export function ReportsView() {
               data-testid="audit-ledger-table-container"
               className="flex-1 min-h-0 relative overflow-x-auto overflow-y-auto scroll-smooth"
             >
-              <table className="w-full text-left border-collapse">
+              <table data-testid="reports-ledger-table" className="w-full text-left border-collapse">
                 <thead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs">
                   <tr className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                     <th className="py-2.5 px-3 bg-slate-100 dark:bg-slate-900">Invoice #</th>
+                    <th className="py-2.5 px-3 bg-slate-100 dark:bg-slate-900">Branch</th>
                     <th className="py-2.5 px-3 bg-slate-100 dark:bg-slate-900">Date & Time</th>
                     <th className="py-2.5 px-3 bg-slate-100 dark:bg-slate-900">Patient Name</th>
                     <th className="py-2.5 px-3 bg-slate-100 dark:bg-slate-900">Payment Mode</th>
@@ -723,7 +748,7 @@ export function ReportsView() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                   {paginatedTransactions.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center">
+                      <td colSpan={10} className="py-12 text-center">
                         <Receipt className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
                         <p className="mt-2 font-medium text-slate-600 dark:text-slate-300 text-xs">
                           No transactions match the selected filters
@@ -766,6 +791,14 @@ export function ReportsView() {
                           {/* Invoice # */}
                           <td className="py-2 px-3 font-mono font-bold text-blue-700 dark:text-blue-400 whitespace-nowrap">
                             {tx.invoiceNumber}
+                          </td>
+
+                          {/* Branch */}
+                          <td className="py-2 px-3 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300">
+                              <Building2 className="h-3 w-3 text-blue-500" />
+                              {tx.branchName || 'Main Store'}
+                            </span>
                           </td>
 
                           {/* Date & Time */}

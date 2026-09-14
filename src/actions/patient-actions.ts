@@ -9,6 +9,7 @@ import {
   invoices,
   invoiceItems,
   opticalPrescriptions,
+  branches,
 } from '@/db/schema';
 import { getCurrentSession } from '@/lib/auth-utils';
 import type { POSPatient } from '@/store/pos-store';
@@ -270,6 +271,8 @@ export interface PatientOrderHistoryItem {
   itemDescriptions: string[];
   billedToName?: string;
   isWearerOnly?: boolean;
+  branchId?: string | null;
+  branchName?: string | null;
 }
 
 export interface PatientDetailHistory {
@@ -309,7 +312,7 @@ export interface PatientDetailHistory {
 /**
  * Fetch all patients with aggregated order counts and most recent visit date.
  */
-export async function getPatients(): Promise<{
+export async function getPatients(branchIds?: string[]): Promise<{
   success: boolean;
   patients: PatientSummary[];
   error?: string;
@@ -328,6 +331,11 @@ export async function getPatients(): Promise<{
       )
       .orderBy(desc(customers.createdAt));
 
+    const invoiceConditions = [eq(invoices.organizationId, session.organizationId)];
+    if (branchIds && branchIds.length > 0 && !branchIds.includes('all')) {
+      invoiceConditions.push(inArray(invoices.branchId, branchIds));
+    }
+
     const allInvoices = await db
       .select({
         id: invoices.id,
@@ -336,7 +344,7 @@ export async function getPatients(): Promise<{
         createdAt: invoices.createdAt,
       })
       .from(invoices)
-      .where(eq(invoices.organizationId, session.organizationId))
+      .where(and(...invoiceConditions))
       .orderBy(desc(invoices.createdAt));
 
     // Group invoices by customer
@@ -705,6 +713,12 @@ export async function getPatientHistory(
       }
     }
 
+    const orgBranches = await db
+      .select({ id: branches.id, name: branches.name })
+      .from(branches)
+      .where(eq(branches.organizationId, session.organizationId));
+    const branchMap = new Map(orgBranches.map((b) => [b.id, b.name]));
+
     let ltvDec = new Decimal(0);
     let balanceDueDec = new Decimal(0);
 
@@ -734,6 +748,8 @@ export async function getPatientHistory(
         balanceDue: balanceDec.toFixed(2),
         itemCount: itemDescriptions.length,
         itemDescriptions,
+        branchId: inv.branchId,
+        branchName: inv.branchId ? branchMap.get(inv.branchId) || null : null,
         billedToName: isWearerOnly
           ? payerCustomer?.fullName || 'Family Account'
           : undefined,

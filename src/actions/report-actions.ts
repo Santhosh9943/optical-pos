@@ -7,6 +7,7 @@ import {
   invoices,
   payments,
   customers,
+  branches,
   orderStatusEnum,
   paymentStatusEnum,
   type OrderStatus,
@@ -27,6 +28,8 @@ export interface DailyReportTransaction {
   paymentMode: string;
   paymentStatus: string;
   orderStatus: string;
+  branchId?: string | null;
+  branchName?: string | null;
 }
 
 export interface DailyFinancialsReport {
@@ -39,6 +42,7 @@ export interface DailyFinancialsReport {
   totalAdvancePaid: string;
   totalBalanceDue: string;
   totalOrders: number;
+  activeBranchScope?: string;
   paymentSplits: {
     cash: string;
     upi: string;
@@ -65,6 +69,7 @@ export interface FinancialsReportFilter {
   paymentStatus?: string; // 'ALL' | 'PAID' | 'PARTIAL' | 'UNPAID'
   paymentMode?: string; // 'ALL' | 'CASH' | 'UPI' | 'CARD'
   orderStatus?: string; // 'ALL' | OrderStatus
+  branchIds?: string[];
 }
 
 function formatDateStr(d: Date): string {
@@ -246,7 +251,16 @@ export async function getFinancialsReport(
       conditions.push(eq(invoices.orderStatus, filterObj.orderStatus as OrderStatus));
     }
 
-    // Query invoices joined with customer
+    // Branch filter
+    if (
+      filterObj.branchIds &&
+      filterObj.branchIds.length > 0 &&
+      !filterObj.branchIds.includes('all')
+    ) {
+      conditions.push(inArray(invoices.branchId, filterObj.branchIds));
+    }
+
+    // Query invoices joined with customer and branch
     const baseQuery = db
       .select({
         id: invoices.id,
@@ -263,12 +277,15 @@ export async function getFinancialsReport(
         grandTotal: invoices.grandTotal,
         advancePaid: invoices.advancePaid,
         balanceDue: invoices.balanceDue,
+        branchId: invoices.branchId,
+        branchName: branches.name,
         createdAt: invoices.createdAt,
         customerName: customers.fullName,
         customerPhone: customers.phone,
       })
       .from(invoices)
-      .innerJoin(customers, eq(invoices.customerId, customers.id));
+      .innerJoin(customers, eq(invoices.customerId, customers.id))
+      .leftJoin(branches, eq(invoices.branchId, branches.id));
 
     const matchingInvoices = conditions.length > 0
       ? await baseQuery.where(and(...conditions)).orderBy(desc(invoices.createdAt))
@@ -342,6 +359,8 @@ export async function getFinancialsReport(
         paymentMode: paymentModeStr,
         paymentStatus: inv.paymentStatus,
         orderStatus: inv.orderStatus,
+        branchId: inv.branchId,
+        branchName: inv.branchName,
       };
     });
 

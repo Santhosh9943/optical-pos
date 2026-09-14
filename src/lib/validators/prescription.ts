@@ -258,6 +258,7 @@ export const createOrderSchema = z.object({
   promisedDeliveryDate: z.string().datetime().optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   billingDetails: invoiceBillingDetailsSchema.optional(),
+  branchId: z.string().uuid().optional().nullable(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

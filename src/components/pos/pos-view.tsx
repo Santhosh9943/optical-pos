@@ -29,6 +29,7 @@ import {
   WorkshopLabSlip,
 } from '@/components/print';
 import { usePOSStore, type POSPatient } from '@/store/pos-store';
+import { useTenantStore } from '@/store/tenant-store';
 import { AddFamilyMemberModal } from '@/components/pos/add-family-member-modal';
 import {
   SpectacleWizardModal,
@@ -67,6 +68,8 @@ import {
   Receipt,
   Eye,
   AlertCircle,
+  Store,
+  MapPin,
 } from 'lucide-react';
 
 export function PosView() {
@@ -112,6 +115,34 @@ export function PosView() {
     setPrintMode,
     resetOrder,
   } = usePOSStore();
+
+  const {
+    branches,
+    selectedBranchId,
+    selectedBranchIds,
+    selectedOrganizationId,
+  } = useTenantStore();
+
+  const orgBranches = useMemo(() => {
+    return branches.filter(
+      (b) => !selectedOrganizationId || b.organizationId === selectedOrganizationId
+    );
+  }, [branches, selectedOrganizationId]);
+
+  // Billing branch for POS operations
+  const [activeBillingBranchId, setActiveBillingBranchId] = useState<string>('');
+
+  useEffect(() => {
+    if (selectedBranchIds && selectedBranchIds.length === 1 && selectedBranchIds[0] !== 'all') {
+      setActiveBillingBranchId(selectedBranchIds[0]);
+    } else if (!activeBillingBranchId && orgBranches.length > 0) {
+      setActiveBillingBranchId(orgBranches[0].id);
+    }
+  }, [selectedBranchIds, orgBranches, activeBillingBranchId]);
+
+  const activeBranch = useMemo(() => {
+    return orgBranches.find((b) => b.id === activeBillingBranchId) || orgBranches[0];
+  }, [orgBranches, activeBillingBranchId]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAddFamilyModalOpen, setIsAddFamilyModalOpen] = useState(false);
@@ -391,6 +422,7 @@ export function PosView() {
           : undefined;
 
       const payload = {
+        branchId: activeBillingBranchId || undefined,
         customerId: selectedPatient.id,
         patients: activePatients.map((p) => ({
           id: p.id,
@@ -686,8 +718,37 @@ export function PosView() {
           </button>
         </div>
 
-        {/* Right Actions */}
+        {/* Right Actions: Billing Store Location & New Order */}
         <div className="flex items-center space-x-3">
+          {orgBranches.length > 0 && (
+            <div
+              data-testid="pos-billing-branch-container"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs shadow-2xs"
+            >
+              <Store className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span className="text-[11px] text-muted-foreground font-medium hidden md:inline">Counter:</span>
+              {orgBranches.length === 1 ? (
+                <span data-testid="pos-active-branch-name" className="font-semibold text-foreground text-xs">
+                  {activeBranch?.name}
+                </span>
+              ) : (
+                <select
+                  data-testid="select-pos-branch"
+                  aria-label="Select Billing Branch Counter"
+                  value={activeBillingBranchId}
+                  onChange={(e) => setActiveBillingBranchId(e.target.value)}
+                  className="bg-transparent font-semibold text-foreground text-xs focus:outline-hidden cursor-pointer"
+                >
+                  {orgBranches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
           <button
             type="button"
             onClick={resetOrder}
@@ -1022,6 +1083,15 @@ export function PosView() {
                                 Wearer on Family Bill
                               </span>
                             )}
+                            {order.branchName && (
+                              <span
+                                data-testid="order-history-branch-badge"
+                                className="rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.2 text-[9px] font-medium border border-slate-200 dark:border-slate-700 flex items-center gap-0.5"
+                              >
+                                <MapPin className="h-2.5 w-2.5 text-slate-400" />
+                                <span>{order.branchName}</span>
+                              </span>
+                            )}
                           </div>
                           <span className="text-[11px] text-slate-600 dark:text-slate-300 font-mono">
                             {orderDate.toLocaleDateString('en-IN', {
@@ -1147,6 +1217,7 @@ export function PosView() {
               <InventorySearch
                 onAdd={addInventoryItem}
                 onSelectFrame={(item) => setSelectedFrameForWizard(item)}
+                branchId={activeBillingBranchId || undefined}
               />
             </div>
 

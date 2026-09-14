@@ -50,6 +50,7 @@ export const createInventoryItemSchema = z.object({
     .default(5),
   taxRate: z.enum(['5.00', '18.00']).default('18.00'),
   hsnCode: z.string().trim().max(10).optional().nullable(),
+  branchId: z.string().uuid().optional().nullable(),
 });
 
 export type CreateInventoryItemInput = z.infer<typeof createInventoryItemSchema>;

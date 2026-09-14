@@ -17,6 +17,7 @@ import {
   Shield,
   Loader2,
   CheckCircle2,
+  Layers,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -25,6 +26,7 @@ export default function ManageStaffPage() {
     activeRoleMode,
     selectedOrganizationId,
     selectedBranchId,
+    selectedBranchIds,
     organizations,
     branches,
   } = useTenantStore();
@@ -52,14 +54,12 @@ export default function ManageStaffPage() {
     if (!selectedOrganizationId) return;
     setLoading(true);
     try {
-      // If store admin, filter by assigned store; if organizer and specific store chosen, filter too
-      const filterBranch = !isOrganizer
-        ? selectedBranchId === 'all'
-          ? orgBranches[0]?.id
-          : selectedBranchId
-        : selectedBranchId;
+      // Determine branch filter based on selectedBranchIds / role
+      const effectiveFilter = !isOrganizer
+        ? (!selectedBranchIds || selectedBranchIds.includes('all') ? orgBranches[0]?.id : selectedBranchIds)
+        : selectedBranchIds;
 
-      const res = await getStaffMembersAction(selectedOrganizationId, filterBranch);
+      const res = await getStaffMembersAction(selectedOrganizationId, effectiveFilter);
       if (res.success) {
         setStaffList(res.staff);
       }
@@ -68,7 +68,18 @@ export default function ManageStaffPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedOrganizationId, selectedBranchId, isOrganizer, orgBranches]);
+  }, [selectedOrganizationId, selectedBranchIds, isOrganizer, orgBranches]);
+
+  const activeBranchLabel = React.useMemo(() => {
+    if (!selectedBranchIds || selectedBranchIds.includes('all') || selectedBranchIds.length === 0) {
+      return 'All Branches';
+    }
+    if (selectedBranchIds.length === 1) {
+      const match = branches.find((b) => b.id === selectedBranchIds[0]);
+      return match ? match.name : 'Selected Store';
+    }
+    return `${selectedBranchIds.length} Stores Selected`;
+  }, [selectedBranchIds, branches]);
 
   useEffect(() => {
     loadStaff();
@@ -143,6 +154,20 @@ export default function ManageStaffPage() {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Store Staff & Team Members
             </h1>
+            <span
+              data-testid="staff-scope-badge"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20"
+            >
+              {selectedBranchIds?.includes('all') || !selectedBranchIds?.length ? (
+                <Layers className="h-3 w-3" />
+              ) : selectedBranchIds.length === 1 ? (
+                <Store className="h-3 w-3" />
+              ) : (
+                <Building2 className="h-3 w-3" />
+              )}
+              <span>{activeBranchLabel}</span>
+              {loading && <span className="animate-pulse">...</span>}
+            </span>
           </div>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5">
             <Building2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />

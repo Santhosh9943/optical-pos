@@ -704,7 +704,18 @@ export function PatientDetailSheet({
                                     })}
                                   </td>
                                   <td className="py-3 px-3 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                                    {order.invoiceNumber}
+                                    <div>{order.invoiceNumber}</div>
+                                    {order.branchName && (
+                                      <div className="mt-0.5">
+                                        <span
+                                          data-testid="patient-order-branch-badge"
+                                          className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-normal text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                                        >
+                                          <MapPin className="h-2.5 w-2.5 text-slate-400 shrink-0" />
+                                          <span className="truncate max-w-[120px]">{order.branchName}</span>
+                                        </span>
+                                      </div>
+                                    )}
                                   </td>
                                   <td className="py-3 px-3">
                                     {order.itemDescriptions.length > 0 ? (

@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Loader2,
   Trash2,
+  Building2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -21,12 +22,16 @@ import {
 import { InventoryTable } from '@/components/admin/inventory-table';
 import { AddInventoryForm } from '@/components/admin/add-inventory-form';
 import { EditInventoryModal } from '@/components/admin/edit-inventory-modal';
+import { useTenantStore } from '@/store/tenant-store';
 
 export interface InventoryViewProps {
   onNavigateToPos?: () => void;
 }
 
 export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
+  const selectedBranchIds = useTenantStore((s) => s.selectedBranchIds);
+  const branches = useTenantStore((s) => s.branches);
+
   const [items, setItems] = useState<InventoryRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -35,10 +40,11 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const fetchItems = async () => {
+  const fetchItems = async (branchIds?: string[]) => {
     try {
       setIsLoading(true);
-      const result = await getInventoryList();
+      const activeIds = branchIds ?? selectedBranchIds;
+      const result = await getInventoryList(activeIds);
       if (result.success && result.items) {
         setItems(result.items);
       } else {
@@ -57,12 +63,13 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
   };
 
   useEffect(() => {
-    fetchItems();
-  }, []);
+    fetchItems(selectedBranchIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBranchIds]);
 
   const handleRefresh = () => {
     startTransition(async () => {
-      await fetchItems();
+      await fetchItems(selectedBranchIds);
       toast.info('Inventory refreshed', { duration: 2000 });
     });
   };
@@ -135,12 +142,25 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              Inventory Management
-            </h1>
-            <p className="mt-0.5 text-xs sm:text-sm text-slate-500 dark:text-slate-300">
-              Manage stock levels, optical frames, sunglasses, lenses, and retail pricing
-            </p>
+            Inventory Management
+          </h1>
+          <p className="mt-0.5 text-xs sm:text-sm text-slate-500 dark:text-slate-300">
+            Manage stock levels, optical frames, sunglasses, lenses, and retail pricing
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <span
+              data-testid="inventory-scope-badge"
+              className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+            >
+              <Building2 className="h-3 w-3" />
+              {selectedBranchIds.includes('all')
+                ? `All Branches (${branches.length > 0 ? `${branches.length} Stores` : 'Consolidated'})`
+                : selectedBranchIds.length === 1
+                  ? branches.find((b) => b.id === selectedBranchIds[0])?.name || 'Single Store'
+                  : `${selectedBranchIds.length} Stores Selected`}
+            </span>
           </div>
+        </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             <button
@@ -158,6 +178,7 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
 
             <button
               type="button"
+              data-testid="btn-add-product"
               onClick={() => setIsAddModalOpen(true)}
               className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition active:scale-95 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
             >

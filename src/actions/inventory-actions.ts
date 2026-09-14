@@ -1,19 +1,21 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import Decimal from 'decimal.js';
 import { db } from '@/db';
-import { inventoryItems, invoiceItems } from '@/db/schema';
+import { inventoryItems, invoiceItems, branches } from '@/db/schema';
 import { getCurrentSession } from '@/lib/auth-utils';
 import {
   createInventoryItemSchema,
   type CreateInventoryItemInput,
 } from '@/lib/validators/inventory';
 
-export type InventoryRow = typeof inventoryItems.$inferSelect;
+export type InventoryRow = typeof inventoryItems.$inferSelect & {
+  branchName?: string | null;
+};
 
-export async function getInventoryList(): Promise<{
+export async function getInventoryList(branchIds?: string[]): Promise<{
   success: boolean;
   items: InventoryRow[];
   error?: string;
@@ -21,15 +23,44 @@ export async function getInventoryList(): Promise<{
   try {
     const session = await getCurrentSession();
 
+    const conditions: SQL[] = [
+      eq(inventoryItems.organizationId, session.organizationId),
+      eq(inventoryItems.isActive, true),
+    ];
+
+    if (branchIds && branchIds.length > 0 && !branchIds.includes('all')) {
+      conditions.push(inArray(inventoryItems.branchId, branchIds));
+    }
+
     const items = await db
-      .select()
+      .select({
+        id: inventoryItems.id,
+        sku: inventoryItems.sku,
+        barcode: inventoryItems.barcode,
+        category: inventoryItems.category,
+        brand: inventoryItems.brand,
+        model: inventoryItems.model,
+        description: inventoryItems.description,
+        costPrice: inventoryItems.costPrice,
+        sellingPrice: inventoryItems.sellingPrice,
+        mrp: inventoryItems.mrp,
+        stockQuantity: inventoryItems.stockQuantity,
+        lowStockThreshold: inventoryItems.lowStockThreshold,
+        taxRate: inventoryItems.taxRate,
+        hsnCode: inventoryItems.hsnCode,
+        lensType: inventoryItems.lensType,
+        coating: inventoryItems.coating,
+        lensMaterial: inventoryItems.lensMaterial,
+        organizationId: inventoryItems.organizationId,
+        branchId: inventoryItems.branchId,
+        branchName: branches.name,
+        isActive: inventoryItems.isActive,
+        createdAt: inventoryItems.createdAt,
+        updatedAt: inventoryItems.updatedAt,
+      })
       .from(inventoryItems)
-      .where(
-        and(
-          eq(inventoryItems.organizationId, session.organizationId),
-          eq(inventoryItems.isActive, true)
-        )
-      )
+      .leftJoin(branches, eq(inventoryItems.branchId, branches.id))
+      .where(and(...conditions))
       .orderBy(desc(inventoryItems.createdAt));
 
     return { success: true, items };
@@ -98,14 +129,23 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
         taxRate,
         hsnCode,
         organizationId: session.organizationId,
-        branchId: session.branchId,
+        branchId: parsed.branchId || session.branchId,
         isActive: true,
       })
       .returning();
 
+    let branchName: string | null = null;
+    if (inserted?.branchId) {
+      const [branch] = await db
+        .select({ name: branches.name })
+        .from(branches)
+        .where(eq(branches.id, inserted.branchId));
+      branchName = branch?.name || null;
+    }
+
     revalidatePath('/admin/inventory');
     revalidatePath('/');
-    return { success: true, item: inserted };
+    return { success: true, item: { ...inserted, branchName } };
   } catch (error: unknown) {
     console.error('[addInventoryItem] Failed:', error);
     return {
@@ -129,6 +169,7 @@ export interface UpdateInventoryItemInput {
   lowStockThreshold?: number;
   taxRate?: '5.00' | '18.00';
   hsnCode?: string | null;
+  branchId?: string | null;
 }
 
 export async function updateInventoryItem(
@@ -145,6 +186,10 @@ export async function updateInventoryItem(
     const updateData: Partial<typeof inventoryItems.$inferInsert> = {
       updatedAt: new Date(),
     };
+
+    if (rawInput.branchId !== undefined) {
+      updateData.branchId = rawInput.branchId;
+    }
 
     if (rawInput.sku !== undefined) {
       const sku = rawInput.sku.trim();
@@ -222,9 +267,18 @@ export async function updateInventoryItem(
       return { success: false, error: 'Inventory item not found or unauthorized' };
     }
 
+    let branchName: string | null = null;
+    if (updated?.branchId) {
+      const [branch] = await db
+        .select({ name: branches.name })
+        .from(branches)
+        .where(eq(branches.id, updated.branchId));
+      branchName = branch?.name || null;
+    }
+
     revalidatePath('/admin/inventory');
     revalidatePath('/');
-    return { success: true, item: updated };
+    return { success: true, item: { ...updated, branchName } };
   } catch (error: unknown) {
     console.error('[updateInventoryItem] Failed:', error);
     return {

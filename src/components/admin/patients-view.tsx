@@ -22,6 +22,9 @@ import {
   Edit,
   Trash2,
   AlertTriangle,
+  Building2,
+  Store,
+  Layers,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -29,6 +32,7 @@ import {
   deletePatientAction,
   type PatientSummary,
 } from '@/actions/patient-actions';
+import { useTenantStore } from '@/store/tenant-store';
 import { PatientDetailSheet } from '@/components/admin/patient-detail-sheet';
 import { AddPatientModal } from '@/components/admin/add-patient-modal';
 import { EditPatientModal } from '@/components/admin/edit-patient-modal';
@@ -41,16 +45,19 @@ export function PatientsView() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  const selectedBranchIds = useTenantStore((state) => state.selectedBranchIds);
+  const branches = useTenantStore((state) => state.branches);
+
   // CRUD Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<PatientSummary | null>(null);
   const [deletingPatient, setDeletingPatient] = useState<PatientSummary | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchPatients = async () => {
+  const fetchPatients = async (branchIds?: string[]) => {
     try {
       setIsLoading(true);
-      const res = await getPatients();
+      const res = await getPatients(branchIds);
       if (res.success && res.patients) {
         setPatients(res.patients);
       } else {
@@ -69,8 +76,19 @@ export function PatientsView() {
   };
 
   useEffect(() => {
-    fetchPatients();
-  }, []);
+    fetchPatients(selectedBranchIds);
+  }, [selectedBranchIds]);
+
+  const activeBranchLabel = useMemo(() => {
+    if (!selectedBranchIds || selectedBranchIds.includes('all') || selectedBranchIds.length === 0) {
+      return 'All Branches';
+    }
+    if (selectedBranchIds.length === 1) {
+      const match = branches.find((b) => b.id === selectedBranchIds[0]);
+      return match ? match.name : 'Selected Store';
+    }
+    return `${selectedBranchIds.length} Stores Selected`;
+  }, [selectedBranchIds, branches]);
 
   const handleRefresh = () => {
     startTransition(async () => {
@@ -166,6 +184,20 @@ export function PatientsView() {
             </h1>
             <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
               {patients.length} Records
+            </span>
+            <span
+              data-testid="patients-scope-badge"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+            >
+              {selectedBranchIds?.includes('all') || !selectedBranchIds?.length ? (
+                <Layers className="h-3 w-3" />
+              ) : selectedBranchIds.length === 1 ? (
+                <Store className="h-3 w-3" />
+              ) : (
+                <Building2 className="h-3 w-3" />
+              )}
+              <span>{activeBranchLabel}</span>
+              {isLoading && <span className="animate-pulse">...</span>}
             </span>
           </div>
           <p className="text-xs md:text-sm text-slate-500 dark:text-slate-300 mt-0.5">

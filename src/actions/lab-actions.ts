@@ -1,6 +1,6 @@
 'use server';
 
-import { and, desc, eq, notInArray, isNull, or } from 'drizzle-orm';
+import { and, desc, eq, notInArray, isNull, or, inArray, type SQL } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import {
@@ -50,6 +50,8 @@ export interface LabOrderSummary {
   promisedDeliveryDate: string | null;
   labJobTicketNumber: string | null;
   notes: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
   createdAt: string;
   updatedAt: string;
   itemsCount: number;
@@ -61,21 +63,28 @@ export interface LabOrderSummary {
  * Fetch all active lab orders (invoices where orderStatus is NOT DRAFT and NOT CANCELLED_REFUNDED).
  * Completed orders (DELIVERED_AND_CLOSED) are limited to the most recent 50 for performance.
  */
-export async function getActiveLabOrders(): Promise<LabOrderSummary[]> {
+export async function getActiveLabOrders(branchIds?: string[]): Promise<LabOrderSummary[]> {
   try {
     const session = await getCurrentSession();
 
-    const rawInvoices = await db.query.invoices.findMany({
-      where: and(
-        or(
-          eq(invoices.organizationId, session.organizationId),
-          isNull(invoices.organizationId)
-        ),
-        notInArray(invoices.orderStatus, ['DRAFT', 'CANCELLED_REFUNDED'])
+    const whereConditions: (SQL | undefined)[] = [
+      or(
+        eq(invoices.organizationId, session.organizationId),
+        isNull(invoices.organizationId)
       ),
+      notInArray(invoices.orderStatus, ['DRAFT', 'CANCELLED_REFUNDED']),
+    ];
+
+    if (branchIds && branchIds.length > 0 && !branchIds.includes('all')) {
+      whereConditions.push(inArray(invoices.branchId, branchIds));
+    }
+
+    const rawInvoices = await db.query.invoices.findMany({
+      where: and(...whereConditions),
       with: {
         customer: true,
         prescription: true,
+        branch: true,
         items: {
           with: {
             inventoryItem: true,
@@ -235,6 +244,8 @@ export async function getActiveLabOrders(): Promise<LabOrderSummary[]> {
           : null,
         labJobTicketNumber: inv.labJobTicketNumber || null,
         notes: inv.notes || null,
+        branchId: inv.branchId,
+        branchName: inv.branch?.name || null,
         createdAt: inv.createdAt.toISOString(),
         updatedAt: inv.updatedAt.toISOString(),
         itemsCount: itemsList.reduce((acc, item) => acc + item.quantity, 0),
