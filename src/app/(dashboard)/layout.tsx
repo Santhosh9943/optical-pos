@@ -13,10 +13,13 @@ import {
   Settings,
   Clock,
   Shield,
+  Store,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { UserNav } from '@/components/layout/user-nav';
 import { BranchSwitcher } from '@/components/layout/branch-switcher';
+import { SimulationBanner } from '@/components/layout/simulation-banner';
+import { useTenantStore } from '@/store/tenant-store';
 
 export default function DashboardLayout({
   children,
@@ -25,6 +28,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { activeRoleMode, isSimulating } = useTenantStore();
 
   const isPos = pathname?.startsWith('/pos');
   const isInventory = pathname?.startsWith('/admin/inventory');
@@ -32,7 +36,14 @@ export default function DashboardLayout({
   const isPatients = pathname?.startsWith('/admin/patients');
   const isLabOrders = pathname?.startsWith('/admin/lab-orders');
   const isSettings = pathname?.startsWith('/admin/settings');
-  const isSuperAdmin = pathname?.startsWith('/admin/super-admin');
+  const isBranches = pathname?.startsWith('/admin/branches');
+  const isStaff = pathname?.startsWith('/admin/staff');
+  const isSuperAdminPlatform = pathname?.startsWith('/super-admin');
+
+  const isStaffOnly = activeRoleMode === 'user';
+  const isStoreAdmin = activeRoleMode === 'admin';
+  const isOrganizer = activeRoleMode === 'organizer';
+  const isSuperAdmin = activeRoleMode === 'super_admin';
 
   // Global Keyboard Shortcuts (F1 for POS Billing, F3 for Inventory)
   useEffect(() => {
@@ -178,81 +189,144 @@ export default function DashboardLayout({
             </span>
           </Link>
 
-          <div className="pt-3">
-            <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-300">
-              Management
-            </div>
-            <Link
-              href="/admin/reports"
-              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
-                isReports
-                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shadow-2xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <BarChart3
-                  className={`h-4 w-4 ${
-                    isReports
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-slate-400 dark:text-slate-400'
-                  }`}
-                />
-                <span>Daily Z-Report</span>
+          {/* Management Section: Visible to Organizer, Store Admin, and Super Admin (Hidden for Store Staff) */}
+          {!isStaffOnly && (
+            <div className="pt-3">
+              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-300">
+                Management
               </div>
-              <span className="rounded bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-mono text-slate-600 dark:text-slate-300">
-                Audit
-              </span>
-            </Link>
-            <Link
-              href="/admin/settings"
-              data-testid="nav-settings"
-              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
-                isSettings
-                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Settings
-                  className={`h-4 w-4 ${
-                    isSettings
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-slate-400 dark:text-slate-400'
-                  }`}
-                />
-                <span>Settings</span>
-              </div>
-              <span className="rounded bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-mono text-slate-600 dark:text-slate-300">
-                Cfg
-              </span>
-            </Link>
 
-            {/* Super Admin Console Nav Link */}
-            <Link
-              href="/admin/super-admin"
-              data-testid="nav-super-admin"
-              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-600 ${
-                isSuperAdmin
-                  ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 hover:text-purple-900 dark:hover:text-purple-200'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Shield
-                  className={`h-4 w-4 ${
-                    isSuperAdmin
-                      ? 'text-purple-600 dark:text-purple-400'
-                      : 'text-slate-400 dark:text-slate-400'
+              {/* Daily Z-Report: Visible to Admin, Organizer, Super Admin */}
+              <Link
+                href="/admin/reports"
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                  isReports
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <BarChart3
+                    className={`h-4 w-4 ${
+                      isReports
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-slate-400 dark:text-slate-400'
+                    }`}
+                  />
+                  <span>Daily Z-Report</span>
+                </div>
+                <span className="rounded bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-mono text-slate-600 dark:text-slate-300">
+                  Audit
+                </span>
+              </Link>
+
+              {/* Manage Branches: Exclusive to Organizer and Super Admin */}
+              {(isOrganizer || isSuperAdmin) && (
+                <Link
+                  href="/admin/branches"
+                  data-testid="nav-branches"
+                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                    isBranches
+                      ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shadow-2xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
                   }`}
-                />
-                <span>Super Admin</span>
-              </div>
-              <span className="rounded bg-purple-100 dark:bg-purple-900/60 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-purple-700 dark:text-purple-300">
-                SaaS
-              </span>
-            </Link>
-          </div>
+                >
+                  <div className="flex items-center gap-2">
+                    <Store
+                      className={`h-4 w-4 ${
+                        isBranches
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-slate-400 dark:text-slate-400'
+                      }`}
+                    />
+                    <span>Manage Branches</span>
+                  </div>
+                  <span className="rounded bg-blue-100 dark:bg-blue-950/80 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-blue-700 dark:text-blue-300">
+                    Stores
+                  </span>
+                </Link>
+              )}
+
+              {/* Manage Staff: Visible to Organizer, Store Admin, and Super Admin */}
+              {(isOrganizer || isStoreAdmin || isSuperAdmin) && (
+                <Link
+                  href="/admin/staff"
+                  data-testid="nav-staff"
+                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                    isStaff
+                      ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shadow-2xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Users
+                      className={`h-4 w-4 ${
+                        isStaff
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-slate-400 dark:text-slate-400'
+                      }`}
+                    />
+                    <span>{isStoreAdmin ? 'Store Staff' : 'Manage Staff'}</span>
+                  </div>
+                  <span className="rounded bg-purple-100 dark:bg-purple-950/80 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-purple-700 dark:text-purple-300">
+                    Team
+                  </span>
+                </Link>
+              )}
+
+              {/* Practice Settings */}
+              <Link
+                href="/admin/settings"
+                data-testid="nav-settings"
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                  isSettings
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Settings
+                    className={`h-4 w-4 ${
+                      isSettings
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-slate-400 dark:text-slate-400'
+                    }`}
+                  />
+                  <span>Settings</span>
+                </div>
+                <span className="rounded bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-mono text-slate-600 dark:text-slate-300">
+                  Cfg
+                </span>
+              </Link>
+
+              {/* Super Admin Console Nav Link */}
+              {isSuperAdmin && !isSimulating && (
+                <Link
+                  href="/super-admin/dashboard"
+                  data-testid="nav-super-admin"
+                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-600 ${
+                    isSuperAdminPlatform
+                      ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 shadow-2xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 hover:text-purple-900 dark:hover:text-purple-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Shield
+                      className={`h-4 w-4 ${
+                        isSuperAdminPlatform
+                          ? 'text-purple-600 dark:text-purple-400'
+                          : 'text-slate-400 dark:text-slate-400'
+                      }`}
+                    />
+                    <span>Super Admin</span>
+                  </div>
+                  <span className="rounded bg-purple-100 dark:bg-purple-900/60 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-purple-700 dark:text-purple-300">
+                    SaaS
+                  </span>
+                </Link>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* Function Keys Cheatsheet (Footer of Sidebar) */}
@@ -279,6 +353,9 @@ export default function DashboardLayout({
 
       {/* ── Persistent Main Viewport Container ── */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        {/* Persistent Sticky Simulation Banner (Active when simulating) */}
+        <SimulationBanner />
+
         {/* ── Persistent Top Global Action Bar ── */}
         <header className="flex h-14 items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 shrink-0 z-10">
           {/* Navigation Tabs / Link Switcher */}

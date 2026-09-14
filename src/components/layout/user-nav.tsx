@@ -201,7 +201,7 @@ export function UserNav() {
             {/* Super Admin Console Link (shown for super_admin or simulated super_admin) */}
             {(actualRole === 'super_admin' || activeRoleMode === 'super_admin') && (
               <Link
-                href="/admin/super-admin"
+                href="/super-admin/dashboard"
                 data-testid="link-super-admin-console"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition"

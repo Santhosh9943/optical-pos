@@ -21,6 +21,7 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute =
     pathname.startsWith('/pos') ||
     pathname.startsWith('/admin') ||
+    pathname.startsWith('/super-admin') ||
     pathname === '/';
 
   // If unauthenticated and accessing protected route, redirect to login
@@ -45,6 +46,7 @@ export const config = {
     '/',
     '/pos/:path*',
     '/admin/:path*',
+    '/super-admin/:path*',
     '/auth/:path*',
   ],
 };

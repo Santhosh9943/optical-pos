@@ -2,15 +2,25 @@
   "communities": {
     "0": [
       "decimal_js",
+      "ref_lucide_react",
       "ref_use_debounce",
+      "src_actions_patient_actions",
+      "src_actions_patient_actions_familymemberlinkinfo",
+      "src_actions_patient_actions_getlinkedfamilygroup",
       "src_actions_patient_actions_getpatientorderhistory",
       "src_actions_patient_actions_getpatientprescriptions",
+      "src_actions_patient_actions_getpatients",
       "src_actions_patient_actions_linkexistingcustomertofamily",
       "src_actions_patient_actions_patientorderhistoryitem",
       "src_actions_patient_actions_patientprescriptionhistory",
+      "src_actions_patient_actions_patientsummary",
       "src_actions_patient_actions_savenewprescription",
+      "src_app_dashboard_admin_patients_page",
+      "src_app_dashboard_admin_patients_page_patientspage",
       "src_app_dashboard_pos_new_bill_page",
       "src_app_dashboard_pos_new_bill_page_newbillpage",
+      "src_components_admin_patients_view",
+      "src_components_admin_patients_view_patientsview",
       "src_components_pos_add_family_member_modal",
       "src_components_pos_add_family_member_modal_addfamilymembermodal",
       "src_components_pos_add_family_member_modal_addfamilymembermodalprops",
@@ -72,7 +82,6 @@
       "src_lib_patient_relationship",
       "src_lib_patient_relationship_getdynamicrelationship",
       "src_lib_patient_relationship_patientrelationmeta",
-      "src_lib_validators_prescription_isquarterstep",
       "src_store_pos_store",
       "src_store_pos_store_initialinvoicebillingdetails",
       "src_store_pos_store_invoicebillingdetails",
@@ -82,23 +91,97 @@
       "src_store_pos_store_useposstore"
     ],
     "1": [
-      "src_actions_patient_actions",
-      "src_actions_patient_actions_familymemberlinkinfo",
-      "src_actions_patient_actions_getlinkedfamilygroup",
+      "ref_react",
+      "ref_sonner",
+      "src_actions_tenant_actions",
+      "src_actions_tenant_actions_createbranchaction",
+      "src_actions_tenant_actions_createorganizationaction",
+      "src_actions_tenant_actions_createstaffmemberaction",
+      "src_actions_tenant_actions_getorganizationbranchesaction",
+      "src_actions_tenant_actions_getstaffmembersaction",
+      "src_actions_tenant_actions_getsuperadminplatformmetrics",
+      "src_actions_tenant_actions_getusertenancycontext",
+      "src_actions_tenant_actions_mockstaffstore",
+      "src_actions_tenant_actions_platformtenantdetail",
+      "src_actions_tenant_actions_rolemode",
+      "src_actions_tenant_actions_staffmember",
+      "src_actions_tenant_actions_superadminplatformmetrics",
+      "src_actions_tenant_actions_tenancycontext",
+      "src_actions_tenant_actions_togglebranchstatusaction",
+      "src_app_auth_login_page",
+      "src_app_auth_login_page_loginformcontent",
+      "src_app_auth_login_page_loginpage",
+      "src_app_dashboard_admin_branches_page",
+      "src_app_dashboard_admin_branches_page_managebranchespage",
+      "src_app_dashboard_admin_staff_page",
+      "src_app_dashboard_admin_staff_page_managestaffpage",
+      "src_app_dashboard_layout",
+      "src_app_dashboard_layout_dashboardlayout",
+      "src_app_super_admin_branches_page",
+      "src_app_super_admin_branches_page_superadminbranchespage",
+      "src_app_super_admin_dashboard_page",
+      "src_app_super_admin_dashboard_page_superadmindashboardpage",
+      "src_app_super_admin_layout",
+      "src_app_super_admin_layout_superadminlayout",
+      "src_app_super_admin_organizations_page",
+      "src_app_super_admin_organizations_page_superadminorganizationspage",
+      "src_app_super_admin_settings_page",
+      "src_app_super_admin_settings_page_superadminsettingspage",
+      "src_app_super_admin_simulator_page",
+      "src_app_super_admin_simulator_page_perspectivesimulatorpage",
+      "src_components_layout_branch_switcher",
+      "src_components_layout_branch_switcher_branchswitcher",
+      "src_components_layout_branch_switcher_branchswitcher_handleclickoutside",
+      "src_components_layout_simulation_banner",
+      "src_components_layout_simulation_banner_simulationbanner",
+      "src_components_layout_user_nav",
+      "src_components_layout_user_nav_usernav",
+      "src_components_layout_user_nav_usernav_handleclickoutside",
+      "src_components_theme_toggle",
+      "src_components_theme_toggle_themetoggle",
+      "src_db_schema_branches",
+      "src_db_schema_user",
+      "src_lib_auth_client",
+      "src_lib_auth_client_authclient",
+      "src_store_tenant_store",
+      "src_store_tenant_store_branchoption",
+      "src_store_tenant_store_orgoption",
+      "src_store_tenant_store_rolemode",
+      "src_store_tenant_store_tenantstate",
+      "src_store_tenant_store_usetenantstore"
+    ],
+    "2": [
+      "src_actions_lab_actions",
+      "src_actions_lab_actions_getactivelaborders",
+      "src_actions_lab_actions_laborderitemdetail",
+      "src_actions_lab_actions_labordersummary",
+      "src_actions_lab_actions_updateorderstatus",
       "src_actions_patient_actions_getpatienthistory",
-      "src_actions_patient_actions_getpatients",
       "src_actions_patient_actions_patientdetailhistory",
-      "src_actions_patient_actions_patientsummary",
       "src_actions_patient_actions_updatecustomerphone",
+      "src_actions_payment_actions_collectbalance",
       "src_actions_settings_actions_getinvoiceprintdata",
-      "src_app_dashboard_admin_patients_page",
-      "src_app_dashboard_admin_patients_page_patientspage",
+      "src_app_dashboard_admin_lab_orders_page",
+      "src_app_dashboard_admin_lab_orders_page_dynamic",
+      "src_app_dashboard_admin_lab_orders_page_laborderspage",
+      "src_app_dashboard_admin_lab_orders_page_metadata",
+      "src_components_admin_lab_orders_view",
+      "src_components_admin_lab_orders_view_labordersview",
+      "src_components_admin_lab_orders_view_labordersviewprops",
+      "src_components_admin_lab_orders_view_ordercard",
+      "src_components_admin_lab_orders_view_ordercardprops",
+      "src_components_admin_lab_orders_view_tabkey",
       "src_components_admin_patient_detail_sheet",
       "src_components_admin_patient_detail_sheet_patientdetailsheet",
       "src_components_admin_patient_detail_sheet_patientdetailsheetprops",
       "src_components_admin_patient_detail_sheet_prescriptioncard",
-      "src_components_admin_patients_view",
-      "src_components_admin_patients_view_patientsview",
+      "src_components_admin_settle_balance_modal",
+      "src_components_admin_settle_balance_modal_settlebalancemodal",
+      "src_components_admin_settle_balance_modal_settlebalancemodalprops",
+      "src_components_admin_settle_balance_modal_settleinvoicedata",
+      "src_components_admin_workshop_slip_modal",
+      "src_components_admin_workshop_slip_modal_workshopslipmodal",
+      "src_components_admin_workshop_slip_modal_workshopslipmodalprops",
       "src_components_pos_print_a4_invoice",
       "src_components_pos_print_a4_invoice_a4invoice",
       "src_components_pos_print_a4_invoice_formatdiopter",
@@ -119,48 +202,51 @@
       "src_components_print_workshoplabslip",
       "src_components_print_workshoplabslip_formatdiopter",
       "src_components_print_workshoplabslip_workshoplabslip",
-      "src_components_print_workshoplabslip_workshoplabslipprops"
-    ],
-    "2": [
-      "ref_lucide_react",
-      "ref_next_themes",
-      "ref_react",
-      "ref_sonner",
-      "ref_zustand",
-      "src_actions_tenant_actions_createbranchaction",
-      "src_actions_tenant_actions_getsuperadminplatformmetrics",
-      "src_actions_tenant_actions_getusertenancycontext",
-      "src_actions_tenant_actions_superadminplatformmetrics",
-      "src_app_auth_login_page",
-      "src_app_auth_login_page_loginformcontent",
-      "src_app_auth_login_page_loginpage",
-      "src_app_dashboard_admin_super_admin_page",
-      "src_app_dashboard_admin_super_admin_page_superadminpage",
-      "src_app_dashboard_layout",
-      "src_app_dashboard_layout_dashboardlayout",
-      "src_app_layout",
-      "src_app_layout_metadata",
-      "src_app_layout_rootlayout",
-      "src_components_layout_branch_switcher",
-      "src_components_layout_branch_switcher_branchswitcher",
-      "src_components_layout_branch_switcher_branchswitcher_handleclickoutside",
-      "src_components_layout_user_nav",
-      "src_components_layout_user_nav_usernav",
-      "src_components_layout_user_nav_usernav_handleclickoutside",
-      "src_components_theme_provider",
-      "src_components_theme_provider_themeprovider",
-      "src_components_theme_toggle",
-      "src_components_theme_toggle_themetoggle",
-      "src_lib_auth_client",
-      "src_lib_auth_client_authclient",
-      "src_store_tenant_store",
-      "src_store_tenant_store_branchoption",
-      "src_store_tenant_store_orgoption",
-      "src_store_tenant_store_rolemode",
-      "src_store_tenant_store_tenantstate",
-      "src_store_tenant_store_usetenantstore"
+      "src_components_print_workshoplabslip_workshoplabslipprops",
+      "src_db_schema_orderstatus",
+      "src_db_schema_paymentmode"
     ],
     "3": [
+      "drizzle_0002_cute_molly_hayes",
+      "drizzle_0002_cute_molly_hayes_branches",
+      "drizzle_0002_cute_molly_hayes_branches_organization_idx",
+      "drizzle_0002_cute_molly_hayes_customers_organization_idx",
+      "drizzle_0002_cute_molly_hayes_customers_primary_customer_idx",
+      "drizzle_0002_cute_molly_hayes_inventory_branch_idx",
+      "drizzle_0002_cute_molly_hayes_inventory_organization_idx",
+      "drizzle_0002_cute_molly_hayes_invoice_branch_idx",
+      "drizzle_0002_cute_molly_hayes_invoice_item_patient_idx",
+      "drizzle_0002_cute_molly_hayes_invoice_item_prescription_idx",
+      "drizzle_0002_cute_molly_hayes_invoice_organization_idx",
+      "drizzle_0002_cute_molly_hayes_organizations",
+      "drizzle_0002_cute_molly_hayes_payment_branch_idx",
+      "drizzle_0002_cute_molly_hayes_payment_organization_idx",
+      "drizzle_0002_cute_molly_hayes_store_profile",
+      "inventory_items",
+      "invoice_items",
+      "public_branches",
+      "public_optical_prescriptions",
+      "public_organizations",
+      "src_actions_report_actions",
+      "src_actions_report_actions_dailyfinancialsreport",
+      "src_actions_report_actions_dailyreporttransaction",
+      "src_actions_report_actions_datepreset",
+      "src_actions_report_actions_financialsreportfilter",
+      "src_actions_report_actions_formatdatestr",
+      "src_actions_report_actions_getdailyfinancials",
+      "src_actions_report_actions_getfinancialsreport",
+      "src_actions_report_actions_resolvedaterange",
+      "src_app_dashboard_admin_reports_page",
+      "src_app_dashboard_admin_reports_page_reportspage",
+      "src_components_admin_reports_view",
+      "src_components_admin_reports_view_reportsview",
+      "src_db_schema_customers",
+      "src_db_schema_invoices",
+      "src_db_schema_orderstatusenum",
+      "src_db_schema_payments",
+      "src_db_schema_paymentstatusenum"
+    ],
+    "4": [
       "src_db_schema",
       "src_db_schema_account",
       "src_db_schema_accountrelations",
@@ -195,39 +281,6 @@
       "src_db_schema_userrelations",
       "src_db_schema_userroleenum",
       "src_db_schema_verification"
-    ],
-    "4": [
-      "ref_upstash_redis",
-      "src_actions_settings_actions",
-      "src_actions_settings_actions_getstoreprofile",
-      "src_actions_settings_actions_storeprofileinput",
-      "src_actions_settings_actions_storeprofileresult",
-      "src_actions_settings_actions_storeprofileschema",
-      "src_actions_settings_actions_updatestoreprofile",
-      "src_app_api_inventory_search_route",
-      "src_app_api_inventory_search_route_dynamic",
-      "src_app_api_inventory_search_route_get",
-      "src_app_api_patients_search_route",
-      "src_app_api_patients_search_route_dynamic",
-      "src_app_api_patients_search_route_get",
-      "src_app_dashboard_admin_settings_page",
-      "src_app_dashboard_admin_settings_page_dynamic",
-      "src_app_dashboard_admin_settings_page_metadata",
-      "src_app_dashboard_admin_settings_page_settingspage",
-      "src_components_admin_settings_view",
-      "src_components_admin_settings_view_settingsview",
-      "src_components_admin_settings_view_settingsviewprops",
-      "src_components_admin_settings_view_tabtype",
-      "src_db_schema_receipttype",
-      "src_db_schema_storeprofile",
-      "src_lib_auth_utils_getcurrentsession",
-      "src_lib_redis",
-      "src_lib_redis_cachedel",
-      "src_lib_redis_cacheget",
-      "src_lib_redis_cacheset",
-      "src_lib_redis_initredis",
-      "src_lib_redis_isredisconfigured",
-      "src_lib_redis_redis"
     ],
     "5": [
       "drizzle_0000_dashing_runaways",
@@ -281,6 +334,7 @@
       "src_lib_validators_prescription_invoicebillingdetailsschema",
       "src_lib_validators_prescription_invoiceiteminput",
       "src_lib_validators_prescription_invoiceitemschema",
+      "src_lib_validators_prescription_isquarterstep",
       "src_lib_validators_prescription_patientinput",
       "src_lib_validators_prescription_patientinputschema",
       "src_lib_validators_prescription_pdschema",
@@ -291,34 +345,6 @@
       "src_lib_validators_prescription_sphereschema"
     ],
     "7": [
-      "ref_next",
-      "src_actions_lab_actions",
-      "src_actions_lab_actions_getactivelaborders",
-      "src_actions_lab_actions_laborderitemdetail",
-      "src_actions_lab_actions_labordersummary",
-      "src_actions_lab_actions_updateorderstatus",
-      "src_actions_payment_actions_collectbalance",
-      "src_app_dashboard_admin_lab_orders_page",
-      "src_app_dashboard_admin_lab_orders_page_dynamic",
-      "src_app_dashboard_admin_lab_orders_page_laborderspage",
-      "src_app_dashboard_admin_lab_orders_page_metadata",
-      "src_components_admin_lab_orders_view",
-      "src_components_admin_lab_orders_view_labordersview",
-      "src_components_admin_lab_orders_view_labordersviewprops",
-      "src_components_admin_lab_orders_view_ordercard",
-      "src_components_admin_lab_orders_view_ordercardprops",
-      "src_components_admin_lab_orders_view_tabkey",
-      "src_components_admin_settle_balance_modal",
-      "src_components_admin_settle_balance_modal_settlebalancemodal",
-      "src_components_admin_settle_balance_modal_settlebalancemodalprops",
-      "src_components_admin_settle_balance_modal_settleinvoicedata",
-      "src_components_admin_workshop_slip_modal",
-      "src_components_admin_workshop_slip_modal_workshopslipmodal",
-      "src_components_admin_workshop_slip_modal_workshopslipmodalprops",
-      "src_db_schema_orderstatus",
-      "src_db_schema_paymentmode"
-    ],
-    "8": [
       "ref_zod",
       "src_actions_inventory_actions",
       "src_actions_inventory_actions_addinventoryitem",
@@ -335,35 +361,33 @@
       "src_components_admin_inventory_view",
       "src_components_admin_inventory_view_inventoryview",
       "src_components_admin_inventory_view_inventoryviewprops",
-      "src_db_index_db",
       "src_lib_validators_inventory",
       "src_lib_validators_inventory_createinventoryiteminput",
       "src_lib_validators_inventory_createinventoryitemschema",
       "src_lib_validators_inventory_inventorycategoryvalues"
     ],
-    "9": [
-      "drizzle_0002_cute_molly_hayes",
-      "drizzle_0002_cute_molly_hayes_branches",
-      "drizzle_0002_cute_molly_hayes_branches_organization_idx",
-      "drizzle_0002_cute_molly_hayes_inventory_branch_idx",
-      "drizzle_0002_cute_molly_hayes_inventory_organization_idx",
-      "drizzle_0002_cute_molly_hayes_invoice_branch_idx",
-      "drizzle_0002_cute_molly_hayes_invoice_item_patient_idx",
-      "drizzle_0002_cute_molly_hayes_invoice_item_prescription_idx",
-      "drizzle_0002_cute_molly_hayes_invoice_organization_idx",
-      "drizzle_0002_cute_molly_hayes_organizations",
-      "drizzle_0002_cute_molly_hayes_payment_branch_idx",
-      "drizzle_0002_cute_molly_hayes_payment_organization_idx",
-      "drizzle_0002_cute_molly_hayes_store_profile",
-      "inventory_items",
-      "invoice_items",
-      "public_branches",
-      "public_optical_prescriptions",
-      "public_organizations",
-      "src_db_schema_invoices",
-      "src_db_schema_payments"
+    "8": [
+      "e2e_balance_settlement_spec",
+      "ref_drizzle_orm",
+      "src_actions_payment_actions",
+      "src_actions_payment_actions_collectbalanceresult",
+      "src_app_api_auth_all_route",
+      "src_app_api_auth_all_route_get_post",
+      "src_db_index",
+      "src_db_index_db",
+      "src_db_index_pool",
+      "src_db_schema_organizations",
+      "src_db_schema_paymentstatus",
+      "src_lib_auth",
+      "src_lib_auth_auth",
+      "src_lib_auth_session",
+      "src_lib_auth_user",
+      "src_lib_auth_utils",
+      "src_lib_auth_utils_currentsessioncontext",
+      "src_lib_auth_utils_default_branch_id",
+      "src_lib_auth_utils_default_org_id"
     ],
-    "10": [
+    "9": [
       "tsconfig",
       "tsconfig_compileroptions",
       "tsconfig_compileroptions_allowjs",
@@ -384,7 +408,7 @@
       "tsconfig_exclude",
       "tsconfig_include"
     ],
-    "11": [
+    "10": [
       "drizzle_0003_lying_captain_stacy",
       "drizzle_0003_lying_captain_stacy_account",
       "drizzle_0003_lying_captain_stacy_account_userid_idx",
@@ -404,7 +428,7 @@
       "public_organization",
       "public_user"
     ],
-    "12": [
+    "11": [
       "package_dependencies",
       "package_dependencies_better_auth",
       "package_dependencies_better_fetch_fetch",
@@ -424,33 +448,30 @@
       "package_dependencies_zod",
       "package_dependencies_zustand"
     ],
-    "13": [
-      "ref_better_auth",
-      "src_actions_tenant_actions",
-      "src_actions_tenant_actions_platformtenantdetail",
-      "src_actions_tenant_actions_rolemode",
-      "src_actions_tenant_actions_tenancycontext",
-      "src_app_api_auth_all_route",
-      "src_app_api_auth_all_route_get_post",
-      "src_db_index",
-      "src_db_index_pool",
-      "src_db_schema_branches",
-      "src_db_schema_organizations",
-      "src_db_schema_user",
-      "src_lib_auth",
-      "src_lib_auth_auth",
-      "src_lib_auth_session",
-      "src_lib_auth_user",
-      "src_lib_auth_utils",
-      "src_lib_auth_utils_currentsessioncontext"
+    "12": [
+      "src_actions_settings_actions",
+      "src_actions_settings_actions_getstoreprofile",
+      "src_actions_settings_actions_storeprofileinput",
+      "src_actions_settings_actions_storeprofileresult",
+      "src_actions_settings_actions_storeprofileschema",
+      "src_actions_settings_actions_updatestoreprofile",
+      "src_app_dashboard_admin_settings_page",
+      "src_app_dashboard_admin_settings_page_dynamic",
+      "src_app_dashboard_admin_settings_page_metadata",
+      "src_app_dashboard_admin_settings_page_settingspage",
+      "src_components_admin_settings_view",
+      "src_components_admin_settings_view_settingsview",
+      "src_components_admin_settings_view_settingsviewprops",
+      "src_components_admin_settings_view_tabtype",
+      "src_db_schema_receipttype",
+      "src_db_schema_storeprofile",
+      "src_lib_redis_cachedel"
     ],
-    "14": [
-      "drizzle_config",
+    "13": [
       "package",
       "ref_autoprefixer",
+      "ref_better_auth",
       "ref_better_fetch_fetch",
-      "ref_dotenv",
-      "ref_drizzle_kit",
       "ref_eslint",
       "ref_eslint_config_next",
       "ref_neondatabase_serverless",
@@ -460,42 +481,11 @@
       "ref_types_node",
       "ref_types_react",
       "ref_types_react_dom",
-      "ref_typescript"
+      "ref_typescript",
+      "ref_upstash_redis",
+      "ref_zustand"
     ],
-    "15": [
-      "src_actions_report_actions",
-      "src_actions_report_actions_dailyfinancialsreport",
-      "src_actions_report_actions_dailyreporttransaction",
-      "src_actions_report_actions_datepreset",
-      "src_actions_report_actions_financialsreportfilter",
-      "src_actions_report_actions_formatdatestr",
-      "src_actions_report_actions_getdailyfinancials",
-      "src_actions_report_actions_getfinancialsreport",
-      "src_actions_report_actions_resolvedaterange",
-      "src_app_dashboard_admin_reports_page",
-      "src_app_dashboard_admin_reports_page_reportspage",
-      "src_components_admin_reports_view",
-      "src_components_admin_reports_view_reportsview",
-      "src_db_schema_orderstatusenum",
-      "src_db_schema_paymentstatusenum"
-    ],
-    "16": [
-      "drizzle_0002_cute_molly_hayes_customers_organization_idx",
-      "drizzle_0002_cute_molly_hayes_customers_primary_customer_idx",
-      "e2e_balance_settlement_spec",
-      "src_db_schema_customers",
-      "src_db_schema_inventoryitems",
-      "src_db_schema_invoiceitems",
-      "src_db_schema_opticalprescriptions",
-      "src_db_seed",
-      "src_db_seed_seedcustomers",
-      "src_db_seed_seeddatabase",
-      "src_db_seed_seedinventory",
-      "src_db_seed_seedprescriptions",
-      "src_lib_auth_utils_default_branch_id",
-      "src_lib_auth_utils_default_org_id"
-    ],
-    "17": [
+    "14": [
       "package_devdependencies",
       "package_devdependencies_autoprefixer",
       "package_devdependencies_dotenv",
@@ -511,7 +501,22 @@
       "package_devdependencies_types_react_dom",
       "package_devdependencies_typescript"
     ],
-    "18": [
+    "15": [
+      "src_app_api_inventory_search_route",
+      "src_app_api_inventory_search_route_dynamic",
+      "src_app_api_inventory_search_route_get",
+      "src_app_api_patients_search_route",
+      "src_app_api_patients_search_route_dynamic",
+      "src_app_api_patients_search_route_get",
+      "src_lib_auth_utils_getcurrentsession",
+      "src_lib_redis",
+      "src_lib_redis_cacheget",
+      "src_lib_redis_cacheset",
+      "src_lib_redis_initredis",
+      "src_lib_redis_isredisconfigured",
+      "src_lib_redis_redis"
+    ],
+    "16": [
       "package_scripts",
       "package_scripts_build",
       "package_scripts_check",
@@ -523,7 +528,7 @@
       "package_scripts_test_e2e",
       "package_scripts_validate"
     ],
-    "19": [
+    "17": [
       "e2e_auth_flow_spec",
       "e2e_caching_performance_spec",
       "e2e_lab_orders_spec",
@@ -534,6 +539,25 @@
       "playwright_config",
       "ref_playwright_test"
     ],
+    "18": [
+      "src_db_schema_inventoryitems",
+      "src_db_schema_invoiceitems",
+      "src_db_schema_opticalprescriptions",
+      "src_db_seed",
+      "src_db_seed_seedcustomers",
+      "src_db_seed_seeddatabase",
+      "src_db_seed_seedinventory",
+      "src_db_seed_seedprescriptions"
+    ],
+    "19": [
+      "ref_next",
+      "ref_next_themes",
+      "src_app_layout",
+      "src_app_layout_metadata",
+      "src_app_layout_rootlayout",
+      "src_components_theme_provider",
+      "src_components_theme_provider_themeprovider"
+    ],
     "20": [
       "ref_clsx",
       "ref_tailwind_merge",
@@ -541,15 +565,14 @@
       "src_lib_utils_cn"
     ],
     "21": [
-      "ref_drizzle_orm",
-      "src_actions_payment_actions",
-      "src_actions_payment_actions_collectbalanceresult",
-      "src_db_schema_paymentstatus"
-    ],
-    "22": [
       "docs_prd_tier1",
       "docs_prd_tier2",
       "docs_prd_tier3"
+    ],
+    "22": [
+      "drizzle_config",
+      "ref_dotenv",
+      "ref_drizzle_kit"
     ],
     "23": [
       "ref_tailwindcss",
@@ -570,58 +593,66 @@
       "postcss_config_config"
     ],
     "27": [
+      "src_app_dashboard_admin_super_admin_page",
+      "src_app_dashboard_admin_super_admin_page_legacysuperadminredirectpage"
+    ],
+    "28": [
       "src_app_page",
       "src_app_page_homepage"
     ],
-    "28": [
-      "claude_concurrency_rules"
-    ],
     "29": [
-      "claude_optical_rules"
+      "src_app_super_admin_page",
+      "src_app_super_admin_page_superadminrootpage"
     ],
     "30": [
-      "claude_security_rules"
+      "claude_concurrency_rules"
     ],
     "31": [
-      "claude_ui_standards"
+      "claude_optical_rules"
     ],
     "32": [
-      "docs_prd_optixos"
+      "claude_security_rules"
     ],
     "33": [
-      "drizzle_0001_nebulous_black_tom"
+      "claude_ui_standards"
     ],
     "34": [
-      "eslint_config"
+      "docs_prd_optixos"
     ],
     "35": [
-      "readme"
+      "drizzle_0001_nebulous_black_tom"
     ],
     "36": [
+      "eslint_config"
+    ],
+    "37": [
+      "readme"
+    ],
+    "38": [
       "src_lib_auth_client_signin_signup_signout_usesession"
     ]
   },
   "cohesion": {
-    "0": 0.05777345017851347,
-    "1": 0.08677098150782361,
-    "2": 0.1036036036036036,
-    "3": 0.058823529411764705,
-    "4": 0.12043010752688173,
+    "0": 0.05642633228840126,
+    "1": 0.09013914095583787,
+    "2": 0.06289308176100629,
+    "3": 0.08819345661450925,
+    "4": 0.058823529411764705,
     "5": 0.11724137931034483,
-    "6": 0.09401709401709402,
-    "7": 0.12615384615384614,
-    "8": 0.18571428571428572,
-    "9": 0.15789473684210525,
-    "10": 0.10526315789473684,
-    "11": 0.1895424836601307,
-    "12": 0.1111111111111111,
-    "13": 0.17647058823529413,
-    "14": 0.13333333333333333,
-    "15": 0.22857142857142856,
-    "16": 0.15384615384615385,
-    "17": 0.14285714285714285,
-    "18": 0.2,
-    "19": 0.2222222222222222,
+    "6": 0.08994708994708994,
+    "7": 0.2,
+    "8": 0.21052631578947367,
+    "9": 0.10526315789473684,
+    "10": 0.1895424836601307,
+    "11": 0.1111111111111111,
+    "12": 0.21323529411764705,
+    "13": 0.125,
+    "14": 0.14285714285714285,
+    "15": 0.2692307692307692,
+    "16": 0.2,
+    "17": 0.2222222222222222,
+    "18": 0.25,
+    "19": 0.3333333333333333,
     "20": 0.5,
     "21": 0.6666666666666666,
     "22": 0.6666666666666666,
@@ -638,18 +669,20 @@
     "33": 1.0,
     "34": 1.0,
     "35": 1.0,
-    "36": 1.0
+    "36": 1.0,
+    "37": 1.0,
+    "38": 1.0
   },
   "gods": [
     {
       "id": "ref_react",
       "label": "react",
-      "degree": 34
+      "degree": 42
     },
     {
       "id": "ref_lucide_react",
       "label": "lucide-react",
-      "degree": 28
+      "degree": 36
     },
     {
       "id": "src_lib_auth_utils_getcurrentsession",
@@ -657,19 +690,24 @@
       "degree": 23
     },
     {
+      "id": "ref_sonner",
+      "label": "sonner",
+      "degree": 22
+    },
+    {
       "id": "decimal_js",
       "label": "Decimal.js",
       "degree": 21
     },
     {
+      "id": "src_store_tenant_store_usetenantstore",
+      "label": "useTenantStore",
+      "degree": 19
+    },
+    {
       "id": "tsconfig_compileroptions",
       "label": "compilerOptions",
       "degree": 16
-    },
-    {
-      "id": "ref_sonner",
-      "label": "sonner",
-      "degree": 15
     },
     {
       "id": "ref_drizzle_orm",
@@ -685,36 +723,9 @@
       "id": "src_db_schema_invoices",
       "label": "invoices",
       "degree": 13
-    },
-    {
-      "id": "src_components_pos_print_layouts_printorderdata",
-      "label": "PrintOrderData",
-      "degree": 11
     }
   ],
   "surprises": [
-    {
-      "source": "customers_organization_idx",
-      "target": "customers",
-      "source_files": [
-        "drizzle/0002_cute_molly_hayes.sql",
-        "src/db/schema.ts"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "indexes",
-      "why": "connects across different repos/directories; peripheral node `customers_organization_idx` unexpectedly reaches hub `customers`"
-    },
-    {
-      "source": "customers_primary_customer_idx",
-      "target": "customers",
-      "source_files": [
-        "drizzle/0002_cute_molly_hayes.sql",
-        "src/db/schema.ts"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "indexes",
-      "why": "connects across different repos/directories; peripheral node `customers_primary_customer_idx` unexpectedly reaches hub `customers`"
-    },
     {
       "source": "invoice_branch_idx",
       "target": "invoices",
@@ -747,43 +758,65 @@
       "confidence": "EXTRACTED",
       "relation": "indexes",
       "why": "connects across different repos/directories; peripheral node `payment_branch_idx` unexpectedly reaches hub `payments`"
+    },
+    {
+      "source": "payment_organization_idx",
+      "target": "payments",
+      "source_files": [
+        "drizzle/0002_cute_molly_hayes.sql",
+        "src/db/schema.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "indexes",
+      "why": "connects across different repos/directories; peripheral node `payment_organization_idx` unexpectedly reaches hub `payments`"
+    },
+    {
+      "source": "customers_organization_idx",
+      "target": "customers",
+      "source_files": [
+        "drizzle/0002_cute_molly_hayes.sql",
+        "src/db/schema.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "indexes",
+      "why": "connects across different repos/directories; peripheral node `customers_organization_idx` unexpectedly reaches hub `customers`"
     }
   ],
   "questions": [
     {
       "type": "bridge_node",
-      "question": "Why does `react` connect `react` to `pos-view.tsx`, `patient-actions.ts`, `settings-actions.ts`, `lab-orders-view.tsx`, `inventory-actions.ts`, `package.json`, `report-actions.ts`?",
-      "why": "High betweenness centrality (0.093) - this node is a cross-community bridge."
+      "question": "Why does `react` connect `react` to `pos-view.tsx`, `patient-detail-sheet.tsx`, `report-actions.ts`, `inventory-actions.ts`, `settings-actions.ts`, `package.json`, `app/layout.tsx`?",
+      "why": "High betweenness centrality (0.105) - this node is a cross-community bridge."
     },
     {
       "type": "bridge_node",
-      "question": "Why does `Decimal.js` connect `pos-view.tsx` to `patient-actions.ts`, `settings-actions.ts`, `process-optical-order.ts`, `lab-orders-view.tsx`, `inventory-actions.ts`, `package.json`, `report-actions.ts`, `drizzle-orm`?",
-      "why": "High betweenness centrality (0.071) - this node is a cross-community bridge."
+      "question": "Why does `lucide-react` connect `pos-view.tsx` to `react`, `patient-detail-sheet.tsx`, `report-actions.ts`, `inventory-actions.ts`, `settings-actions.ts`, `package.json`?",
+      "why": "High betweenness centrality (0.078) - this node is a cross-community bridge."
     },
     {
       "type": "bridge_node",
-      "question": "Why does `lucide-react` connect `react` to `pos-view.tsx`, `patient-actions.ts`, `settings-actions.ts`, `lab-orders-view.tsx`, `inventory-actions.ts`, `package.json`, `report-actions.ts`?",
-      "why": "High betweenness centrality (0.067) - this node is a cross-community bridge."
+      "question": "Why does `invoices` connect `report-actions.ts` to `pos-view.tsx`, `react`, `patient-detail-sheet.tsx`, `schema.ts`, `process-optical-order.ts`, `auth-utils.ts`, `seed.ts`?",
+      "why": "High betweenness centrality (0.065) - this node is a cross-community bridge."
     },
     {
       "type": "isolated_nodes",
-      "question": "What connects `ProductCategory`, `BillingCartProps`, `CalculatedCartLine` to the rest of the system?",
-      "why": "183 weakly-connected nodes found - possible documentation gaps or missing edges."
+      "question": "What connects `FamilyMemberLinkInfo`, `ProductCategory`, `BillingCartProps` to the rest of the system?",
+      "why": "182 weakly-connected nodes found - possible documentation gaps or missing edges."
     },
     {
       "type": "low_cohesion",
       "question": "Should `pos-view.tsx` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.05777345017851347 - nodes in this community are weakly interconnected."
-    },
-    {
-      "type": "low_cohesion",
-      "question": "Should `patient-actions.ts` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.08677098150782361 - nodes in this community are weakly interconnected."
+      "why": "Cohesion score 0.05642633228840126 - nodes in this community are weakly interconnected."
     },
     {
       "type": "low_cohesion",
       "question": "Should `react` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.1036036036036036 - nodes in this community are weakly interconnected."
+      "why": "Cohesion score 0.09013914095583787 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `patient-detail-sheet.tsx` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.06289308176100629 - nodes in this community are weakly interconnected."
     }
   ]
 }
