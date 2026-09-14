@@ -6,17 +6,18 @@ test.describe('Stage 7: Lab Order & Workshop Management E2E Suite', () => {
     await page.goto('/admin/lab-orders');
     await page.waitForLoadState('networkidle');
 
-    // 2. Verify page header and status tabs/columns
+    // 2. Verify page header, search input in Kanban, and absence of filter tabs in Kanban
     await expect(page.locator('h1:has-text("Lab Order & Workshop Management")')).toBeVisible({
       timeout: 10000,
     });
 
-    // Verify presence of status tabs
-    await expect(page.getByTestId('tab-all')).toBeVisible();
-    await expect(page.getByTestId('tab-ordered')).toBeVisible();
-    await expect(page.getByTestId('tab-in-fitting')).toBeVisible();
-    await expect(page.getByTestId('tab-ready')).toBeVisible();
-    await expect(page.getByTestId('tab-completed')).toBeVisible();
+    // In Kanban view: Centered search is visible
+    const searchInput = page.getByTestId('input-lab-orders-search');
+    await expect(searchInput).toBeVisible();
+
+    // In Kanban view: Status tabs are NOT visible (only shown in table list)
+    await expect(page.getByTestId('tab-all')).not.toBeVisible();
+    await expect(page.getByTestId('tab-ordered')).not.toBeVisible();
 
     // Verify Kanban columns
     await expect(page.locator('text=1. Action Required')).toBeVisible();
@@ -24,14 +25,20 @@ test.describe('Stage 7: Lab Order & Workshop Management E2E Suite', () => {
     await expect(page.locator('text=3. Ready for Pickup')).toBeVisible();
     await expect(page.locator('text=4. Completed')).toBeVisible();
 
-    // 3. Find an active test order and click status update to move it to READY_FOR_COLLECTION
-    // We locate an order card in the Action Required or In Fitting column
+    // 3. Find an active test order and verify search in Kanban mode
     const orderCard = page.getByTestId('order-card').first();
     await expect(orderCard).toBeVisible({ timeout: 10000 });
 
     // Read the invoice number from this card to track it
     const invoiceNumText = await orderCard.locator('.font-mono').first().innerText();
     expect(invoiceNumText).toBeTruthy();
+
+    // Verify search filters Kanban columns
+    await searchInput.fill(invoiceNumText);
+    await page.waitForTimeout(200);
+    await expect(page.locator(`text=${invoiceNumText}`).first()).toBeVisible();
+    await searchInput.fill('');
+    await page.waitForTimeout(200);
 
     // Find the "Mark Ready" button or use the status select dropdown
     const markReadyBtn = orderCard.getByTestId('btn-mark-ready');
@@ -78,6 +85,13 @@ test.describe('Stage 7: Lab Order & Workshop Management E2E Suite', () => {
     // 6. Verify Table List view mode
     const tableViewBtn = page.getByTestId('view-toggle-table');
     await tableViewBtn.click();
+
+    // Verify status tabs are visible in Table List mode
+    await expect(page.getByTestId('tab-all')).toBeVisible();
+    await expect(page.getByTestId('tab-ordered')).toBeVisible();
+    await expect(page.getByTestId('tab-in-fitting')).toBeVisible();
+    await expect(page.getByTestId('tab-ready')).toBeVisible();
+    await expect(page.getByTestId('tab-completed')).toBeVisible();
 
     // Verify table row for this order exists
     const orderRow = page.locator('tr[data-testid="order-row"]', {

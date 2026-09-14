@@ -17,6 +17,7 @@ import {
   Phone,
   Glasses,
   Check,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -88,21 +89,38 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
     }
   };
 
-  // Status mapping to 4 workflow columns
+  // Filter all orders by search query so both Kanban and Table views reflect search results
+  const searchedOrders = useMemo(() => {
+    if (!searchQuery.trim()) return orders;
+    const query = searchQuery.toLowerCase().trim();
+    return orders.filter((order) => {
+      const matchInv = order.invoiceNumber.toLowerCase().includes(query);
+      const matchName = order.customerName.toLowerCase().includes(query);
+      const matchPhone = order.customerPhone.toLowerCase().includes(query);
+      const matchItem = order.items.some(
+        (i) =>
+          i.description.toLowerCase().includes(query) ||
+          (i.sku && i.sku.toLowerCase().includes(query))
+      );
+      return matchInv || matchName || matchPhone || matchItem;
+    });
+  }, [orders, searchQuery]);
+
+  // Status mapping to 4 workflow columns (reflects search query in Kanban columns)
   const orderColumns = useMemo(() => {
     return {
-      actionRequired: orders.filter((o) => o.orderStatus === 'ORDERED'),
-      atLabFitting: orders.filter(
+      actionRequired: searchedOrders.filter((o) => o.orderStatus === 'ORDERED'),
+      atLabFitting: searchedOrders.filter(
         (o) => o.orderStatus === 'SENT_TO_LAB' || o.orderStatus === 'IN_FITTING'
       ),
-      readyPickup: orders.filter((o) => o.orderStatus === 'READY_FOR_COLLECTION'),
-      completed: orders.filter((o) => o.orderStatus === 'DELIVERED_AND_CLOSED'),
+      readyPickup: searchedOrders.filter((o) => o.orderStatus === 'READY_FOR_COLLECTION'),
+      completed: searchedOrders.filter((o) => o.orderStatus === 'DELIVERED_AND_CLOSED'),
     };
-  }, [orders]);
+  }, [searchedOrders]);
 
   // Filtered orders for table/tabbed view
   const filteredOrders = useMemo(() => {
-    let list = orders;
+    let list = searchedOrders;
 
     if (activeTab === 'ORDERED') {
       list = orderColumns.actionRequired;
@@ -114,21 +132,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
       list = orderColumns.completed;
     }
 
-    if (!searchQuery.trim()) return list;
-
-    const query = searchQuery.toLowerCase().trim();
-    return list.filter((order) => {
-      const matchInv = order.invoiceNumber.toLowerCase().includes(query);
-      const matchName = order.customerName.toLowerCase().includes(query);
-      const matchPhone = order.customerPhone.toLowerCase().includes(query);
-      const matchItem = order.items.some(
-        (i) =>
-          i.description.toLowerCase().includes(query) ||
-          (i.sku && i.sku.toLowerCase().includes(query))
-      );
-      return matchInv || matchName || matchPhone || matchItem;
-    });
-  }, [orders, activeTab, orderColumns, searchQuery]);
+    return list;
+  }, [searchedOrders, activeTab, orderColumns]);
 
   const handleStatusChange = async (invoiceId: string, newStatus: OrderStatus) => {
     const targetOrder = orders.find((o) => o.id === invoiceId);
@@ -262,8 +267,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
   return (
     <div className="flex h-full w-full flex-1 flex-col overflow-hidden bg-background text-foreground p-4 md:p-6 font-sans">
       {/* ── Page Top Header & Metrics Bar ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-border">
+        <div className="shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
               <ClipboardList className="h-5 w-5" />
@@ -279,8 +284,33 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
           </div>
         </div>
 
+        {/* In Kanban View: Center-positioned Search Box */}
+        {viewMode === 'kanban' && (
+          <div className="relative flex-1 max-w-md w-full sm:mx-4">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              data-testid="input-lab-orders-search"
+              placeholder="Search by invoice #, customer name, phone, or SKU..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-border bg-card pl-9 pr-8 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded"
+                title="Clear search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* View Mode Switcher */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <div className="flex rounded-lg border border-border bg-muted/50 p-0.5 shadow-2xs">
             <button
               type="button"
@@ -312,88 +342,101 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
         </div>
       </div>
 
-      {/* ── Search & Filter Navigation Bar ── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 pb-2">
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search by invoice #, customer name, phone, or SKU..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs"
-          />
+      {/* ── Table View Navigation Bar (Search + Status Filter Tabs) ── */}
+      {viewMode === 'table' && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 pb-1">
+          {/* Search Input for Table */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              data-testid="input-lab-orders-search"
+              placeholder="Search by invoice #, customer name, phone, or SKU..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-border bg-card pl-9 pr-8 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded"
+                title="Clear search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Status Tabs for Tabbed Navigation - Only visible in Table List */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+            <button
+              type="button"
+              data-testid="tab-all"
+              onClick={() => setActiveTab('ALL')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                activeTab === 'ALL'
+                  ? 'bg-foreground text-background shadow-xs'
+                  : 'bg-card text-muted-foreground border border-border hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              All Orders ({searchedOrders.length})
+            </button>
+
+            <button
+              type="button"
+              data-testid="tab-ordered"
+              onClick={() => setActiveTab('ORDERED')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                activeTab === 'ORDERED'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-card text-amber-600 dark:text-amber-400 border border-border hover:bg-amber-500/10'
+              }`}
+            >
+              Action Required ({orderColumns.actionRequired.length})
+            </button>
+
+            <button
+              type="button"
+              data-testid="tab-in-fitting"
+              onClick={() => setActiveTab('IN_FITTING')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                activeTab === 'IN_FITTING'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-card text-indigo-600 dark:text-indigo-400 border border-border hover:bg-indigo-500/10'
+              }`}
+            >
+              In Fitting ({orderColumns.atLabFitting.length})
+            </button>
+
+            <button
+              type="button"
+              data-testid="tab-ready"
+              onClick={() => setActiveTab('READY_FOR_COLLECTION')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                activeTab === 'READY_FOR_COLLECTION'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-card text-emerald-600 dark:text-emerald-400 border border-border hover:bg-emerald-500/10'
+              }`}
+            >
+              Ready for Pickup ({orderColumns.readyPickup.length})
+            </button>
+
+            <button
+              type="button"
+              data-testid="tab-completed"
+              onClick={() => setActiveTab('DELIVERED_AND_CLOSED')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                activeTab === 'DELIVERED_AND_CLOSED'
+                  ? 'bg-slate-600 text-white shadow-xs'
+                  : 'bg-card text-muted-foreground border border-border hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              Completed ({orderColumns.completed.length})
+            </button>
+          </div>
         </div>
-
-        {/* Status Tabs for Tabbed Navigation */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-          <button
-            type="button"
-            data-testid="tab-all"
-            onClick={() => setActiveTab('ALL')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-              activeTab === 'ALL'
-                ? 'bg-foreground text-background shadow-xs'
-                : 'bg-card text-muted-foreground border border-border hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            All Orders ({orders.length})
-          </button>
-
-          <button
-            type="button"
-            data-testid="tab-ordered"
-            onClick={() => setActiveTab('ORDERED')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-              activeTab === 'ORDERED'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-card text-amber-600 dark:text-amber-400 border border-border hover:bg-amber-500/10'
-            }`}
-          >
-            Action Required ({orderColumns.actionRequired.length})
-          </button>
-
-          <button
-            type="button"
-            data-testid="tab-in-fitting"
-            onClick={() => setActiveTab('IN_FITTING')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-              activeTab === 'IN_FITTING'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'bg-card text-indigo-600 dark:text-indigo-400 border border-border hover:bg-indigo-500/10'
-            }`}
-          >
-            In Fitting ({orderColumns.atLabFitting.length})
-          </button>
-
-          <button
-            type="button"
-            data-testid="tab-ready"
-            onClick={() => setActiveTab('READY_FOR_COLLECTION')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-              activeTab === 'READY_FOR_COLLECTION'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-card text-emerald-600 dark:text-emerald-400 border border-border hover:bg-emerald-500/10'
-            }`}
-          >
-            Ready for Pickup ({orderColumns.readyPickup.length})
-          </button>
-
-          <button
-            type="button"
-            data-testid="tab-completed"
-            onClick={() => setActiveTab('DELIVERED_AND_CLOSED')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-              activeTab === 'DELIVERED_AND_CLOSED'
-                ? 'bg-slate-600 text-white shadow-xs'
-                : 'bg-card text-muted-foreground border border-border hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            Completed ({orderColumns.completed.length})
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* ── Main Content Area (Kanban or Table) ── */}
       <div className="flex-1 overflow-hidden mt-2">
@@ -419,8 +462,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
 
               <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/20">
                 {orderColumns.actionRequired.length === 0 ? (
-                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground">
-                    No orders awaiting action
+                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground p-3">
+                    {searchQuery ? 'No matching orders' : 'No orders awaiting action'}
                   </div>
                 ) : (
                   orderColumns.actionRequired.map((order) => (
@@ -456,8 +499,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
 
               <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/20">
                 {orderColumns.atLabFitting.length === 0 ? (
-                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground">
-                    No orders currently in workshop
+                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground p-3">
+                    {searchQuery ? 'No matching orders' : 'No orders currently in workshop'}
                   </div>
                 ) : (
                   orderColumns.atLabFitting.map((order) => (
@@ -493,8 +536,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
 
               <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/20">
                 {orderColumns.readyPickup.length === 0 ? (
-                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground">
-                    No orders ready for pickup
+                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground p-3">
+                    {searchQuery ? 'No matching orders' : 'No orders ready for pickup'}
                   </div>
                 ) : (
                   orderColumns.readyPickup.map((order) => (
@@ -530,8 +573,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
 
               <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/20">
                 {orderColumns.completed.length === 0 ? (
-                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground">
-                    No completed orders
+                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground p-3">
+                    {searchQuery ? 'No matching orders' : 'No completed orders'}
                   </div>
                 ) : (
                   orderColumns.completed.map((order) => (
