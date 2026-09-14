@@ -1,12 +1,17 @@
 'use server';
 
 import Decimal from 'decimal.js';
-import { and, desc, eq, gte, lte, inArray } from 'drizzle-orm';
+import { and, desc, eq, gte, lte, inArray, type SQL } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   invoices,
   payments,
   customers,
+  orderStatusEnum,
+  paymentStatusEnum,
+  type OrderStatus,
+  type PaymentStatus,
+  type PaymentMode,
 } from '@/db/schema';
 
 export interface DailyReportTransaction {
@@ -24,7 +29,10 @@ export interface DailyReportTransaction {
 }
 
 export interface DailyFinancialsReport {
-  date: string; // YYYY-MM-DD
+  date: string; // Human-readable range or date string
+  startDate?: string;
+  endDate?: string;
+  preset?: string;
   totalRevenue: string;
   totalTax: string;
   totalAdvancePaid: string;
@@ -40,31 +48,204 @@ export interface DailyFinancialsReport {
   transactions: DailyReportTransaction[];
 }
 
-export async function getDailyFinancials(
-  targetDate?: Date | string
+export type DatePreset =
+  | 'today'
+  | 'yesterday'
+  | 'last7days'
+  | 'last30days'
+  | 'thisMonth'
+  | 'all'
+  | 'custom';
+
+export interface FinancialsReportFilter {
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string; // YYYY-MM-DD
+  preset?: DatePreset;
+  paymentStatus?: string; // 'ALL' | 'PAID' | 'PARTIAL' | 'UNPAID'
+  paymentMode?: string; // 'ALL' | 'CASH' | 'UPI' | 'CARD'
+  orderStatus?: string; // 'ALL' | OrderStatus
+}
+
+function formatDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function resolveDateRange(filter?: FinancialsReportFilter | string | Date) {
+  const now = new Date();
+  const todayStr = formatDateStr(now);
+
+  if (!filter) {
+    return {
+      preset: 'all' as DatePreset,
+      startDate: undefined,
+      endDate: undefined,
+      start: null,
+      end: null,
+      label: 'All Time',
+    };
+  }
+
+  if (filter instanceof Date) {
+    const dStr = formatDateStr(filter);
+    return {
+      preset: 'custom' as DatePreset,
+      startDate: dStr,
+      endDate: dStr,
+      start: new Date(`${dStr}T00:00:00.000`),
+      end: new Date(`${dStr}T23:59:59.999`),
+      label: dStr,
+    };
+  }
+
+  if (typeof filter === 'string') {
+    const dStr = filter.trim().substring(0, 10);
+    return {
+      preset: 'custom' as DatePreset,
+      startDate: dStr,
+      endDate: dStr,
+      start: new Date(`${dStr}T00:00:00.000`),
+      end: new Date(`${dStr}T23:59:59.999`),
+      label: dStr,
+    };
+  }
+
+  const preset = filter.preset || (filter.startDate && filter.endDate ? 'custom' : 'all');
+
+  switch (preset) {
+    case 'today': {
+      return {
+        preset: 'today' as DatePreset,
+        startDate: todayStr,
+        endDate: todayStr,
+        start: new Date(`${todayStr}T00:00:00.000`),
+        end: new Date(`${todayStr}T23:59:59.999`),
+        label: `Today (${todayStr})`,
+      };
+    }
+    case 'yesterday': {
+      const y = new Date(now);
+      y.setDate(y.getDate() - 1);
+      const yStr = formatDateStr(y);
+      return {
+        preset: 'yesterday' as DatePreset,
+        startDate: yStr,
+        endDate: yStr,
+        start: new Date(`${yStr}T00:00:00.000`),
+        end: new Date(`${yStr}T23:59:59.999`),
+        label: `Yesterday (${yStr})`,
+      };
+    }
+    case 'last7days': {
+      const s = new Date(now);
+      s.setDate(s.getDate() - 6);
+      const sStr = formatDateStr(s);
+      return {
+        preset: 'last7days' as DatePreset,
+        startDate: sStr,
+        endDate: todayStr,
+        start: new Date(`${sStr}T00:00:00.000`),
+        end: new Date(`${todayStr}T23:59:59.999`),
+        label: `Last 7 Days (${sStr} to ${todayStr})`,
+      };
+    }
+    case 'last30days': {
+      const s = new Date(now);
+      s.setDate(s.getDate() - 29);
+      const sStr = formatDateStr(s);
+      return {
+        preset: 'last30days' as DatePreset,
+        startDate: sStr,
+        endDate: todayStr,
+        start: new Date(`${sStr}T00:00:00.000`),
+        end: new Date(`${todayStr}T23:59:59.999`),
+        label: `Last 30 Days (${sStr} to ${todayStr})`,
+      };
+    }
+    case 'thisMonth': {
+      const sStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      return {
+        preset: 'thisMonth' as DatePreset,
+        startDate: sStr,
+        endDate: todayStr,
+        start: new Date(`${sStr}T00:00:00.000`),
+        end: new Date(`${todayStr}T23:59:59.999`),
+        label: `This Month (${sStr} to ${todayStr})`,
+      };
+    }
+    case 'custom': {
+      const sStr = filter.startDate || todayStr;
+      const eStr = filter.endDate || sStr;
+      return {
+        preset: 'custom' as DatePreset,
+        startDate: sStr,
+        endDate: eStr,
+        start: new Date(`${sStr}T00:00:00.000`),
+        end: new Date(`${eStr}T23:59:59.999`),
+        label: `${sStr} to ${eStr}`,
+      };
+    }
+    case 'all':
+    default: {
+      return {
+        preset: 'all' as DatePreset,
+        startDate: undefined,
+        endDate: undefined,
+        start: null,
+        end: null,
+        label: 'All Time',
+      };
+    }
+  }
+}
+
+/**
+ * Fetch financial report and audit ledger with support for custom date ranges,
+ * presets, and status filtering.
+ */
+export async function getFinancialsReport(
+  filterInput?: FinancialsReportFilter | string | Date
 ): Promise<{
   success: boolean;
   data?: DailyFinancialsReport;
   error?: string;
 }> {
   try {
-    // 1. Resolve target date string (YYYY-MM-DD)
-    let dateStr: string;
-    if (!targetDate) {
-      const now = new Date();
-      dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    } else if (targetDate instanceof Date) {
-      dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
-    } else {
-      dateStr = String(targetDate).trim().substring(0, 10);
+    const range = resolveDateRange(filterInput);
+    const filterObj = typeof filterInput === 'object' && !(filterInput instanceof Date) ? filterInput : {};
+
+    const conditions: SQL[] = [];
+
+    // Date range filter
+    if (range.start) {
+      conditions.push(gte(invoices.createdAt, range.start));
+    }
+    if (range.end) {
+      conditions.push(lte(invoices.createdAt, range.end));
     }
 
-    // 2. Define day boundaries
-    const startOfDay = new Date(`${dateStr}T00:00:00.000`);
-    const endOfDay = new Date(`${dateStr}T23:59:59.999`);
+    // Payment status filter
+    if (
+      filterObj.paymentStatus &&
+      filterObj.paymentStatus !== 'ALL' &&
+      paymentStatusEnum.enumValues.includes(filterObj.paymentStatus as PaymentStatus)
+    ) {
+      conditions.push(eq(invoices.paymentStatus, filterObj.paymentStatus as PaymentStatus));
+    }
 
-    // 3. Query all invoices created within this day, joined with customer info
-    const dailyInvoices = await db
+    // Order status filter
+    if (
+      filterObj.orderStatus &&
+      filterObj.orderStatus !== 'ALL' &&
+      orderStatusEnum.enumValues.includes(filterObj.orderStatus as OrderStatus)
+    ) {
+      conditions.push(eq(invoices.orderStatus, filterObj.orderStatus as OrderStatus));
+    }
+
+    // Query invoices joined with customer
+    const baseQuery = db
       .select({
         id: invoices.id,
         invoiceNumber: invoices.invoiceNumber,
@@ -85,43 +266,48 @@ export async function getDailyFinancials(
         customerPhone: customers.phone,
       })
       .from(invoices)
-      .innerJoin(customers, eq(invoices.customerId, customers.id))
-      .where(
-        and(
-          gte(invoices.createdAt, startOfDay),
-          lte(invoices.createdAt, endOfDay)
-        )
-      )
-      .orderBy(desc(invoices.createdAt));
+      .innerJoin(customers, eq(invoices.customerId, customers.id));
 
-    // 4. Fetch payments associated with either the invoices of today OR logged today
-    const invoiceIds = dailyInvoices.map((inv) => inv.id);
+    const matchingInvoices = conditions.length > 0
+      ? await baseQuery.where(and(...conditions)).orderBy(desc(invoices.createdAt))
+      : await baseQuery.orderBy(desc(invoices.createdAt));
 
-    let dailyPayments: (typeof payments.$inferSelect)[] = [];
+    // Fetch payments associated with matching invoices
+    const invoiceIds = matchingInvoices.map((inv) => inv.id);
+
+    let associatedPayments: (typeof payments.$inferSelect)[] = [];
     if (invoiceIds.length > 0) {
-      dailyPayments = await db
+      associatedPayments = await db
         .select()
         .from(payments)
-        .where(
-          inArray(payments.invoiceId, invoiceIds)
-        );
+        .where(inArray(payments.invoiceId, invoiceIds));
     }
 
     // Map payments by invoiceId for fast lookup
     const paymentsByInvoice = new Map<string, (typeof payments.$inferSelect)[]>();
-    for (const p of dailyPayments) {
+    for (const p of associatedPayments) {
       const existing = paymentsByInvoice.get(p.invoiceId) || [];
       existing.push(p);
       paymentsByInvoice.set(p.invoiceId, existing);
     }
 
-    // 5. Aggregate metrics strictly using decimal.js
+    // Filter by payment mode if requested
+    let finalInvoices = matchingInvoices;
+    if (filterObj.paymentMode && filterObj.paymentMode !== 'ALL') {
+      const targetMode = filterObj.paymentMode;
+      finalInvoices = matchingInvoices.filter((inv) => {
+        const orderPayments = paymentsByInvoice.get(inv.id) || [];
+        return orderPayments.some((p) => p.paymentMode === targetMode);
+      });
+    }
+
+    // Aggregate metrics using decimal.js
     let totalRevenueDec = new Decimal(0);
     let totalTaxDec = new Decimal(0);
     let totalAdvancePaidDec = new Decimal(0);
     let totalBalanceDueDec = new Decimal(0);
 
-    const transactions: DailyReportTransaction[] = dailyInvoices.map((inv) => {
+    const transactions: DailyReportTransaction[] = finalInvoices.map((inv) => {
       const grandTotalDec = new Decimal(inv.grandTotal || '0.00');
       const taxDec = new Decimal(inv.totalTax || '0.00');
       const advanceDec = new Decimal(inv.advancePaid || '0.00');
@@ -132,7 +318,7 @@ export async function getDailyFinancials(
       totalAdvancePaidDec = totalAdvancePaidDec.plus(advanceDec);
       totalBalanceDueDec = totalBalanceDueDec.plus(balanceDec);
 
-      // Determine primary payment mode
+      // Determine payment mode label
       const orderPayments = paymentsByInvoice.get(inv.id) || [];
       let paymentModeStr = 'UNPAID';
       if (orderPayments.length > 0) {
@@ -157,14 +343,17 @@ export async function getDailyFinancials(
       };
     });
 
-    // 6. Aggregate Payment Mode Splits strictly using decimal.js
+    // Payment Mode Splits for matching invoices
     let cashDec = new Decimal(0);
     let upiDec = new Decimal(0);
     let cardDec = new Decimal(0);
     let otherDec = new Decimal(0);
     let totalCollectedDec = new Decimal(0);
 
-    for (const p of dailyPayments) {
+    const finalInvoiceIdSet = new Set(finalInvoices.map((inv) => inv.id));
+    for (const p of associatedPayments) {
+      if (!finalInvoiceIdSet.has(p.invoiceId)) continue;
+
       const amountDec = new Decimal(p.amount || '0.00');
       totalCollectedDec = totalCollectedDec.plus(amountDec);
 
@@ -180,12 +369,15 @@ export async function getDailyFinancials(
     }
 
     const report: DailyFinancialsReport = {
-      date: dateStr,
+      date: range.label,
+      startDate: range.startDate,
+      endDate: range.endDate,
+      preset: range.preset,
       totalRevenue: totalRevenueDec.toFixed(2),
       totalTax: totalTaxDec.toFixed(2),
       totalAdvancePaid: totalAdvancePaidDec.toFixed(2),
       totalBalanceDue: totalBalanceDueDec.toFixed(2),
-      totalOrders: dailyInvoices.length,
+      totalOrders: finalInvoices.length,
       paymentSplits: {
         cash: cashDec.toFixed(2),
         upi: upiDec.toFixed(2),
@@ -198,10 +390,23 @@ export async function getDailyFinancials(
 
     return { success: true, data: report };
   } catch (error: unknown) {
-    console.error('[getDailyFinancials] Failed:', error);
+    console.error('[getFinancialsReport] Failed:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to generate daily report',
+      error: error instanceof Error ? error.message : 'Failed to generate financial report',
     };
   }
+}
+
+/**
+ * Backward compatibility alias for getFinancialsReport.
+ */
+export async function getDailyFinancials(
+  targetDate?: Date | string | FinancialsReportFilter
+): Promise<{
+  success: boolean;
+  data?: DailyFinancialsReport;
+  error?: string;
+}> {
+  return getFinancialsReport(targetDate);
 }

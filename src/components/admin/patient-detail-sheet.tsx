@@ -23,6 +23,7 @@ import {
   Check,
   Crown,
   Plus,
+  Banknote,
 } from 'lucide-react';
 import {
   getPatientHistory,
@@ -31,6 +32,7 @@ import {
   type PatientPrescriptionHistory,
 } from '@/actions/patient-actions';
 import { toast } from 'sonner';
+import { SettleBalanceModal, type SettleInvoiceData } from './settle-balance-modal';
 
 interface PatientDetailSheetProps {
   patientId: string | null;
@@ -58,6 +60,22 @@ export function PatientDetailSheet({
   // Phone editing state for family members in Tab 3
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [memberPhoneInput, setMemberPhoneInput] = useState('');
+
+  // Balance settlement modal state
+  const [selectedOrderForSettlement, setSelectedOrderForSettlement] =
+    useState<SettleInvoiceData | null>(null);
+
+  const handleBalanceSettled = () => {
+    if (patientId) {
+      getPatientHistory(patientId)
+        .then((res) => {
+          if (res.success && res.data) {
+            setData(res.data);
+          }
+        })
+        .catch((err) => console.error('Failed to reload patient history:', err));
+    }
+  };
   const [isSavingMemberPhone, setIsSavingMemberPhone] = useState(false);
 
   useEffect(() => {
@@ -207,6 +225,7 @@ export function PatientDetailSheet({
 
       {/* Slide-out Sheet Panel */}
       <aside
+        data-testid="patient-detail-sheet"
         className="relative z-50 flex h-full w-full max-w-2xl flex-col bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-in-out font-sans text-slate-900 dark:text-slate-100 overflow-hidden"
         role="dialog"
         aria-modal="true"
@@ -612,6 +631,7 @@ export function PatientDetailSheet({
                               <th className="py-2.5 px-3">Status</th>
                               <th className="py-2.5 px-3 text-right">Total</th>
                               <th className="py-2.5 px-3 text-right">Due</th>
+                              <th className="py-2.5 px-3 text-right">Action</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -678,6 +698,37 @@ export function PatientDetailSheet({
                                     ) : (
                                       <span className="text-emerald-600 dark:text-emerald-400">
                                         ₹0.00
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-3 px-3 text-right whitespace-nowrap">
+                                    {order.paymentStatus === 'PARTIAL' ||
+                                    order.paymentStatus === 'UNPAID' ||
+                                    Number(order.balanceDue) > 0 ? (
+                                      <button
+                                        type="button"
+                                        data-testid="btn-collect-balance"
+                                        onClick={() =>
+                                          setSelectedOrderForSettlement({
+                                            id: order.id,
+                                            invoiceNumber: order.invoiceNumber,
+                                            customerName:
+                                              order.billedToName || data.patient.fullName,
+                                            grandTotal: order.grandTotal,
+                                            advancePaid: order.advancePaid,
+                                            balanceDue: order.balanceDue,
+                                            orderStatus: order.orderStatus,
+                                            paymentStatus: order.paymentStatus,
+                                          })
+                                        }
+                                        className="inline-flex items-center gap-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2 py-1 text-[10px] font-bold transition cursor-pointer"
+                                      >
+                                        <Banknote className="h-3 w-3" />
+                                        <span>Collect Balance</span>
+                                      </button>
+                                    ) : (
+                                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                                        Settled
                                       </span>
                                     )}
                                   </td>
@@ -894,6 +945,14 @@ export function PatientDetailSheet({
           </button>
         </div>
       </aside>
+
+      {/* ── Balance Settlement Modal ── */}
+      <SettleBalanceModal
+        isOpen={!!selectedOrderForSettlement}
+        onClose={() => setSelectedOrderForSettlement(null)}
+        invoice={selectedOrderForSettlement}
+        onSuccess={handleBalanceSettled}
+      />
     </div>
   );
 }

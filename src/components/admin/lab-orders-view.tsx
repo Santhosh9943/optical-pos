@@ -25,6 +25,7 @@ import {
 } from '@/actions/lab-actions';
 import type { OrderStatus } from '@/db/schema';
 import { WorkshopSlipModal } from './workshop-slip-modal';
+import { SettleBalanceModal, type SettleInvoiceData } from './settle-balance-modal';
 
 interface LabOrdersViewProps {
   initialOrders: LabOrderSummary[];
@@ -38,7 +39,54 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrderForSlip, setSelectedOrderForSlip] = useState<LabOrderSummary | null>(null);
+  const [selectedOrderForSettlement, setSelectedOrderForSettlement] = useState<SettleInvoiceData | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const handleSettleOrder = (order: LabOrderSummary) => {
+    setSelectedOrderForSettlement({
+      id: order.id,
+      invoiceNumber: order.invoiceNumber,
+      customerName: order.customerName,
+      grandTotal: order.grandTotal,
+      advancePaid: order.advancePaid,
+      balanceDue: order.balanceDue,
+      orderStatus: order.orderStatus,
+      paymentStatus: order.paymentStatus,
+    });
+  };
+
+  const handleBalanceSettled = (result: {
+    invoiceId: string;
+    newBalance: string;
+    isDelivered: boolean;
+  }) => {
+    if (result.isDelivered) {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === result.invoiceId
+            ? {
+                ...o,
+                balanceDue: '0.00',
+                paymentStatus: 'PAID',
+                orderStatus: 'DELIVERED_AND_CLOSED' as OrderStatus,
+              }
+            : o
+        )
+      );
+    } else {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === result.invoiceId
+            ? {
+                ...o,
+                balanceDue: result.newBalance,
+                paymentStatus: 'PARTIAL',
+              }
+            : o
+        )
+      );
+    }
+  };
 
   // Status mapping to 4 workflow columns
   const orderColumns = useMemo(() => {
@@ -83,6 +131,16 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
   }, [orders, activeTab, orderColumns, searchQuery]);
 
   const handleStatusChange = async (invoiceId: string, newStatus: OrderStatus) => {
+    const targetOrder = orders.find((o) => o.id === invoiceId);
+    if (
+      newStatus === 'DELIVERED_AND_CLOSED' &&
+      targetOrder &&
+      Number(targetOrder.balanceDue) > 0
+    ) {
+      handleSettleOrder(targetOrder);
+      return;
+    }
+
     const prevOrders = [...orders];
     // Optimistic UI update
     setOrders((current) =>
@@ -343,7 +401,10 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
           /* ── Kanban Board View (4 Columns) ── */
           <div className="grid h-full grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-y-auto pb-4">
             {/* Column 1: Action Required (ORDERED) */}
-            <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden">
+            <div
+              data-testid="kanban-column-action-required"
+              className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden"
+            >
               <div className="flex items-center justify-between border-b border-amber-500/20 bg-amber-500/10 px-3.5 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
@@ -367,6 +428,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                       key={order.id}
                       order={order}
                       onStatusChange={handleStatusChange}
+                      onSettleBalance={handleSettleOrder}
                       onViewSlip={setSelectedOrderForSlip}
                       formatPromisedDate={formatPromisedDate}
                     />
@@ -376,7 +438,10 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             </div>
 
             {/* Column 2: At Lab / In Fitting (SENT_TO_LAB, IN_FITTING) */}
-            <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden">
+            <div
+              data-testid="kanban-column-at-lab"
+              className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden"
+            >
               <div className="flex items-center justify-between border-b border-indigo-500/20 bg-indigo-500/10 px-3.5 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
@@ -400,6 +465,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                       key={order.id}
                       order={order}
                       onStatusChange={handleStatusChange}
+                      onSettleBalance={handleSettleOrder}
                       onViewSlip={setSelectedOrderForSlip}
                       formatPromisedDate={formatPromisedDate}
                     />
@@ -409,7 +475,10 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             </div>
 
             {/* Column 3: Ready for Pickup (READY_FOR_COLLECTION) */}
-            <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden">
+            <div
+              data-testid="kanban-column-ready-pickup"
+              className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden"
+            >
               <div className="flex items-center justify-between border-b border-emerald-500/20 bg-emerald-500/10 px-3.5 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
@@ -433,6 +502,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                       key={order.id}
                       order={order}
                       onStatusChange={handleStatusChange}
+                      onSettleBalance={handleSettleOrder}
                       onViewSlip={setSelectedOrderForSlip}
                       formatPromisedDate={formatPromisedDate}
                     />
@@ -442,7 +512,10 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             </div>
 
             {/* Column 4: Completed (DELIVERED_AND_CLOSED) */}
-            <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden">
+            <div
+              data-testid="kanban-column-completed"
+              className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden"
+            >
               <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3.5 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground" />
@@ -466,6 +539,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                       key={order.id}
                       order={order}
                       onStatusChange={handleStatusChange}
+                      onSettleBalance={handleSettleOrder}
                       onViewSlip={setSelectedOrderForSlip}
                       formatPromisedDate={formatPromisedDate}
                     />
@@ -613,6 +687,30 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                                   </button>
                                 )}
 
+                              {order.orderStatus === 'READY_FOR_COLLECTION' && (
+                                Number(order.balanceDue) > 0 ? (
+                                  <button
+                                    type="button"
+                                    data-testid="btn-collect-balance"
+                                    onClick={() => handleSettleOrder(order)}
+                                    className="rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
+                                  >
+                                    Collect Balance
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    data-testid="btn-mark-delivered"
+                                    onClick={() =>
+                                      handleStatusChange(order.id, 'DELIVERED_AND_CLOSED')
+                                    }
+                                    className="rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 border border-blue-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
+                                  >
+                                    Mark Delivered
+                                  </button>
+                                )
+                              )}
+
                               <button
                                 type="button"
                                 data-testid="btn-view-lab-slip"
@@ -641,6 +739,14 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
         onClose={() => setSelectedOrderForSlip(null)}
         order={selectedOrderForSlip?.printOrderData || null}
       />
+
+      {/* ── Balance Settlement & Order Delivery Modal ── */}
+      <SettleBalanceModal
+        isOpen={!!selectedOrderForSettlement}
+        onClose={() => setSelectedOrderForSettlement(null)}
+        invoice={selectedOrderForSettlement}
+        onSuccess={handleBalanceSettled}
+      />
     </div>
   );
 }
@@ -648,6 +754,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
 interface OrderCardProps {
   order: LabOrderSummary;
   onStatusChange: (id: string, status: OrderStatus) => void;
+  onSettleBalance: (order: LabOrderSummary) => void;
   onViewSlip: (order: LabOrderSummary) => void;
   formatPromisedDate: (dateStr: string | null) => {
     label: string;
@@ -659,6 +766,7 @@ interface OrderCardProps {
 function OrderCard({
   order,
   onStatusChange,
+  onSettleBalance,
   onViewSlip,
   formatPromisedDate,
 }: OrderCardProps) {
@@ -750,15 +858,27 @@ function OrderCard({
             )}
 
           {order.orderStatus === 'READY_FOR_COLLECTION' && (
-            <button
-              type="button"
-              data-testid="btn-mark-delivered"
-              onClick={() => onStatusChange(order.id, 'DELIVERED_AND_CLOSED')}
-              className="flex items-center gap-1 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 px-2 py-1 text-[10px] font-bold border border-blue-500/30 transition cursor-pointer"
-            >
-              <span>Deliver</span>
-              <PackageCheck className="h-2.5 w-2.5" />
-            </button>
+            Number(order.balanceDue) > 0 ? (
+              <button
+                type="button"
+                data-testid="btn-collect-balance"
+                onClick={() => onSettleBalance(order)}
+                className="flex items-center gap-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 px-2 py-1 text-[10px] font-bold border border-amber-500/30 transition cursor-pointer"
+              >
+                <span>Collect Balance</span>
+                <PackageCheck className="h-2.5 w-2.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                data-testid="btn-mark-delivered"
+                onClick={() => onStatusChange(order.id, 'DELIVERED_AND_CLOSED')}
+                className="flex items-center gap-1 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 px-2 py-1 text-[10px] font-bold border border-blue-500/30 transition cursor-pointer"
+              >
+                <span>Mark Delivered</span>
+                <PackageCheck className="h-2.5 w-2.5" />
+              </button>
+            )
           )}
 
           {/* Quick Dropdown Selector */}

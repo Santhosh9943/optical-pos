@@ -59,6 +59,7 @@ export const paymentStatusEnum = pgEnum('payment_status', [
   'PARTIAL',
   'PAID',
 ]);
+export type PaymentStatus = (typeof paymentStatusEnum.enumValues)[number];
 
 export const paymentModeEnum = pgEnum('payment_mode', [
   'CASH',
@@ -66,6 +67,7 @@ export const paymentModeEnum = pgEnum('payment_mode', [
   'CARD',
   'CREDIT',
 ]);
+export type PaymentMode = (typeof paymentModeEnum.enumValues)[number];
 
 export const lensTypeEnum = pgEnum('lens_type', [
   'SINGLE_VISION',
