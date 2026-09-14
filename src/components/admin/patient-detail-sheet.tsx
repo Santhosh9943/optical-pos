@@ -278,7 +278,7 @@ export function PatientDetailSheet({
       {/* Slide-out Sheet Panel */}
       <aside
         data-testid="patient-detail-sheet"
-        className="relative z-50 flex h-full w-full max-w-2xl flex-col bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-in-out font-sans text-slate-900 dark:text-slate-100 overflow-hidden"
+        className="relative z-50 flex h-full w-full max-w-4xl lg:max-w-5xl flex-col bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-in-out font-sans text-slate-900 dark:text-slate-100 overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-labelledby="patient-sheet-title"
@@ -674,7 +674,7 @@ export function PatientDetailSheet({
                   ) : (
                     <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs overflow-hidden">
                       <div className="overflow-x-auto">
-                        <table className="w-full text-xs text-left">
+                        <table className="w-full min-w-[700px] text-xs text-left">
                           <thead>
                             <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 text-[10px] uppercase font-bold text-slate-500 dark:text-slate-300">
                               <th className="py-2.5 px-3">Date</th>
@@ -833,8 +833,8 @@ export function PatientDetailSheet({
                         No family members or dependents are linked to this customer account yet.
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {data.familyMembers.map((member) => {
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        {data.familyMembers.map((member, idx) => {
                           const primaryMember = data.familyMembers.find((m) => m.isPrimary);
                           const primaryPhone = primaryMember?.phone || '';
                           const isDependent = !member.isPrimary;
@@ -844,24 +844,37 @@ export function PatientDetailSheet({
                               member.phone !== '0000000000'
                           );
 
+                          // Find latest prescription for this family member
+                          const memberRx = data.prescriptions.find(
+                            (rx) => rx.patientId === member.id
+                          );
+
                           return (
                             <div
                               key={member.id}
-                              className={`rounded-xl border p-3.5 space-y-2.5 transition ${
+                              data-testid={`family-member-card-${idx}`}
+                              className={`rounded-xl border p-4 space-y-3 transition shadow-2xs ${
                                 member.id === data.patient.id
-                                  ? 'bg-blue-50/60 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800'
+                                  ? 'bg-blue-50/60 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 ring-1 ring-blue-400/30'
                                   : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
                               }`}
                             >
+                              {/* Member Header: Name-wise Numbering & Relation */}
                               <div className="flex items-start justify-between gap-2">
                                 <div>
-                                  <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                  <div className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                    <span className="text-purple-600 dark:text-purple-400 font-mono text-xs">
+                                      #{idx + 1}.
+                                    </span>
                                     <span>{member.fullName}</span>
                                     {member.isPrimary && (
                                       <span title="Primary Account Holder">
-                                        <Crown className="h-3 w-3 text-amber-500 shrink-0" />
+                                        <Crown className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                                       </span>
                                     )}
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    {member.gender || '—'} {member.age ? `• ${member.age} yrs` : ''}
                                   </div>
                                 </div>
                                 <span
@@ -946,6 +959,7 @@ export function PatientDetailSheet({
                                   <div className="flex items-center justify-between text-[11px]">
                                     <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
                                       <Phone className="h-3 w-3 text-slate-400" />
+                                      <span className="text-[10px] text-slate-500">Primary Phone:</span>
                                       <span className="font-mono font-semibold">{member.phone}</span>
                                     </span>
                                     <button
@@ -962,10 +976,59 @@ export function PatientDetailSheet({
                                 )}
                               </div>
 
-                              <div className="flex items-center gap-3 text-[11px] text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-100 dark:border-slate-800">
-                                <span>
-                                  Demographics: {member.gender || '—'}, {member.age ? `${member.age} yrs` : '—'}
-                                </span>
+                              {/* Embedded Optical Powers for Family Member */}
+                              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                                  <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-medium">
+                                    <Eye className="h-3 w-3" />
+                                    <span>Optical Powers</span>
+                                  </span>
+                                  {memberRx ? (
+                                    <span className="text-[10px] text-slate-400 font-mono">
+                                      Rx: {new Date(memberRx.prescribedAt).toLocaleDateString('en-IN', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric',
+                                      })}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] text-slate-400 italic">
+                                      No Rx on file
+                                    </span>
+                                  )}
+                                </div>
+
+                                {memberRx ? (
+                                  <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
+                                    {/* OD (Right Eye) */}
+                                    <div className="rounded-lg bg-blue-50/50 dark:bg-blue-950/30 p-2 border border-blue-200/50 dark:border-blue-900/40">
+                                      <div className="font-bold text-blue-600 dark:text-blue-400 mb-0.5">
+                                        OD (Right)
+                                      </div>
+                                      <div>SPH: <span className="font-bold text-slate-800 dark:text-slate-200">{memberRx.odSphere || 'Plano'}</span></div>
+                                      <div>CYL: <span className="text-slate-800 dark:text-slate-200">{memberRx.odCylinder || '0.00'}</span></div>
+                                      {memberRx.odAxis && <div>AXIS: <span className="text-slate-800 dark:text-slate-200">{memberRx.odAxis}°</span></div>}
+                                      {memberRx.odAdd && <div>ADD: <span className="text-slate-800 dark:text-slate-200">{memberRx.odAdd}</span></div>}
+                                      {memberRx.odPd && <div>PD: <span className="text-slate-800 dark:text-slate-200">{memberRx.odPd}mm</span></div>}
+                                    </div>
+
+                                    {/* OS (Left Eye) */}
+                                    <div className="rounded-lg bg-purple-50/50 dark:bg-purple-950/30 p-2 border border-purple-200/50 dark:border-purple-900/40">
+                                      <div className="font-bold text-purple-600 dark:text-purple-400 mb-0.5">
+                                        OS (Left)
+                                      </div>
+                                      <div>SPH: <span className="font-bold text-slate-800 dark:text-slate-200">{memberRx.osSphere || 'Plano'}</span></div>
+                                      <div>CYL: <span className="text-slate-800 dark:text-slate-200">{memberRx.osCylinder || '0.00'}</span></div>
+                                      {memberRx.osAxis && <div>AXIS: <span className="text-slate-800 dark:text-slate-200">{memberRx.osAxis}°</span></div>}
+                                      {memberRx.osAdd && <div>ADD: <span className="text-slate-800 dark:text-slate-200">{memberRx.osAdd}</span></div>}
+                                      {memberRx.osPd && <div>PD: <span className="text-slate-800 dark:text-slate-200">{memberRx.osPd}mm</span></div>}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 text-center text-[10px] text-slate-400 dark:text-slate-500 italic">
+                                    No clinical refraction recorded yet
+                                  </div>
+                                )}
                               </div>
                             </div>
                           );

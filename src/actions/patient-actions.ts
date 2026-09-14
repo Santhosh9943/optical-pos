@@ -1,7 +1,8 @@
 'use server';
 
 import Decimal from 'decimal.js';
-import { and, desc, eq, inArray, or } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, or } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import {
   customers,
@@ -11,6 +12,201 @@ import {
 } from '@/db/schema';
 import { getCurrentSession } from '@/lib/auth-utils';
 import type { POSPatient } from '@/store/pos-store';
+
+export interface CreatePatientInput {
+  fullName: string;
+  phone: string;
+  age?: number | null;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  relationType?: string;
+  primaryCustomerId?: string | null;
+}
+
+export interface UpdatePatientInput {
+  fullName?: string;
+  phone?: string;
+  age?: number | null;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  relationType?: string;
+}
+
+export async function createPatientAction(input: CreatePatientInput): Promise<{
+  success: boolean;
+  patient?: typeof customers.$inferSelect;
+  error?: string;
+}> {
+  try {
+    const session = await getCurrentSession();
+
+    const fullName = input.fullName.trim();
+    const phone = input.phone.trim();
+
+    if (!fullName) {
+      return { success: false, error: 'Full name is required' };
+    }
+    if (!phone) {
+      return { success: false, error: 'Phone number is required' };
+    }
+
+    const [newCustomer] = await db
+      .insert(customers)
+      .values({
+        organizationId: session.organizationId,
+        fullName,
+        phone,
+        age: input.age ?? null,
+        gender: input.gender ?? null,
+        addressLine1: input.addressLine1?.trim() || null,
+        addressLine2: input.addressLine2?.trim() || null,
+        city: input.city?.trim() || null,
+        state: input.state?.trim() || null,
+        pincode: input.pincode?.trim() || null,
+        relationType: input.relationType?.trim() || 'Self',
+        primaryCustomerId: input.primaryCustomerId || null,
+        advanceBalance: '0.00',
+      })
+      .returning();
+
+    revalidatePath('/admin/patients');
+    revalidatePath('/pos/new-bill');
+
+    return { success: true, patient: newCustomer };
+  } catch (err: unknown) {
+    console.error('[createPatientAction] Error:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to create patient',
+    };
+  }
+}
+
+export async function updatePatientAction(
+  id: string,
+  input: UpdatePatientInput
+): Promise<{
+  success: boolean;
+  patient?: typeof customers.$inferSelect;
+  error?: string;
+}> {
+  try {
+    const session = await getCurrentSession();
+
+    const updateData: Partial<typeof customers.$inferInsert> = {
+      updatedAt: new Date(),
+    };
+
+    if (input.fullName !== undefined) {
+      const name = input.fullName.trim();
+      if (!name) return { success: false, error: 'Name cannot be empty' };
+      updateData.fullName = name;
+    }
+
+    if (input.phone !== undefined) {
+      const ph = input.phone.trim();
+      if (!ph) return { success: false, error: 'Phone cannot be empty' };
+      updateData.phone = ph;
+    }
+
+    if (input.age !== undefined) updateData.age = input.age;
+    if (input.gender !== undefined) updateData.gender = input.gender;
+    if (input.addressLine1 !== undefined)
+      updateData.addressLine1 = input.addressLine1?.trim() || null;
+    if (input.addressLine2 !== undefined)
+      updateData.addressLine2 = input.addressLine2?.trim() || null;
+    if (input.city !== undefined) updateData.city = input.city?.trim() || null;
+    if (input.state !== undefined) updateData.state = input.state?.trim() || null;
+    if (input.pincode !== undefined)
+      updateData.pincode = input.pincode?.trim() || null;
+    if (input.relationType !== undefined)
+      updateData.relationType = input.relationType?.trim() || 'Self';
+
+    const [updated] = await db
+      .update(customers)
+      .set(updateData)
+      .where(
+        and(
+          eq(customers.id, id),
+          eq(customers.organizationId, session.organizationId)
+        )
+      )
+      .returning();
+
+    if (!updated) {
+      return { success: false, error: 'Patient not found or unauthorized' };
+    }
+
+    revalidatePath('/admin/patients');
+    revalidatePath('/pos/new-bill');
+
+    return { success: true, patient: updated };
+  } catch (err: unknown) {
+    console.error('[updatePatientAction] Error:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to update patient',
+    };
+  }
+}
+
+export async function deletePatientAction(id: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const session = await getCurrentSession();
+
+    // Check if customer exists under tenant
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(
+        and(
+          eq(customers.id, id),
+          eq(customers.organizationId, session.organizationId)
+        )
+      )
+      .limit(1);
+
+    if (!customer) {
+      return { success: false, error: 'Patient not found' };
+    }
+
+    // Soft-delete the customer to safeguard historical orders and prescriptions
+    await db
+      .update(customers)
+      .set({
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(customers.id, id),
+          eq(customers.organizationId, session.organizationId)
+        )
+      );
+
+    revalidatePath('/admin/patients');
+    revalidatePath('/pos/new-bill');
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error('[deletePatientAction] Error:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to delete patient',
+    };
+  }
+}
 
 export interface PatientSummary {
   id: string;
@@ -124,7 +320,12 @@ export async function getPatients(): Promise<{
     const allCustomers = await db
       .select()
       .from(customers)
-      .where(eq(customers.organizationId, session.organizationId))
+      .where(
+        and(
+          eq(customers.organizationId, session.organizationId),
+          isNull(customers.deletedAt)
+        )
+      )
       .orderBy(desc(customers.createdAt));
 
     const allInvoices = await db

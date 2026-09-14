@@ -44,6 +44,7 @@ import {
 import { AddProductModal } from '@/components/pos/add-product-modal';
 import { CartItemEditModal } from '@/components/pos/cart-item-edit-modal';
 import { InvoiceDetailsModal } from '@/components/pos/invoice-details-modal';
+import { QuickAddPatientModal } from '@/components/pos/quick-add-patient-modal';
 import { getDynamicRelationship } from '@/lib/patient-relationship';
 import {
   PlusCircle,
@@ -118,6 +119,8 @@ export function PosView() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [editingCartItem, setEditingCartItem] = useState<CartItem | null>(null);
   const [isInvoiceDetailsModalOpen, setIsInvoiceDetailsModalOpen] = useState(false);
+  const [isQuickAddPatientOpen, setIsQuickAddPatientOpen] = useState(false);
+  const [quickAddPrefill, setQuickAddPrefill] = useState('');
 
   // Clean family members cluster & purchase history states
   const [availableFamilyMembers, setAvailableFamilyMembers] = useState<POSPatient[]>([]);
@@ -602,66 +605,85 @@ export function PosView() {
     <div className="flex flex-col h-full w-full p-4 md:p-6 gap-4 md:gap-6">
       {/* ── POS Sub-header: Quick Patient Search & New Order Action ── */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 shrink-0">
-        {/* Mounted Patient Search Component */}
-        <div className="w-96 max-w-md">
-          <PatientSearch
-            onPatientSelect={async (patient) => {
-              const rawRel =
-                patient.relationType ||
-                (patient.primaryCustomerId ? 'Family' : 'Self');
+        {/* Mounted Patient Search Component & Quick Register Button */}
+        <div className="flex items-center gap-2 w-full max-w-lg">
+          <div className="flex-1">
+            <PatientSearch
+              onPatientSelect={async (patient) => {
+                const rawRel =
+                  patient.relationType ||
+                  (patient.primaryCustomerId ? 'Family' : 'Self');
 
-              const currentPatient: POSPatient = {
-                id: patient.id,
-                fullName: patient.fullName,
-                phone: patient.phone,
-                age: patient.age,
-                gender: patient.gender,
-                relationType: 'Current',
-                rawRelationType: rawRel,
-                primaryCustomerId: patient.primaryCustomerId,
-                advanceBalance: patient.advanceBalance || '0.00',
-                city: patient.city,
-                isPayer: true,
-              };
+                const currentPatient: POSPatient = {
+                  id: patient.id,
+                  fullName: patient.fullName,
+                  phone: patient.phone,
+                  age: patient.age,
+                  gender: patient.gender,
+                  relationType: 'Current',
+                  rawRelationType: rawRel,
+                  primaryCustomerId: patient.primaryCustomerId,
+                  advanceBalance: patient.advanceBalance || '0.00',
+                  city: patient.city,
+                  isPayer: true,
+                };
 
-              // Clean single customer load: ONLY selected patient on current order!
-              setActivePatients([currentPatient]);
-              setSelectedPatient(currentPatient);
-              setActivePrescriptionPatientId(currentPatient.id);
-              setActiveLeftTab('rx');
+                // Clean single customer load: ONLY selected patient on current order!
+                setActivePatients([currentPatient]);
+                setSelectedPatient(currentPatient);
+                setActivePrescriptionPatientId(currentPatient.id);
+                setActiveLeftTab('rx');
 
-              // Background fetch: linked family cluster (for Add Family modal)
-              try {
-                const familyRes = await getLinkedFamilyGroup(patient.id);
-                if (familyRes.success && familyRes.members) {
-                  setAvailableFamilyMembers(familyRes.members);
+                // Background fetch: linked family cluster (for Add Family modal)
+                try {
+                  const familyRes = await getLinkedFamilyGroup(patient.id);
+                  if (familyRes.success && familyRes.members) {
+                    setAvailableFamilyMembers(familyRes.members);
+                  }
+                } catch (e) {
+                  console.error('[PosView] Error resolving linked family cluster:', e);
                 }
-              } catch (e) {
-                console.error('[PosView] Error resolving linked family cluster:', e);
-              }
 
-              // Background fetch: purchase order history
-              try {
-                setIsLoadingOrders(true);
-                const orderRes = await getPatientOrderHistory(patient.id);
-                if (orderRes.success && orderRes.orders) {
-                  setPatientOrderHistories((prev) => ({
-                    ...prev,
-                    [patient.id]: orderRes.orders,
-                  }));
+                // Background fetch: purchase order history
+                try {
+                  setIsLoadingOrders(true);
+                  const orderRes = await getPatientOrderHistory(patient.id);
+                  if (orderRes.success && orderRes.orders) {
+                    setPatientOrderHistories((prev) => ({
+                      ...prev,
+                      [patient.id]: orderRes.orders,
+                    }));
+                  }
+                } catch (e) {
+                  console.error('[PosView] Error fetching order history:', e);
+                } finally {
+                  setIsLoadingOrders(false);
                 }
-              } catch (e) {
-                console.error('[PosView] Error fetching order history:', e);
-              } finally {
-                setIsLoadingOrders(false);
-              }
+              }}
+              selectedPatient={selectedPatient}
+              onClearPatient={() => {
+                setSelectedPatient(null);
+                setAvailableFamilyMembers([]);
+              }}
+              onOpenAddPatientModal={(prefill) => {
+                setQuickAddPrefill(prefill || '');
+                setIsQuickAddPatientOpen(true);
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            data-testid="btn-pos-add-patient"
+            onClick={() => {
+              setQuickAddPrefill('');
+              setIsQuickAddPatientOpen(true);
             }}
-            selectedPatient={selectedPatient}
-            onClearPatient={() => {
-              setSelectedPatient(null);
-              setAvailableFamilyMembers([]);
-            }}
-          />
+            className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-2.5 text-xs font-semibold text-white shadow-2xs transition active:scale-95 shrink-0"
+            title="Register New Patient"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span className="hidden sm:inline">New Patient</span>
+          </button>
         </div>
 
         {/* Right Actions */}
@@ -1471,6 +1493,32 @@ export function PosView() {
         defaultCustomerName={selectedPatient?.fullName || ''}
         defaultPhone={selectedPatient?.phone || ''}
         onSave={(details) => setInvoiceBillingDetails(details)}
+      />
+
+      {/* ── Quick Register Patient Modal ── */}
+      <QuickAddPatientModal
+        isOpen={isQuickAddPatientOpen}
+        onClose={() => setIsQuickAddPatientOpen(false)}
+        prefillQuery={quickAddPrefill}
+        onPatientCreated={(newPatient) => {
+          const posPatient: POSPatient = {
+            id: newPatient.id,
+            fullName: newPatient.fullName,
+            phone: newPatient.phone,
+            age: newPatient.age,
+            gender: newPatient.gender,
+            relationType: 'Current',
+            rawRelationType: newPatient.relationType || 'Self',
+            primaryCustomerId: newPatient.primaryCustomerId,
+            advanceBalance: newPatient.advanceBalance || '0.00',
+            city: newPatient.city,
+            isPayer: true,
+          };
+          setActivePatients([posPatient]);
+          setSelectedPatient(posPatient);
+          setActivePrescriptionPatientId(posPatient.id);
+          setActiveLeftTab('rx');
+        }}
       />
 
       {/* ── MOUNTED PRINT TEMPLATES (Hidden on screen via @media screen, active on print) ── */}

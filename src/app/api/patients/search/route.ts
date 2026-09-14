@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { customers } from '@/db/schema';
-import { like, or, eq, ilike, and } from 'drizzle-orm';
+import { like, or, eq, ilike, and, isNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { cacheGet, cacheSet } from '@/lib/redis';
 import { getCurrentSession } from '@/lib/auth-utils';
@@ -46,6 +46,7 @@ export async function GET(request: Request) {
     .where(
       and(
         eq(customers.organizationId, session.organizationId),
+        isNull(customers.deletedAt),
         or(
           like(customers.phone, `${query}%`),
           ilike(customers.fullName, `%${query}%`)
@@ -75,7 +76,12 @@ export async function GET(request: Request) {
         city: customers.city,
       })
       .from(customers)
-      .where(or(...primaryIds.map((pid) => eq(customers.primaryCustomerId, pid))));
+      .where(
+        and(
+          isNull(customers.deletedAt),
+          or(...primaryIds.map((pid) => eq(customers.primaryCustomerId, pid)))
+        )
+      );
 
     for (const dep of dependents) {
       if (!allPatients.some((p) => p.id === dep.id)) {

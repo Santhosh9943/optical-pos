@@ -32,6 +32,7 @@ interface PatientSearchProps {
   selectedPatient?: Patient | null;
   onClearPatient?: () => void;
   onOpenAddFamilyModal?: () => void;
+  onOpenAddPatientModal?: (prefill?: string) => void;
 }
 
 export function PatientSearch({
@@ -39,6 +40,7 @@ export function PatientSearch({
   selectedPatient,
   onClearPatient,
   onOpenAddFamilyModal,
+  onOpenAddPatientModal,
 }: PatientSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Patient[]>([]);
@@ -250,16 +252,49 @@ export function PatientSearch({
                   );
                 })}
               </ul>
+
+              {onOpenAddPatientModal && (
+                <div className="border-t border-slate-100 dark:border-slate-800 p-1.5 bg-slate-50/50 dark:bg-slate-950/50">
+                  <button
+                    type="button"
+                    data-testid="dropdown-btn-add-new-patient"
+                    onClick={() => {
+                      setIsOpen(false);
+                      onOpenAddPatientModal(query);
+                    }}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60 transition"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Register New Patient</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : query.trim().length >= 3 && !isSearching ? (
-            <div className="p-4 text-center">
+            <div className="p-4 text-center space-y-3">
               <AlertCircle className="mx-auto h-5 w-5 text-slate-500 dark:text-slate-300" />
-              <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-                No patient found with phone matching &quot;{query}&quot;
-              </p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-0.5">
-                Click &quot;+ Add Family Member&quot; or register a new patient below.
-              </p>
+              <div>
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                  No patient found matching &quot;{query}&quot;
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Register this patient now to proceed with billing
+                </p>
+              </div>
+              {onOpenAddPatientModal && (
+                <button
+                  type="button"
+                  data-testid="empty-btn-add-new-patient"
+                  onClick={() => {
+                    setIsOpen(false);
+                    onOpenAddPatientModal(query);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition active:scale-95"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add New Patient &quot;{query}&quot;</span>
+                </button>
+              )}
             </div>
           ) : null}
         </div>

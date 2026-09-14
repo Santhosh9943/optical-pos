@@ -10,14 +10,17 @@ import {
   TrendingUp,
   RefreshCw,
   Loader2,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   getInventoryList,
+  deleteInventoryItem,
   type InventoryRow,
 } from '@/actions/inventory-actions';
 import { InventoryTable } from '@/components/admin/inventory-table';
 import { AddInventoryForm } from '@/components/admin/add-inventory-form';
+import { EditInventoryModal } from '@/components/admin/edit-inventory-modal';
 
 export interface InventoryViewProps {
   onNavigateToPos?: () => void;
@@ -27,6 +30,9 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
   const [items, setItems] = useState<InventoryRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<InventoryRow | null>(null);
+  const [deletingItem, setDeletingItem] = useState<InventoryRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const fetchItems = async () => {
@@ -63,6 +69,34 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
 
   const handleItemAdded = (newItem: InventoryRow) => {
     setItems((prev) => [newItem, ...prev.filter((i) => i.id !== newItem.id)]);
+  };
+
+  const handleItemUpdated = (updated: InventoryRow) => {
+    setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingItem) return;
+    try {
+      setIsDeleting(true);
+      const res = await deleteInventoryItem(deletingItem.id);
+      if (res.success) {
+        setItems((prev) => prev.filter((i) => i.id !== deletingItem.id));
+        toast.success('Item Removed', {
+          description: `${deletingItem.sku} has been removed from the active catalog.`,
+        });
+        setDeletingItem(null);
+      } else {
+        toast.error('Failed to delete item', {
+          description: res.error || 'Please try again.',
+        });
+      }
+    } catch (err) {
+      console.error('[InventoryView] delete error:', err);
+      toast.error('Error deleting inventory item');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Inventory KPI statistics computed safely via Decimal
@@ -249,7 +283,11 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
               </p>
             </div>
           ) : (
-            <InventoryTable items={items} />
+            <InventoryTable
+              items={items}
+              onEditItem={(item) => setEditingItem(item)}
+              onDeleteItem={(item) => setDeletingItem(item)}
+            />
           )}
         </section>
 
@@ -259,6 +297,83 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={handleItemAdded}
       />
+
+      {/* ── Edit Inventory Item Modal ── */}
+      <EditInventoryModal
+        isOpen={!!editingItem}
+        onClose={() => setEditingItem(null)}
+        item={editingItem}
+        onItemUpdated={handleItemUpdated}
+      />
+
+      {/* ── Delete Confirmation Dialog ── */}
+      {deletingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs transition-opacity"
+            onClick={() => !isDeleting && setDeletingItem(null)}
+            aria-hidden="true"
+          />
+
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-inventory-dialog-title"
+            className="relative z-50 w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 font-sans space-y-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3
+                  id="delete-inventory-dialog-title"
+                  className="text-base font-bold text-slate-900 dark:text-slate-100"
+                >
+                  Remove Inventory Item?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {deletingItem.sku} • {deletingItem.brand || ''} {deletingItem.model || ''}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Are you sure you want to remove this item? If it has been previously billed on customer invoices, it will be safely archived without breaking historical records. If it has never been billed, it will be deleted permanently.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setDeletingItem(null)}
+                disabled={isDeleting}
+                className="rounded-lg px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                data-testid="btn-confirm-delete-inventory"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-xs font-semibold text-white shadow-xs transition active:scale-95 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Removing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Confirm Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
