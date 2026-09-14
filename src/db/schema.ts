@@ -108,6 +108,49 @@ export type ReceiptType = (typeof receiptTypeEnum.enumValues)[number];
 export const invoiceNumberSeq = pgSequence('invoice_number_seq', { startWith: 1 });
 
 // ─────────────────────────────────────────────────────────────
+// ORGANIZATIONS (SAAS TENANTS)
+// ─────────────────────────────────────────────────────────────
+
+export const organizations = pgTable('organizations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 200 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type Organization = typeof organizations.$inferSelect;
+export type NewOrganization = typeof organizations.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────
+// BRANCHES (PHYSICAL STORES)
+// ─────────────────────────────────────────────────────────────
+
+export const branches = pgTable(
+  'branches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 200 }).notNull(),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    organizationIdx: index('branches_organization_idx').on(table.organizationId),
+  })
+);
+
+export type Branch = typeof branches.$inferSelect;
+export type NewBranch = typeof branches.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────
 // CUSTOMERS
 // ─────────────────────────────────────────────────────────────
 
@@ -133,6 +176,9 @@ export const customers = pgTable(
     })
       .notNull()
       .default('0.00'),
+    organizationId: uuid('organization_id').references(() => organizations.id, {
+      onDelete: 'cascade',
+    }),
     metadata: text('metadata'), // JSONB-like free text for extensions
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -147,6 +193,7 @@ export const customers = pgTable(
     primaryCustomerIdx: index('customers_primary_customer_idx').on(
       table.primaryCustomerId
     ),
+    orgIdx: index('customers_organization_idx').on(table.organizationId),
   })
 );
 
@@ -247,6 +294,12 @@ export const inventoryItems = pgTable(
     lensType: lensTypeEnum('lens_type'),
     coating: coatingEnum('coating'),
     lensMaterial: lensMaterialEnum('lens_material'),
+    organizationId: uuid('organization_id').references(() => organizations.id, {
+      onDelete: 'cascade',
+    }),
+    branchId: uuid('branch_id').references(() => branches.id, {
+      onDelete: 'set null',
+    }),
     // Audit
     isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true })
@@ -268,6 +321,8 @@ export const inventoryItems = pgTable(
       table.stockQuantity,
       table.lowStockThreshold
     ),
+    orgIdx: index('inventory_organization_idx').on(table.organizationId),
+    branchIdx: index('inventory_branch_idx').on(table.branchId),
   })
 );
 
@@ -354,6 +409,12 @@ export const invoices = pgTable(
       length: 50,
     }),
     notes: text('notes'),
+    organizationId: uuid('organization_id').references(() => organizations.id, {
+      onDelete: 'cascade',
+    }),
+    branchId: uuid('branch_id').references(() => branches.id, {
+      onDelete: 'set null',
+    }),
     // Audit
     createdBy: uuid('created_by'),
     createdAt: timestamp('created_at', { withTimezone: true })
@@ -379,6 +440,8 @@ export const invoices = pgTable(
     prescriptionIdx: index('invoice_prescription_idx').on(
       table.prescriptionId
     ),
+    orgIdx: index('invoice_organization_idx').on(table.organizationId),
+    branchIdx: index('invoice_branch_idx').on(table.branchId),
   })
 );
 
@@ -455,6 +518,12 @@ export const payments = pgTable(
     transactionReference: varchar('transaction_reference', {
       length: 100,
     }),
+    organizationId: uuid('organization_id').references(() => organizations.id, {
+      onDelete: 'cascade',
+    }),
+    branchId: uuid('branch_id').references(() => branches.id, {
+      onDelete: 'set null',
+    }),
     collectedBy: uuid('collected_by'),
     paidAt: timestamp('paid_at', { withTimezone: true })
       .notNull()
@@ -467,6 +536,8 @@ export const payments = pgTable(
     invoiceIdx: index('payment_invoice_idx').on(table.invoiceId),
     paidAtIdx: index('payment_paid_at_idx').on(table.paidAt),
     modeIdx: index('payment_mode_idx').on(table.paymentMode),
+    orgIdx: index('payment_organization_idx').on(table.organizationId),
+    branchIdx: index('payment_branch_idx').on(table.branchId),
   })
 );
 
@@ -495,6 +566,9 @@ export const storeProfile = pgTable('store_profile', {
   receiptType: receiptTypeEnum('receipt_type')
     .notNull()
     .default('THERMAL_80MM'),
+  branchId: uuid('branch_id').references(() => branches.id, {
+    onDelete: 'set null',
+  }),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -510,7 +584,30 @@ export type NewStoreProfile = typeof storeProfile.$inferInsert;
 // RELATIONS (for Drizzle query API)
 // ─────────────────────────────────────────────────────────────
 
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  branches: many(branches),
+  customers: many(customers),
+  inventoryItems: many(inventoryItems),
+  invoices: many(invoices),
+  payments: many(payments),
+}));
+
+export const branchesRelations = relations(branches, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [branches.organizationId],
+    references: [organizations.id],
+  }),
+  inventoryItems: many(inventoryItems),
+  invoices: many(invoices),
+  payments: many(payments),
+  storeProfiles: many(storeProfile),
+}));
+
 export const customersRelations = relations(customers, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [customers.organizationId],
+    references: [organizations.id],
+  }),
   primaryCustomer: one(customers, {
     fields: [customers.primaryCustomerId],
     references: [customers.id],
@@ -532,7 +629,30 @@ export const prescriptionsRelations = relations(
   })
 );
 
+export const inventoryItemsRelations = relations(
+  inventoryItems,
+  ({ one, many }) => ({
+    organization: one(organizations, {
+      fields: [inventoryItems.organizationId],
+      references: [organizations.id],
+    }),
+    branch: one(branches, {
+      fields: [inventoryItems.branchId],
+      references: [branches.id],
+    }),
+    invoiceItems: many(invoiceItems),
+  })
+);
+
 export const invoicesRelations = relations(invoices, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [invoices.organizationId],
+    references: [organizations.id],
+  }),
+  branch: one(branches, {
+    fields: [invoices.branchId],
+    references: [branches.id],
+  }),
   customer: one(customers, {
     fields: [invoices.customerId],
     references: [customers.id],
@@ -568,6 +688,14 @@ export const invoiceItemsRelations = relations(
 );
 
 export const paymentsRelations = relations(payments, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [payments.organizationId],
+    references: [organizations.id],
+  }),
+  branch: one(branches, {
+    fields: [payments.branchId],
+    references: [branches.id],
+  }),
   invoice: one(invoices, {
     fields: [payments.invoiceId],
     references: [invoices.id],

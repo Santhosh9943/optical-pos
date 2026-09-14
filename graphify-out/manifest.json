@@ -30,10 +30,10 @@
     "semantic_hash": "bdc1e8623d9b7058606568c8a8bae5cb"
   },
   "drizzle/meta/_journal.json": {
-    "mtime": 1789310045.0977547,
-    "seen": 1789352510.8420079,
-    "ast_hash": "d26ac04abb70213281b9574cc5587425",
-    "semantic_hash": "d26ac04abb70213281b9574cc5587425"
+    "mtime": 1789361324.2097962,
+    "seen": 1789361657.6653826,
+    "ast_hash": "e953bff3817802025936637e35aa6352",
+    "semantic_hash": "e953bff3817802025936637e35aa6352"
   },
   "e2e/balance-settlement.spec.ts": {
     "mtime": 1789344764.5933135,
@@ -330,10 +330,10 @@
     "semantic_hash": "6fab6fa2b192d782d9446343c5a6114e"
   },
   "src/db/schema.ts": {
-    "mtime": 1789356859.9688923,
-    "seen": 1789358207.524846,
-    "ast_hash": "d027bcf3bd3eafb3eaec1003a00f1222",
-    "semantic_hash": "d027bcf3bd3eafb3eaec1003a00f1222"
+    "mtime": 1789361308.2601516,
+    "seen": 1789361657.6734152,
+    "ast_hash": "6eb85588da6a7ab3f28e99c1c54539ca",
+    "semantic_hash": "6eb85588da6a7ab3f28e99c1c54539ca"
   },
   "src/db/seed.ts": {
     "mtime": 1789309461.8846815,
@@ -402,10 +402,10 @@
     "semantic_hash": "e36ba75f1032e3cf387638fe7cc1315d"
   },
   "docs/PRD.md": {
-    "mtime": 1789359624.6257637,
-    "seen": 1789360141.6033063,
-    "ast_hash": "bb2c7299f21fae112aeb811132fdddea",
-    "semantic_hash": "bb2c7299f21fae112aeb811132fdddea"
+    "mtime": 1789361360.321918,
+    "seen": 1789361657.674966,
+    "ast_hash": "b2492dfbeae9a4a9a405b3575ead4b6d",
+    "semantic_hash": "b2492dfbeae9a4a9a405b3575ead4b6d"
   },
   "e2e/settings-print.spec.ts": {
     "mtime": 1789358085.3726454,
@@ -414,10 +414,10 @@
     "semantic_hash": "f299c59b658fdc544980e4aad88302f0"
   },
   "src/actions/settings-actions.ts": {
-    "mtime": 1789359491.96324,
-    "seen": 1789360002.4230618,
-    "ast_hash": "25b367ea80d97543157d723abe92e209",
-    "semantic_hash": "25b367ea80d97543157d723abe92e209"
+    "mtime": 1789361343.715127,
+    "seen": 1789361657.6673825,
+    "ast_hash": "6bf5593bd5afeca5a912a86098daddeb",
+    "semantic_hash": "6bf5593bd5afeca5a912a86098daddeb"
   },
   "src/app/(dashboard)/admin/settings/page.tsx": {
     "mtime": 1789356913.960578,
@@ -466,5 +466,17 @@
     "seen": 1789360814.6809556,
     "ast_hash": "7459c65a86fa44fdccc6163ba140fd4b",
     "semantic_hash": "7459c65a86fa44fdccc6163ba140fd4b"
+  },
+  "drizzle/0002_cute_molly_hayes.sql": {
+    "mtime": 1789361324.2103205,
+    "seen": 1789361657.6653826,
+    "ast_hash": "99771cb1912ab13860e41dfb232b051f",
+    "semantic_hash": "99771cb1912ab13860e41dfb232b051f"
+  },
+  "drizzle/meta/0002_snapshot.json": {
+    "mtime": 1789361324.2092674,
+    "seen": 1789361657.6653826,
+    "ast_hash": "4f694dbb4dd881476eed7c055e3113f1",
+    "semantic_hash": "4f694dbb4dd881476eed7c055e3113f1"
   }
 }

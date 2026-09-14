@@ -83,6 +83,7 @@ export async function getStoreProfile(): Promise<StoreProfile> {
       address: '123 Optical Plaza, MG Road, Bengaluru - 560001',
       defaultTaxRate: '18.00',
       receiptType: 'THERMAL_80MM' as ReceiptType,
+      branchId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
