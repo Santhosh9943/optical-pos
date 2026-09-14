@@ -20,8 +20,6 @@ import {
   ChevronLeft,
   ChevronDown,
   ChevronUp,
-  ArrowDown,
-  ArrowUp,
   Loader2,
   SlidersHorizontal,
   PackageCheck,
@@ -195,34 +193,6 @@ export function ReportsView() {
 
   const handlePrintZReport = () => {
     window.print();
-  };
-
-  // Smooth scroll helper functions
-  const handleScrollDown = () => {
-    if (tableContainerRef.current) {
-      tableContainerRef.current.scrollBy({ top: 300, behavior: 'smooth' });
-    }
-  };
-
-  const handleScrollUp = () => {
-    if (tableContainerRef.current) {
-      tableContainerRef.current.scrollBy({ top: -300, behavior: 'smooth' });
-    }
-  };
-
-  const handleScrollToBottom = () => {
-    if (tableContainerRef.current) {
-      tableContainerRef.current.scrollTo({
-        top: tableContainerRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-  };
-
-  const handleScrollToTop = () => {
-    if (tableContainerRef.current) {
-      tableContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
   };
 
   // Client-side text search within currently fetched ledger
@@ -638,32 +608,8 @@ export function ReportsView() {
                   </p>
                 </div>
 
-                {/* Action Controls: Down/Up Scroll Buttons & Quick Search */}
+                {/* Action Controls: Quick Search */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  {/* Dedicated Scroll Down & Up Buttons */}
-                  <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 p-1 rounded-lg border border-slate-200 dark:border-slate-800 no-print">
-                    <button
-                      type="button"
-                      data-testid="btn-scroll-down"
-                      onClick={handleScrollDown}
-                      className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-2 py-1 text-xs font-bold border border-blue-200 dark:border-blue-800 transition cursor-pointer"
-                      title="Scroll Table Down"
-                    >
-                      <ArrowDown className="h-3.5 w-3.5" />
-                      <span>Scroll Down</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      data-testid="btn-scroll-up"
-                      onClick={handleScrollUp}
-                      className="p-1 rounded text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
-                      title="Scroll Table Up"
-                    >
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-
                   {/* Search Input */}
                   <div className="relative w-full sm:w-60">
                     <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />

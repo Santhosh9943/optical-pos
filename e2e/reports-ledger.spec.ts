@@ -28,19 +28,7 @@ test.describe('Reports & Audit Ledger Date Range, Scrolling & Pagination Suite',
     const countNum = parseInt(totalCountText, 10);
     expect(countNum).toBeGreaterThan(4);
 
-    // 5. Test Scroll Down and Scroll Up action buttons
-    const scrollDownBtn = page.getByTestId('btn-scroll-down');
-    const scrollUpBtn = page.getByTestId('btn-scroll-up');
-    await expect(scrollDownBtn).toBeVisible();
-    await expect(scrollUpBtn).toBeVisible();
-
-    // Click scroll down button
-    await scrollDownBtn.click();
-    await page.waitForTimeout(200);
-    await scrollUpBtn.click();
-    await page.waitForTimeout(200);
-
-    // 6. Test Pagination Controls: Change Rows Per Page to 5
+    // 5. Test Pagination Controls: Change Rows Per Page to 5
     const pageSizeSelect = page.getByTestId('select-page-size');
     await expect(pageSizeSelect).toBeVisible();
     await pageSizeSelect.selectOption('5');
