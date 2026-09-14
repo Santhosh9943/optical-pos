@@ -20,6 +20,7 @@ import {
   NegativeBalanceError,
 } from '@/lib/errors';
 import Decimal from 'decimal.js';
+import { getCurrentSession } from '@/lib/auth-utils';
 
 // ─────────────────────────────────────────────────────────────
 // Typed response
@@ -82,6 +83,7 @@ export async function processOpticalOrder(
   }
 
   const input: CreateOrderInput = parsed.data;
+  const session = await getCurrentSession();
 
   // ── Step 2: Pre-transaction validation ──
 
@@ -89,7 +91,12 @@ export async function processOpticalOrder(
   const [existingCustomer] = await db
     .select({ id: customers.id, phone: customers.phone })
     .from(customers)
-    .where(eq(customers.id, input.customerId))
+    .where(
+      and(
+        eq(customers.id, input.customerId),
+        eq(customers.organizationId, session.organizationId)
+      )
+    )
     .limit(1);
 
   const customerInPatients = input.patients?.find(
@@ -222,6 +229,7 @@ export async function processOpticalOrder(
               gender: p.gender ?? null,
               relationType: p.relationType || 'Other',
               primaryCustomerId: validPrimaryId,
+              organizationId: session.organizationId,
             })
             .returning({ id: customers.id });
 
@@ -409,6 +417,8 @@ export async function processOpticalOrder(
             (input.billingDetails?.billingName
               ? `Billed to: ${input.billingDetails.billingName}`
               : null),
+          organizationId: session.organizationId,
+          branchId: session.branchId,
         })
         .returning({ id: invoices.id, invoiceNumber: invoices.invoiceNumber });
 
@@ -442,6 +452,8 @@ export async function processOpticalOrder(
           amount: advancePaid.toFixed(2),
           paymentMode: input.advancePayment.mode,
           transactionReference: input.advancePayment.reference ?? null,
+          organizationId: session.organizationId,
+          branchId: session.branchId,
         });
       }
 

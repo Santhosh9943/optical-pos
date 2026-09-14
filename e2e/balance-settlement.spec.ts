@@ -7,6 +7,7 @@ import {
   payments,
 } from '../src/db/schema';
 import { eq } from 'drizzle-orm';
+import { DEFAULT_ORG_ID, DEFAULT_BRANCH_ID } from '../src/lib/auth-utils';
 
 test.describe('Stage 8: Balance Settlement & Order Delivery E2E Suite', () => {
   test('Collect pending balance, record UPI payment, and deliver order', async ({
@@ -55,6 +56,8 @@ test.describe('Stage 8: Balance Settlement & Order Delivery E2E Suite', () => {
         balanceDue: '3000.00',
         promisedDeliveryDate: new Date(),
         notes: 'Stage 8 Automated Settlement Test',
+        organizationId: DEFAULT_ORG_ID,
+        branchId: DEFAULT_BRANCH_ID,
       })
       .returning();
 
@@ -77,6 +80,8 @@ test.describe('Stage 8: Balance Settlement & Order Delivery E2E Suite', () => {
       amount: '2000.00',
       paymentMode: 'CASH',
       transactionReference: `INIT-ADV-${uniqueSuffix}`,
+      organizationId: DEFAULT_ORG_ID,
+      branchId: DEFAULT_BRANCH_ID,
     });
 
     // ── 2. Navigate to /admin/lab-orders ──

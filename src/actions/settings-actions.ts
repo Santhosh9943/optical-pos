@@ -58,6 +58,9 @@ export async function getStoreProfile(): Promise<StoreProfile> {
     }
 
     // Initialize default profile row if table is empty
+    const { getCurrentSession } = await import('@/lib/auth-utils');
+    const session = await getCurrentSession();
+
     const [newProfile] = await db
       .insert(storeProfile)
       .values({
@@ -67,6 +70,7 @@ export async function getStoreProfile(): Promise<StoreProfile> {
         address: '123 Optical Plaza, MG Road, Bengaluru - 560001',
         defaultTaxRate: '18.00',
         receiptType: 'THERMAL_80MM',
+        branchId: session.branchId,
       })
       .returning();
 

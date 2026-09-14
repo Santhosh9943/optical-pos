@@ -6,8 +6,10 @@
       "ref_react",
       "ref_use_debounce",
       "src_actions_patient_actions_linkexistingcustomertofamily",
-      "src_actions_patient_actions_patientorderhistoryitem",
       "src_actions_patient_actions_patientprescriptionhistory",
+      "src_components_admin_workshop_slip_modal",
+      "src_components_admin_workshop_slip_modal_workshopslipmodal",
+      "src_components_admin_workshop_slip_modal_workshopslipmodalprops",
       "src_components_pos_add_family_member_modal",
       "src_components_pos_add_family_member_modal_addfamilymembermodal",
       "src_components_pos_add_family_member_modal_addfamilymembermodalprops",
@@ -49,6 +51,7 @@
       "src_components_pos_pos_view",
       "src_components_pos_prescription_grid",
       "src_components_pos_prescription_grid_formatdioptre",
+      "src_components_pos_prescription_grid_historytoprescriptionvalues",
       "src_components_pos_prescription_grid_initialprescriptionvalues",
       "src_components_pos_prescription_grid_parsedioptre",
       "src_components_pos_prescription_grid_prescriptiongrid",
@@ -56,6 +59,17 @@
       "src_components_pos_prescription_grid_prescriptionvalues",
       "src_components_pos_prescription_grid_stepfield",
       "src_components_pos_prescription_grid_stepfieldprops",
+      "src_components_pos_print_a4_invoice",
+      "src_components_pos_print_a4_invoice_a4invoice",
+      "src_components_pos_print_a4_invoice_formatdiopter",
+      "src_components_pos_print_layouts",
+      "src_components_pos_print_layouts_formatdiopter",
+      "src_components_pos_print_layouts_printcustomerdata",
+      "src_components_pos_print_layouts_printinvoiceitem",
+      "src_components_pos_print_layouts_printorderdata",
+      "src_components_pos_print_layouts_printprescriptiondata",
+      "src_components_pos_print_layouts_thermalreceipt",
+      "src_components_pos_print_layouts_workshopslip",
       "src_components_pos_spectacle_wizard_modal",
       "src_components_pos_spectacle_wizard_modal_lens_coatings",
       "src_components_pos_spectacle_wizard_modal_lens_materials",
@@ -63,6 +77,17 @@
       "src_components_pos_spectacle_wizard_modal_spectaclepairconfig",
       "src_components_pos_spectacle_wizard_modal_spectaclewizardmodal",
       "src_components_pos_spectacle_wizard_modal_spectaclewizardmodalprops",
+      "src_components_print_a4taxinvoice",
+      "src_components_print_a4taxinvoice_a4taxinvoice",
+      "src_components_print_a4taxinvoice_a4taxinvoiceprops",
+      "src_components_print_index",
+      "src_components_print_thermalreceipt",
+      "src_components_print_thermalreceipt_thermalreceipt",
+      "src_components_print_thermalreceipt_thermalreceiptprops",
+      "src_components_print_workshoplabslip",
+      "src_components_print_workshoplabslip_formatdiopter",
+      "src_components_print_workshoplabslip_workshoplabslip",
+      "src_components_print_workshoplabslip_workshoplabslipprops",
       "src_lib_patient_relationship",
       "src_lib_patient_relationship_getdynamicrelationship",
       "src_lib_patient_relationship_patientrelationmeta",
@@ -72,58 +97,12 @@
       "src_store_pos_store_invoicebillingdetails",
       "src_store_pos_store_pospatient",
       "src_store_pos_store_posstate",
-      "src_store_pos_store_printmode"
+      "src_store_pos_store_printmode",
+      "src_store_pos_store_useposstore"
     ],
     "1": [
-      "ref_next",
-      "ref_next_themes",
-      "ref_sonner",
-      "src_actions_lab_actions_getactivelaborders",
-      "src_actions_lab_actions_labordersummary",
-      "src_actions_lab_actions_updateorderstatus",
-      "src_actions_payment_actions_collectbalance",
-      "src_actions_report_actions",
-      "src_actions_report_actions_dailyfinancialsreport",
-      "src_actions_report_actions_dailyreporttransaction",
-      "src_actions_report_actions_datepreset",
-      "src_actions_report_actions_financialsreportfilter",
-      "src_actions_report_actions_formatdatestr",
-      "src_actions_report_actions_getdailyfinancials",
-      "src_actions_report_actions_getfinancialsreport",
-      "src_actions_report_actions_resolvedaterange",
-      "src_app_dashboard_admin_lab_orders_page",
-      "src_app_dashboard_admin_lab_orders_page_dynamic",
-      "src_app_dashboard_admin_lab_orders_page_laborderspage",
-      "src_app_dashboard_admin_lab_orders_page_metadata",
-      "src_app_dashboard_admin_reports_page",
-      "src_app_dashboard_admin_reports_page_reportspage",
-      "src_app_dashboard_layout",
-      "src_app_dashboard_layout_dashboardlayout",
-      "src_app_layout",
-      "src_app_layout_metadata",
-      "src_app_layout_rootlayout",
-      "src_components_admin_lab_orders_view",
-      "src_components_admin_lab_orders_view_labordersview",
-      "src_components_admin_lab_orders_view_labordersviewprops",
-      "src_components_admin_lab_orders_view_ordercard",
-      "src_components_admin_lab_orders_view_ordercardprops",
-      "src_components_admin_lab_orders_view_tabkey",
-      "src_components_admin_reports_view",
-      "src_components_admin_reports_view_reportsview",
-      "src_components_admin_settle_balance_modal",
-      "src_components_admin_settle_balance_modal_settlebalancemodal",
-      "src_components_admin_settle_balance_modal_settlebalancemodalprops",
-      "src_components_admin_settle_balance_modal_settleinvoicedata",
-      "src_components_theme_provider",
-      "src_components_theme_provider_themeprovider",
-      "src_components_theme_toggle",
-      "src_components_theme_toggle_themetoggle",
-      "src_db_schema_orderstatus",
-      "src_db_schema_paymentmode",
-      "src_db_schema_paymentstatusenum"
-    ],
-    "2": [
       "drizzle_config",
+      "e2e_auth_flow_spec",
       "e2e_caching_performance_spec",
       "e2e_lab_orders_spec",
       "e2e_pos_checkout_spec",
@@ -142,11 +121,15 @@
       "package_scripts_validate",
       "playwright_config",
       "ref_autoprefixer",
+      "ref_better_fetch_fetch",
       "ref_clsx",
       "ref_dotenv",
       "ref_drizzle_kit",
       "ref_eslint",
       "ref_eslint_config_next",
+      "ref_neondatabase_serverless",
+      "ref_next",
+      "ref_next_themes",
       "ref_playwright_test",
       "ref_postcss",
       "ref_react_dom",
@@ -157,12 +140,53 @@
       "ref_types_react",
       "ref_types_react_dom",
       "ref_typescript",
-      "ref_zod",
       "ref_zustand",
+      "src_app_layout",
+      "src_app_layout_metadata",
+      "src_app_layout_rootlayout",
+      "src_components_theme_provider",
+      "src_components_theme_provider_themeprovider",
       "src_lib_utils",
       "src_lib_utils_cn",
       "tailwind_config",
       "tailwind_config_config"
+    ],
+    "2": [
+      "src_db_schema",
+      "src_db_schema_account",
+      "src_db_schema_accountrelations",
+      "src_db_schema_branch",
+      "src_db_schema_branchesrelations",
+      "src_db_schema_coatingenum",
+      "src_db_schema_customersrelations",
+      "src_db_schema_genderenum",
+      "src_db_schema_inventorycategoryenum",
+      "src_db_schema_inventoryitemsrelations",
+      "src_db_schema_invitation",
+      "src_db_schema_invitationrelations",
+      "src_db_schema_invoiceitemsrelations",
+      "src_db_schema_invoicenumberseq",
+      "src_db_schema_invoicesrelations",
+      "src_db_schema_lensmaterialenum",
+      "src_db_schema_lenstypeenum",
+      "src_db_schema_member",
+      "src_db_schema_memberrelations",
+      "src_db_schema_newbranch",
+      "src_db_schema_neworganization",
+      "src_db_schema_newstoreprofile",
+      "src_db_schema_organization",
+      "src_db_schema_organizationrelations",
+      "src_db_schema_organizationsrelations",
+      "src_db_schema_paymentmodeenum",
+      "src_db_schema_paymentsrelations",
+      "src_db_schema_prescriptionsrelations",
+      "src_db_schema_receipttypeenum",
+      "src_db_schema_session",
+      "src_db_schema_sessionrelations",
+      "src_db_schema_user",
+      "src_db_schema_userrelations",
+      "src_db_schema_userroleenum",
+      "src_db_schema_verification"
     ],
     "3": [
       "drizzle_0000_dashing_runaways",
@@ -234,6 +258,7 @@
       "src_actions_patient_actions_getpatientprescriptions",
       "src_actions_patient_actions_getpatients",
       "src_actions_patient_actions_patientdetailhistory",
+      "src_actions_patient_actions_patientorderhistoryitem",
       "src_actions_patient_actions_patientsummary",
       "src_actions_patient_actions_savenewprescription",
       "src_actions_patient_actions_updatecustomerphone",
@@ -248,65 +273,36 @@
       "src_components_admin_patient_detail_sheet_prescriptioncard",
       "src_components_admin_patients_view",
       "src_components_admin_patients_view_patientsview",
-      "src_components_pos_pos_view_posview",
-      "src_components_pos_prescription_grid_historytoprescriptionvalues",
-      "src_store_pos_store_useposstore"
+      "src_components_admin_settle_balance_modal_settleinvoicedata",
+      "src_components_pos_pos_view_posview"
     ],
     "6": [
-      "src_components_admin_workshop_slip_modal",
-      "src_components_admin_workshop_slip_modal_workshopslipmodal",
-      "src_components_admin_workshop_slip_modal_workshopslipmodalprops",
-      "src_components_pos_print_a4_invoice",
-      "src_components_pos_print_a4_invoice_a4invoice",
-      "src_components_pos_print_a4_invoice_formatdiopter",
-      "src_components_pos_print_layouts",
-      "src_components_pos_print_layouts_formatdiopter",
-      "src_components_pos_print_layouts_printcustomerdata",
-      "src_components_pos_print_layouts_printinvoiceitem",
-      "src_components_pos_print_layouts_printorderdata",
-      "src_components_pos_print_layouts_printprescriptiondata",
-      "src_components_pos_print_layouts_thermalreceipt",
-      "src_components_pos_print_layouts_workshopslip",
-      "src_components_print_a4taxinvoice",
-      "src_components_print_a4taxinvoice_a4taxinvoice",
-      "src_components_print_a4taxinvoice_a4taxinvoiceprops",
-      "src_components_print_index",
-      "src_components_print_thermalreceipt",
-      "src_components_print_thermalreceipt_thermalreceipt",
-      "src_components_print_thermalreceipt_thermalreceiptprops",
-      "src_components_print_workshoplabslip",
-      "src_components_print_workshoplabslip_formatdiopter",
-      "src_components_print_workshoplabslip_workshoplabslip",
-      "src_components_print_workshoplabslip_workshoplabslipprops"
+      "src_actions_lab_actions",
+      "src_actions_lab_actions_getactivelaborders",
+      "src_actions_lab_actions_laborderitemdetail",
+      "src_actions_lab_actions_labordersummary",
+      "src_actions_lab_actions_updateorderstatus",
+      "src_actions_payment_actions",
+      "src_actions_payment_actions_collectbalance",
+      "src_actions_payment_actions_collectbalanceresult",
+      "src_app_dashboard_admin_lab_orders_page",
+      "src_app_dashboard_admin_lab_orders_page_dynamic",
+      "src_app_dashboard_admin_lab_orders_page_laborderspage",
+      "src_app_dashboard_admin_lab_orders_page_metadata",
+      "src_components_admin_lab_orders_view",
+      "src_components_admin_lab_orders_view_labordersview",
+      "src_components_admin_lab_orders_view_labordersviewprops",
+      "src_components_admin_lab_orders_view_ordercard",
+      "src_components_admin_lab_orders_view_ordercardprops",
+      "src_components_admin_lab_orders_view_tabkey",
+      "src_components_admin_settle_balance_modal",
+      "src_components_admin_settle_balance_modal_settlebalancemodal",
+      "src_components_admin_settle_balance_modal_settlebalancemodalprops",
+      "src_db_schema_orderstatus",
+      "src_db_schema_paymentmode",
+      "src_db_schema_paymentstatus"
     ],
     "7": [
-      "src_db_schema",
-      "src_db_schema_branch",
-      "src_db_schema_branches",
-      "src_db_schema_branchesrelations",
-      "src_db_schema_coatingenum",
-      "src_db_schema_customersrelations",
-      "src_db_schema_genderenum",
-      "src_db_schema_inventorycategoryenum",
-      "src_db_schema_inventoryitemsrelations",
-      "src_db_schema_invoiceitemsrelations",
-      "src_db_schema_invoicenumberseq",
-      "src_db_schema_invoicesrelations",
-      "src_db_schema_lensmaterialenum",
-      "src_db_schema_lenstypeenum",
-      "src_db_schema_newbranch",
-      "src_db_schema_neworganization",
-      "src_db_schema_newstoreprofile",
-      "src_db_schema_organization",
-      "src_db_schema_organizations",
-      "src_db_schema_organizationsrelations",
-      "src_db_schema_paymentmodeenum",
-      "src_db_schema_paymentsrelations",
-      "src_db_schema_prescriptionsrelations",
-      "src_db_schema_receipttypeenum",
-      "src_db_schema_userroleenum"
-    ],
-    "8": [
       "drizzle_0002_cute_molly_hayes",
       "drizzle_0002_cute_molly_hayes_branches",
       "drizzle_0002_cute_molly_hayes_branches_organization_idx",
@@ -331,7 +327,9 @@
       "src_db_schema_invoices",
       "src_db_schema_payments"
     ],
-    "9": [
+    "8": [
+      "ref_sonner",
+      "ref_zod",
       "src_actions_inventory_actions",
       "src_actions_inventory_actions_addinventoryitem",
       "src_actions_inventory_actions_getinventorylist",
@@ -352,7 +350,7 @@
       "src_lib_validators_inventory_createinventoryitemschema",
       "src_lib_validators_inventory_inventorycategoryvalues"
     ],
-    "10": [
+    "9": [
       "tsconfig",
       "tsconfig_compileroptions",
       "tsconfig_compileroptions_allowjs",
@@ -373,8 +371,50 @@
       "tsconfig_exclude",
       "tsconfig_include"
     ],
+    "10": [
+      "drizzle_0003_lying_captain_stacy",
+      "drizzle_0003_lying_captain_stacy_account",
+      "drizzle_0003_lying_captain_stacy_account_userid_idx",
+      "drizzle_0003_lying_captain_stacy_invitation",
+      "drizzle_0003_lying_captain_stacy_invitation_email_idx",
+      "drizzle_0003_lying_captain_stacy_invitation_organizationid_idx",
+      "drizzle_0003_lying_captain_stacy_member",
+      "drizzle_0003_lying_captain_stacy_member_organizationid_idx",
+      "drizzle_0003_lying_captain_stacy_member_userid_idx",
+      "drizzle_0003_lying_captain_stacy_organization",
+      "drizzle_0003_lying_captain_stacy_organization_slug_uidx",
+      "drizzle_0003_lying_captain_stacy_session",
+      "drizzle_0003_lying_captain_stacy_session_userid_idx",
+      "drizzle_0003_lying_captain_stacy_user",
+      "drizzle_0003_lying_captain_stacy_verification",
+      "drizzle_0003_lying_captain_stacy_verification_identifier_idx",
+      "public_organization",
+      "public_user"
+    ],
     "11": [
+      "e2e_balance_settlement_spec",
+      "ref_better_auth",
+      "ref_drizzle_orm",
+      "src_app_api_auth_all_route",
+      "src_app_api_auth_all_route_get_post",
+      "src_db_index",
+      "src_db_index_db",
+      "src_db_index_pool",
+      "src_db_schema_branches",
+      "src_db_schema_organizations",
+      "src_lib_auth",
+      "src_lib_auth_auth",
+      "src_lib_auth_session",
+      "src_lib_auth_user",
+      "src_lib_auth_utils",
+      "src_lib_auth_utils_currentsessioncontext",
+      "src_lib_auth_utils_default_branch_id",
+      "src_lib_auth_utils_default_org_id"
+    ],
+    "12": [
       "package_dependencies",
+      "package_dependencies_better_auth",
+      "package_dependencies_better_fetch_fetch",
       "package_dependencies_clsx",
       "package_dependencies_decimal_js",
       "package_dependencies_drizzle_orm",
@@ -391,7 +431,7 @@
       "package_dependencies_zod",
       "package_dependencies_zustand"
     ],
-    "12": [
+    "13": [
       "src_actions_settings_actions",
       "src_actions_settings_actions_getstoreprofile",
       "src_actions_settings_actions_storeprofileinput",
@@ -407,9 +447,10 @@
       "src_components_admin_settings_view_settingsviewprops",
       "src_components_admin_settings_view_tabtype",
       "src_db_schema_receipttype",
-      "src_db_schema_storeprofile"
+      "src_db_schema_storeprofile",
+      "src_lib_redis_cachedel"
     ],
-    "13": [
+    "14": [
       "ref_upstash_redis",
       "src_app_api_inventory_search_route",
       "src_app_api_inventory_search_route_dynamic",
@@ -418,15 +459,32 @@
       "src_app_api_patients_search_route_dynamic",
       "src_app_api_patients_search_route_get",
       "src_db_schema_inventoryitems",
+      "src_lib_auth_utils_getcurrentsession",
       "src_lib_redis",
-      "src_lib_redis_cachedel",
       "src_lib_redis_cacheget",
       "src_lib_redis_cacheset",
       "src_lib_redis_initredis",
       "src_lib_redis_isredisconfigured",
       "src_lib_redis_redis"
     ],
-    "14": [
+    "15": [
+      "src_actions_report_actions",
+      "src_actions_report_actions_dailyfinancialsreport",
+      "src_actions_report_actions_dailyreporttransaction",
+      "src_actions_report_actions_datepreset",
+      "src_actions_report_actions_financialsreportfilter",
+      "src_actions_report_actions_formatdatestr",
+      "src_actions_report_actions_getdailyfinancials",
+      "src_actions_report_actions_getfinancialsreport",
+      "src_actions_report_actions_resolvedaterange",
+      "src_app_dashboard_admin_reports_page",
+      "src_app_dashboard_admin_reports_page_reportspage",
+      "src_components_admin_reports_view",
+      "src_components_admin_reports_view_reportsview",
+      "src_db_schema_orderstatusenum",
+      "src_db_schema_paymentstatusenum"
+    ],
+    "16": [
       "package_devdependencies",
       "package_devdependencies_autoprefixer",
       "package_devdependencies_dotenv",
@@ -442,21 +500,18 @@
       "package_devdependencies_types_react_dom",
       "package_devdependencies_typescript"
     ],
-    "15": [
-      "e2e_balance_settlement_spec",
-      "ref_drizzle_orm",
-      "ref_neondatabase_serverless",
-      "src_actions_lab_actions",
-      "src_actions_lab_actions_laborderitemdetail",
-      "src_actions_payment_actions",
-      "src_actions_payment_actions_collectbalanceresult",
-      "src_db_index",
-      "src_db_index_db",
-      "src_db_index_pool",
-      "src_db_schema_orderstatusenum",
-      "src_db_schema_paymentstatus"
+    "17": [
+      "src_app_auth_login_page",
+      "src_app_auth_login_page_loginformcontent",
+      "src_app_auth_login_page_loginpage",
+      "src_app_dashboard_layout",
+      "src_app_dashboard_layout_dashboardlayout",
+      "src_components_theme_toggle",
+      "src_components_theme_toggle_themetoggle",
+      "src_lib_auth_client",
+      "src_lib_auth_client_authclient"
     ],
-    "16": [
+    "18": [
       "src_db_schema_invoiceitems",
       "src_db_schema_opticalprescriptions",
       "src_db_seed",
@@ -465,73 +520,79 @@
       "src_db_seed_seedinventory",
       "src_db_seed_seedprescriptions"
     ],
-    "17": [
+    "19": [
+      "docs_prd_optixos",
       "docs_prd_tier1",
       "docs_prd_tier2",
       "docs_prd_tier3"
     ],
-    "18": [
+    "20": [
+      "src_middleware",
+      "src_middleware_config",
+      "src_middleware_middleware"
+    ],
+    "21": [
       "claude_monetary_rules",
       "claude_stack"
     ],
-    "19": [
+    "22": [
       "postcss_config",
       "postcss_config_config"
     ],
-    "20": [
+    "23": [
       "src_app_page",
       "src_app_page_homepage"
     ],
-    "21": [
+    "24": [
       "claude_concurrency_rules"
     ],
-    "22": [
+    "25": [
       "claude_optical_rules"
     ],
-    "23": [
+    "26": [
       "claude_security_rules"
     ],
-    "24": [
+    "27": [
       "claude_ui_standards"
     ],
-    "25": [
-      "docs_prd_optixos"
-    ],
-    "26": [
-      "docs_prd_tri_output_print"
-    ],
-    "27": [
-      "drizzle_0001_nebulous_black_tom"
-    ],
     "28": [
-      "eslint_config"
+      "docs_prd_decimal_js"
     ],
     "29": [
+      "drizzle_0001_nebulous_black_tom"
+    ],
+    "30": [
+      "eslint_config"
+    ],
+    "31": [
       "readme"
+    ],
+    "32": [
+      "src_lib_auth_client_signin_signup_signout_usesession"
     ]
   },
   "cohesion": {
-    "0": 0.07042253521126761,
-    "1": 0.06859903381642513,
-    "2": 0.052564102564102565,
+    "0": 0.050915211445402904,
+    "1": 0.04421768707482993,
+    "2": 0.05714285714285714,
     "3": 0.11724137931034483,
     "4": 0.09401709401709402,
     "5": 0.13,
-    "6": 0.13,
-    "7": 0.08,
-    "8": 0.1383399209486166,
-    "9": 0.21637426900584794,
-    "10": 0.10526315789473684,
-    "11": 0.125,
-    "12": 0.225,
-    "13": 0.19047619047619047,
-    "14": 0.14285714285714285,
-    "15": 0.25757575757575757,
-    "16": 0.2857142857142857,
-    "17": 0.6666666666666666,
-    "18": 1.0,
-    "19": 1.0,
-    "20": 1.0,
+    "6": 0.15217391304347827,
+    "7": 0.1383399209486166,
+    "8": 0.19047619047619047,
+    "9": 0.10526315789473684,
+    "10": 0.1895424836601307,
+    "11": 0.20261437908496732,
+    "12": 0.1111111111111111,
+    "13": 0.21323529411764705,
+    "14": 0.21904761904761905,
+    "15": 0.22857142857142856,
+    "16": 0.14285714285714285,
+    "17": 0.3055555555555556,
+    "18": 0.2857142857142857,
+    "19": 0.5,
+    "20": 0.6666666666666666,
     "21": 1.0,
     "22": 1.0,
     "23": 1.0,
@@ -540,23 +601,31 @@
     "26": 1.0,
     "27": 1.0,
     "28": 1.0,
-    "29": 1.0
+    "29": 1.0,
+    "30": 1.0,
+    "31": 1.0,
+    "32": 1.0
   },
   "gods": [
     {
       "id": "ref_react",
       "label": "react",
-      "degree": 30
+      "degree": 31
     },
     {
       "id": "ref_lucide_react",
       "label": "lucide-react",
-      "degree": 24
+      "degree": 25
     },
     {
       "id": "decimal_js",
       "label": "Decimal.js",
-      "degree": 20
+      "degree": 21
+    },
+    {
+      "id": "src_lib_auth_utils_getcurrentsession",
+      "label": "getCurrentSession()",
+      "degree": 21
     },
     {
       "id": "tsconfig_compileroptions",
@@ -564,24 +633,19 @@
       "degree": 16
     },
     {
-      "id": "ref_drizzle_orm",
-      "label": "drizzle-orm",
-      "degree": 13
-    },
-    {
-      "id": "src_components_pos_print_layouts_printorderdata",
-      "label": "PrintOrderData",
-      "degree": 12
-    },
-    {
       "id": "src_db_index_db",
       "label": "db",
-      "degree": 12
+      "degree": 14
+    },
+    {
+      "id": "ref_drizzle_orm",
+      "label": "drizzle-orm",
+      "degree": 14
     },
     {
       "id": "ref_sonner",
       "label": "sonner",
-      "degree": 12
+      "degree": 13
     },
     {
       "id": "src_db_schema_invoices",
@@ -589,23 +653,12 @@
       "degree": 12
     },
     {
-      "id": "src_components_pos_inventory_search_inventoryitem",
-      "label": "InventoryItem",
-      "degree": 10
+      "id": "src_components_pos_print_layouts_printorderdata",
+      "label": "PrintOrderData",
+      "degree": 11
     }
   ],
   "surprises": [
-    {
-      "source": "customers_primary_customer_idx",
-      "target": "customers",
-      "source_files": [
-        "drizzle/0002_cute_molly_hayes.sql",
-        "src/db/schema.ts"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "indexes",
-      "why": "connects across different repos/directories; peripheral node `customers_primary_customer_idx` unexpectedly reaches hub `customers`"
-    },
     {
       "source": "customers_organization_idx",
       "target": "customers",
@@ -618,15 +671,15 @@
       "why": "connects across different repos/directories; peripheral node `customers_organization_idx` unexpectedly reaches hub `customers`"
     },
     {
-      "source": "invoice_organization_idx",
-      "target": "invoices",
+      "source": "customers_primary_customer_idx",
+      "target": "customers",
       "source_files": [
         "drizzle/0002_cute_molly_hayes.sql",
         "src/db/schema.ts"
       ],
       "confidence": "EXTRACTED",
       "relation": "indexes",
-      "why": "connects across different repos/directories; peripheral node `invoice_organization_idx` unexpectedly reaches hub `invoices`"
+      "why": "connects across different repos/directories; peripheral node `customers_primary_customer_idx` unexpectedly reaches hub `customers`"
     },
     {
       "source": "invoice_branch_idx",
@@ -640,7 +693,18 @@
       "why": "connects across different repos/directories; peripheral node `invoice_branch_idx` unexpectedly reaches hub `invoices`"
     },
     {
-      "source": "payment_organization_idx",
+      "source": "invoice_organization_idx",
+      "target": "invoices",
+      "source_files": [
+        "drizzle/0002_cute_molly_hayes.sql",
+        "src/db/schema.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "indexes",
+      "why": "connects across different repos/directories; peripheral node `invoice_organization_idx` unexpectedly reaches hub `invoices`"
+    },
+    {
+      "source": "payment_branch_idx",
       "target": "payments",
       "source_files": [
         "drizzle/0002_cute_molly_hayes.sql",
@@ -648,11 +712,11 @@
       ],
       "confidence": "EXTRACTED",
       "relation": "indexes",
-      "why": "connects across different repos/directories; peripheral node `payment_organization_idx` unexpectedly reaches hub `payments`"
+      "why": "connects across different repos/directories; peripheral node `payment_branch_idx` unexpectedly reaches hub `payments`"
     }
   ],
   "tokens": {
-    "input": 7038,
-    "output": 1989
+    "input": 7110,
+    "output": 2309
   }
 }

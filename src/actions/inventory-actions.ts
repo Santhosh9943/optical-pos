@@ -1,10 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import Decimal from 'decimal.js';
 import { db } from '@/db';
 import { inventoryItems } from '@/db/schema';
+import { getCurrentSession } from '@/lib/auth-utils';
 import {
   createInventoryItemSchema,
   type CreateInventoryItemInput,
@@ -18,9 +19,12 @@ export async function getInventoryList(): Promise<{
   error?: string;
 }> {
   try {
+    const session = await getCurrentSession();
+
     const items = await db
       .select()
       .from(inventoryItems)
+      .where(eq(inventoryItems.organizationId, session.organizationId))
       .orderBy(desc(inventoryItems.createdAt));
 
     return { success: true, items };
@@ -70,6 +74,8 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
       else if (parsed.category === 'ACCESSORY') hsnCode = '9003';
     }
 
+    const session = await getCurrentSession();
+
     const [inserted] = await db
       .insert(inventoryItems)
       .values({
@@ -86,6 +92,8 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
         lowStockThreshold: parsed.lowStockThreshold,
         taxRate,
         hsnCode,
+        organizationId: session.organizationId,
+        branchId: session.branchId,
         isActive: true,
       })
       .returning();

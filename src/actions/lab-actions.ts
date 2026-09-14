@@ -1,6 +1,6 @@
 'use server';
 
-import { desc, eq, notInArray } from 'drizzle-orm';
+import { and, desc, eq, notInArray, isNull, or } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import {
@@ -8,6 +8,7 @@ import {
   orderStatusEnum,
   type OrderStatus,
 } from '@/db/schema';
+import { getCurrentSession } from '@/lib/auth-utils';
 import type { PrintOrderData } from '@/components/pos/print-layouts';
 
 export interface LabOrderItemDetail {
@@ -62,8 +63,16 @@ export interface LabOrderSummary {
  */
 export async function getActiveLabOrders(): Promise<LabOrderSummary[]> {
   try {
+    const session = await getCurrentSession();
+
     const rawInvoices = await db.query.invoices.findMany({
-      where: notInArray(invoices.orderStatus, ['DRAFT', 'CANCELLED_REFUNDED']),
+      where: and(
+        or(
+          eq(invoices.organizationId, session.organizationId),
+          isNull(invoices.organizationId)
+        ),
+        notInArray(invoices.orderStatus, ['DRAFT', 'CANCELLED_REFUNDED'])
+      ),
       with: {
         customer: true,
         prescription: true,

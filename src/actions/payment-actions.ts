@@ -1,6 +1,6 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import {
@@ -10,6 +10,7 @@ import {
   type PaymentStatus,
   type OrderStatus,
 } from '@/db/schema';
+import { getCurrentSession } from '@/lib/auth-utils';
 import Decimal from 'decimal.js';
 
 export interface CollectBalanceResult {
@@ -35,6 +36,8 @@ export async function collectBalance(
   transactionReference?: string
 ): Promise<CollectBalanceResult> {
   try {
+    const session = await getCurrentSession();
+
     const amountDec = new Decimal(amount || '0.00');
     if (amountDec.lessThanOrEqualTo(0) || amountDec.isNaN()) {
       return {
@@ -48,7 +51,12 @@ export async function collectBalance(
       const [currentInvoice] = await tx
         .select()
         .from(invoices)
-        .where(eq(invoices.id, invoiceId))
+        .where(
+          and(
+            eq(invoices.id, invoiceId),
+            eq(invoices.organizationId, session.organizationId)
+          )
+        )
         .limit(1);
 
       if (!currentInvoice) {
@@ -85,6 +93,8 @@ export async function collectBalance(
           amount: amountDec.toFixed(2),
           paymentMode,
           transactionReference: transactionReference || null,
+          organizationId: currentInvoice.organizationId || session.organizationId,
+          branchId: currentInvoice.branchId || session.branchId,
         })
         .returning();
 

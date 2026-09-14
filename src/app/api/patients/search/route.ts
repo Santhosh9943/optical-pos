@@ -1,14 +1,16 @@
 import { db } from '@/db';
 import { customers } from '@/db/schema';
-import { like, or, eq, ilike } from 'drizzle-orm';
+import { like, or, eq, ilike, and } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { cacheGet, cacheSet } from '@/lib/redis';
+import { getCurrentSession } from '@/lib/auth-utils';
 
 export const dynamic = 'force-dynamic';
 
 const PATIENTS_SEARCH_CACHE_TTL = 300; // 5 minutes
 
 export async function GET(request: Request) {
+  const session = await getCurrentSession();
   const { searchParams } = new URL(request.url);
   const query = (searchParams.get('phone') ?? searchParams.get('q') ?? '').trim();
 
@@ -16,8 +18,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ patients: [] });
   }
 
-  // Cache key: cache:patients:search:{query}
-  const cacheKey = `cache:patients:search:${query.toLowerCase()}`;
+  // Cache key: cache:patients:search:{orgId}:{query}
+  const cacheKey = `cache:patients:search:${session.organizationId}:${query.toLowerCase()}`;
 
   try {
     // 1. Check Redis cache first
@@ -42,9 +44,12 @@ export async function GET(request: Request) {
     })
     .from(customers)
     .where(
-      or(
-        like(customers.phone, `${query}%`),
-        ilike(customers.fullName, `%${query}%`)
+      and(
+        eq(customers.organizationId, session.organizationId),
+        or(
+          like(customers.phone, `${query}%`),
+          ilike(customers.fullName, `%${query}%`)
+        )
       )
     )
     .limit(20);

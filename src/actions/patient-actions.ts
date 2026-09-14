@@ -1,7 +1,7 @@
 'use server';
 
 import Decimal from 'decimal.js';
-import { desc, eq, inArray, or } from 'drizzle-orm';
+import { and, desc, eq, inArray, or } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   customers,
@@ -9,6 +9,7 @@ import {
   invoiceItems,
   opticalPrescriptions,
 } from '@/db/schema';
+import { getCurrentSession } from '@/lib/auth-utils';
 import type { POSPatient } from '@/store/pos-store';
 
 export interface PatientSummary {
@@ -118,9 +119,12 @@ export async function getPatients(): Promise<{
   error?: string;
 }> {
   try {
+    const session = await getCurrentSession();
+
     const allCustomers = await db
       .select()
       .from(customers)
+      .where(eq(customers.organizationId, session.organizationId))
       .orderBy(desc(customers.createdAt));
 
     const allInvoices = await db
@@ -131,6 +135,7 @@ export async function getPatients(): Promise<{
         createdAt: invoices.createdAt,
       })
       .from(invoices)
+      .where(eq(invoices.organizationId, session.organizationId))
       .orderBy(desc(invoices.createdAt));
 
     // Group invoices by customer
@@ -202,10 +207,17 @@ export async function getLinkedFamilyGroup(customerId: string): Promise<{
   error?: string;
 }> {
   try {
+    const session = await getCurrentSession();
+
     const [target] = await db
       .select()
       .from(customers)
-      .where(eq(customers.id, customerId))
+      .where(
+        and(
+          eq(customers.id, customerId),
+          eq(customers.organizationId, session.organizationId)
+        )
+      )
       .limit(1);
 
     if (!target) {
@@ -220,10 +232,13 @@ export async function getLinkedFamilyGroup(customerId: string): Promise<{
       .select()
       .from(customers)
       .where(
-        or(
-          eq(customers.id, rootId),
-          eq(customers.primaryCustomerId, rootId),
-          eq(customers.id, customerId)
+        and(
+          eq(customers.organizationId, session.organizationId),
+          or(
+            eq(customers.id, rootId),
+            eq(customers.primaryCustomerId, rootId),
+            eq(customers.id, customerId)
+          )
         )
       )
       .orderBy(customers.createdAt);
@@ -329,10 +344,17 @@ export async function getPatientHistory(
   error?: string;
 }> {
   try {
+    const session = await getCurrentSession();
+
     const [customer] = await db
       .select()
       .from(customers)
-      .where(eq(customers.id, patientId));
+      .where(
+        and(
+          eq(customers.id, patientId),
+          eq(customers.organizationId, session.organizationId)
+        )
+      );
 
     if (!customer) {
       return { success: false, error: 'Patient not found' };
@@ -354,10 +376,13 @@ export async function getPatientHistory(
       })
       .from(customers)
       .where(
-        or(
-          eq(customers.id, rootId),
-          eq(customers.primaryCustomerId, rootId),
-          eq(customers.id, patientId)
+        and(
+          eq(customers.organizationId, session.organizationId),
+          or(
+            eq(customers.id, rootId),
+            eq(customers.primaryCustomerId, rootId),
+            eq(customers.id, patientId)
+          )
         )
       );
 
@@ -419,7 +444,12 @@ export async function getPatientHistory(
     const directInvoiceRows = await db
       .select()
       .from(invoices)
-      .where(eq(invoices.customerId, patientId))
+      .where(
+        and(
+          eq(invoices.organizationId, session.organizationId),
+          eq(invoices.customerId, patientId)
+        )
+      )
       .orderBy(desc(invoices.createdAt));
 
     // 3. Fetch invoice items where this patient was the assigned wearer on someone else's bill
@@ -445,7 +475,12 @@ export async function getPatientHistory(
       wearerInvoiceRows = await db
         .select()
         .from(invoices)
-        .where(inArray(invoices.id, wearerInvoiceIds))
+        .where(
+          and(
+            eq(invoices.organizationId, session.organizationId),
+            inArray(invoices.id, wearerInvoiceIds)
+          )
+        )
         .orderBy(desc(invoices.createdAt));
     }
 
@@ -768,10 +803,17 @@ export async function saveNewPrescription(
   error?: string;
 }> {
   try {
+    const session = await getCurrentSession();
+
     const [customer] = await db
       .select()
       .from(customers)
-      .where(eq(customers.id, customerId))
+      .where(
+        and(
+          eq(customers.id, customerId),
+          eq(customers.organizationId, session.organizationId)
+        )
+      )
       .limit(1);
 
     if (!customer) {

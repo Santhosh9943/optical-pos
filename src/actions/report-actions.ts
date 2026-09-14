@@ -13,6 +13,7 @@ import {
   type PaymentStatus,
   type PaymentMode,
 } from '@/db/schema';
+import { getCurrentSession } from '@/lib/auth-utils';
 
 export interface DailyReportTransaction {
   id: string;
@@ -213,10 +214,11 @@ export async function getFinancialsReport(
   error?: string;
 }> {
   try {
+    const session = await getCurrentSession();
     const range = resolveDateRange(filterInput);
     const filterObj = typeof filterInput === 'object' && !(filterInput instanceof Date) ? filterInput : {};
 
-    const conditions: SQL[] = [];
+    const conditions: SQL[] = [eq(invoices.organizationId, session.organizationId)];
 
     // Date range filter
     if (range.start) {

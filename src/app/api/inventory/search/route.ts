@@ -1,21 +1,22 @@
-// src/app/api/inventory/search/route.ts
 import { db } from '@/db';
 import { inventoryItems } from '@/db/schema';
 import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { cacheGet, cacheSet } from '@/lib/redis';
+import { getCurrentSession } from '@/lib/auth-utils';
 
 export const dynamic = 'force-dynamic';
 
 const INVENTORY_SEARCH_CACHE_TTL = 300; // 5 minutes
 
 export async function GET(request: Request) {
+  const session = await getCurrentSession();
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get('q') ?? '').trim();
   const category = (searchParams.get('category') ?? '').trim();
 
-  // Cache key: cache:inventory:search:{category}:{query}
-  const cacheKey = `cache:inventory:search:${category || 'all'}:${q.toLowerCase()}`;
+  // Cache key: cache:inventory:search:{orgId}:{category}:{query}
+  const cacheKey = `cache:inventory:search:${session.organizationId}:${category || 'all'}:${q.toLowerCase()}`;
 
   try {
     // 1. Check Redis cache first
@@ -24,7 +25,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ items: cachedItems, cached: true });
     }
 
-    const conditions = [eq(inventoryItems.isActive, true)];
+    const conditions = [
+      eq(inventoryItems.isActive, true),
+      eq(inventoryItems.organizationId, session.organizationId),
+    ];
 
     if (category) {
       conditions.push(eq(inventoryItems.category, category as any));
