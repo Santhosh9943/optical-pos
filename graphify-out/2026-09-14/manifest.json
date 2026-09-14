@@ -390,10 +390,10 @@
     "semantic_hash": "6cef58d02d19bd0536182f6c22247196"
   },
   "CLAUDE.md": {
-    "mtime": 1789352542.233727,
-    "seen": 1789356253.1221335,
-    "ast_hash": "152582d217b80e3a6740757a96e951fc",
-    "semantic_hash": "152582d217b80e3a6740757a96e951fc"
+    "mtime": 1789360099.2649817,
+    "seen": 1789360141.6033063,
+    "ast_hash": "cfaad0d3e628ba0d0e884a781ebd2b23",
+    "semantic_hash": "cfaad0d3e628ba0d0e884a781ebd2b23"
   },
   "README.md": {
     "mtime": 1789356730.637834,
@@ -402,10 +402,10 @@
     "semantic_hash": "e36ba75f1032e3cf387638fe7cc1315d"
   },
   "docs/PRD.md": {
-    "mtime": 1789358821.2671363,
-    "seen": 1789358960.9256382,
-    "ast_hash": "d3e6666f96ff7460d577662f1182f8b3",
-    "semantic_hash": ""
+    "mtime": 1789359624.6257637,
+    "seen": 1789360141.6033063,
+    "ast_hash": "bb2c7299f21fae112aeb811132fdddea",
+    "semantic_hash": "bb2c7299f21fae112aeb811132fdddea"
   },
   "e2e/settings-print.spec.ts": {
     "mtime": 1789358085.3726454,

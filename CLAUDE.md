@@ -9,6 +9,7 @@ You are an expert full-stack engineer building a high-performance, cloud-native 
 - **Language:** TypeScript (strict mode, zero `any`)
 - **Database:** Neon Serverless PostgreSQL using connection pooler (`DATABASE_URL` must use `-pooler`)
 - **ORM:** Drizzle ORM (`drizzle-orm/pg-core`)
+- **High-Speed Caching (Redis):** Always evaluate if a new feature requires caching. For high-frequency reads (e.g., settings, search autocomplete, catalog lookups, tenant configs), you MUST implement Upstash Redis. Always include a graceful fallback to the primary Neon database if Redis environment variables are missing.
 - **Styling & UI:** Tailwind CSS, Radix Primitives via shadcn/ui, Lucide Icons
   - **Theme Mandate:** All UI components MUST support dark mode natively. Use shadcn/ui CSS variables (e.g., `bg-background`, `text-foreground`, `border-border`) instead of hardcoded colors. If hardcoded utility classes are required, you must include the `dark:` variant (e.g., `bg-white dark:bg-zinc-900`).
   - **Fluid Full-Width Layouts:** All primary views (e.g., POS, Inventory, Reports) must utilize the full available width of the main content area. Use `w-full`, `h-full`, and `flex-1` with consistent padding (e.g., `p-4` or `p-6`). NEVER use `container`, `max-w-7xl`, or `mx-auto` wrapper classes on main dashboard views. Constrained widths are strictly reserved for standalone auth screens or modal dialogs.
@@ -132,6 +133,13 @@ if (updated.length === 0) throw new InsufficientStockError(item.id);
 - **On Success (Token Optimization):** If the validation script passes with exit code 0, DO NOT ingest or analyze the terminal logs. Output a brief confirmation token (e.g., '✅ CI Passed') and stop. Wait for my manual UI verification. Do NOT run dev servers or open browsers yourself.
 - **On Failure (Auto-Correction):** If the validation script fails, you are authorized to ingest the error logs. You must independently analyze the TypeScript, ESLint, or Playwright errors, apply the necessary code fixes, and re-run `npm run validate` until it passes completely.
 - **Continuous Graphify Updates:** To keep the architectural knowledge graph perfectly synced with the codebase, you MUST automatically run the `graphify .` command at the very end of every completed feature, task, or significant refactor. Execute this step immediately after the CI validation (`npm run validate`) passes, right before notifying the user that the task is complete.
+
+---
+
+## Meta-Rule: Self-Evolving Guidelines
+- **Continuous Rule Refinement:** Whenever you successfully implement a new foundational technology (e.g., Redis, Better Auth, new UI spacing architecture), you MUST evaluate if it establishes a new project standard. If it does, you are required to automatically update this `CLAUDE.md` file to instruct future AI sessions to utilize this new standard. Do not wait for the user to tell you to update the rules for newly established infrastructure.
+
+---
 
 <!-- BEGIN:nextjs-agent-rules -->
 
