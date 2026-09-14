@@ -12,8 +12,11 @@ import {
   BarChart3,
   Settings,
   Clock,
+  Shield,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { UserNav } from '@/components/layout/user-nav';
+import { BranchSwitcher } from '@/components/layout/branch-switcher';
 
 export default function DashboardLayout({
   children,
@@ -29,6 +32,7 @@ export default function DashboardLayout({
   const isPatients = pathname?.startsWith('/admin/patients');
   const isLabOrders = pathname?.startsWith('/admin/lab-orders');
   const isSettings = pathname?.startsWith('/admin/settings');
+  const isSuperAdmin = pathname?.startsWith('/admin/super-admin');
 
   // Global Keyboard Shortcuts (F1 for POS Billing, F3 for Inventory)
   useEffect(() => {
@@ -223,6 +227,31 @@ export default function DashboardLayout({
                 Cfg
               </span>
             </Link>
+
+            {/* Super Admin Console Nav Link */}
+            <Link
+              href="/admin/super-admin"
+              data-testid="nav-super-admin"
+              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-600 ${
+                isSuperAdmin
+                  ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 hover:text-purple-900 dark:hover:text-purple-200'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Shield
+                  className={`h-4 w-4 ${
+                    isSuperAdmin
+                      ? 'text-purple-600 dark:text-purple-400'
+                      : 'text-slate-400 dark:text-slate-400'
+                  }`}
+                />
+                <span>Super Admin</span>
+              </div>
+              <span className="rounded bg-purple-100 dark:bg-purple-900/60 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-purple-700 dark:text-purple-300">
+                SaaS
+              </span>
+            </Link>
           </div>
         </nav>
 
@@ -305,8 +334,11 @@ export default function DashboardLayout({
             </Link>
           </div>
 
-          {/* Store / Shift Meta & Theme Toggle */}
+          {/* Store / Shift Meta & Theme Toggle & User Navigation */}
           <div className="flex items-center space-x-3">
+            {/* Multi-Store Branch Switcher */}
+            <BranchSwitcher />
+
             <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
               Shift Active
@@ -318,6 +350,9 @@ export default function DashboardLayout({
             </div>
 
             <ThemeToggle />
+
+            {/* Profile Avatar, Initials, Role Badge, and Logout Flow */}
+            <UserNav />
           </div>
         </header>
 

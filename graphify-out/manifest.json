@@ -144,10 +144,10 @@
     "semantic_hash": "676b7a3af025294427df84c07c518965"
   },
   "src/app/(dashboard)/layout.tsx": {
-    "mtime": 1789356925.9750347,
-    "seen": 1789358207.521846,
-    "ast_hash": "c73749c4496d853adffecb1bd42edeb9",
-    "semantic_hash": "c73749c4496d853adffecb1bd42edeb9"
+    "mtime": 1789368359.888054,
+    "seen": 1789368704.6865234,
+    "ast_hash": "51b675ff5a4f13b144383c982f5269e2",
+    "semantic_hash": "51b675ff5a4f13b144383c982f5269e2"
   },
   "src/app/(dashboard)/pos/new-bill/page.tsx": {
     "mtime": 1789328554.3885584,
@@ -405,7 +405,7 @@
     "mtime": 1789367169.4318569,
     "seen": 1789367458.6228247,
     "ast_hash": "aa9c079f10174e26d46dee8bd65358dd",
-    "semantic_hash": "aa9c079f10174e26d46dee8bd65358dd"
+    "semantic_hash": ""
   },
   "e2e/settings-print.spec.ts": {
     "mtime": 1789358085.3726454,
@@ -532,5 +532,41 @@
     "seen": 1789367458.6228247,
     "ast_hash": "01748cca41fa87844caf1c87a6b475e9",
     "semantic_hash": "01748cca41fa87844caf1c87a6b475e9"
+  },
+  "e2e/tenant-roles.spec.ts": {
+    "mtime": 1789368557.0216973,
+    "seen": 1789368704.6836402,
+    "ast_hash": "1686659724be4eb77ea66fe1fb2f93a5",
+    "semantic_hash": "1686659724be4eb77ea66fe1fb2f93a5"
+  },
+  "src/actions/tenant-actions.ts": {
+    "mtime": 1789368237.3770785,
+    "seen": 1789368704.685518,
+    "ast_hash": "8aa329f0dd5c55fed9f59b498bd74971",
+    "semantic_hash": "8aa329f0dd5c55fed9f59b498bd74971"
+  },
+  "src/app/(dashboard)/admin/super-admin/page.tsx": {
+    "mtime": 1789368498.969251,
+    "seen": 1789368704.6865234,
+    "ast_hash": "54590a640c517df21799de10071f8007",
+    "semantic_hash": "54590a640c517df21799de10071f8007"
+  },
+  "src/components/layout/branch-switcher.tsx": {
+    "mtime": 1789368265.2377222,
+    "seen": 1789368704.6885245,
+    "ast_hash": "fefdf50829210c5fd5c78bc9fc098540",
+    "semantic_hash": "fefdf50829210c5fd5c78bc9fc098540"
+  },
+  "src/components/layout/user-nav.tsx": {
+    "mtime": 1789368486.4704819,
+    "seen": 1789368704.6885245,
+    "ast_hash": "183f7d85245d390d2ee8500205d6b6d8",
+    "semantic_hash": "183f7d85245d390d2ee8500205d6b6d8"
+  },
+  "src/store/tenant-store.ts": {
+    "mtime": 1789368478.753002,
+    "seen": 1789368704.6935296,
+    "ast_hash": "fc0a1e7d55cc21d080b68a170efd0971",
+    "semantic_hash": "fc0a1e7d55cc21d080b68a170efd0971"
   }
 }
