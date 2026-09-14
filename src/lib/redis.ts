@@ -1,19 +1,46 @@
 import { Redis } from '@upstash/redis';
 
-const url = process.env.UPSTASH_REDIS_REST_URL;
-const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+/**
+ * Initializes the Upstash Redis client with resilient parameter sanitization
+ * and zero-crash error handling.
+ */
+function initRedis(): Redis | null {
+  try {
+    const rawUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const rawToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (!rawUrl || !rawToken) {
+      return null;
+    }
+
+    // Strip surrounding quotes and whitespace if present (e.g. from .env files)
+    let url = rawUrl.trim().replace(/^["']|["']$/g, '').trim();
+    const token = rawToken.trim().replace(/^["']|["']$/g, '').trim();
+
+    if (!url || !token) {
+      return null;
+    }
+
+    // Normalize protocol to https:// if missing
+    if (!url.startsWith('https://') && !url.startsWith('http://')) {
+      url = `https://${url}`;
+    }
+
+    return new Redis({
+      url,
+      token,
+    });
+  } catch (error) {
+    console.warn('[Redis] Failed to initialize Upstash Redis client. Bypassing Redis cache:', error);
+    return null;
+  }
+}
 
 /**
  * Singleton Redis client instance.
  * Instantiated only when valid Upstash Redis credentials are provided.
  */
-export const redis: Redis | null =
-  url && token
-    ? new Redis({
-        url,
-        token,
-      })
-    : null;
+export const redis: Redis | null = initRedis();
 
 /**
  * Check if Redis caching is configured and enabled in the current environment.
