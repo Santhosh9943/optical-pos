@@ -46,6 +46,9 @@ import { AddProductModal } from '@/components/pos/add-product-modal';
 import { CartItemEditModal } from '@/components/pos/cart-item-edit-modal';
 import { InvoiceDetailsModal } from '@/components/pos/invoice-details-modal';
 import { QuickAddPatientModal } from '@/components/pos/quick-add-patient-modal';
+import { CompactPatientStrip } from '@/components/pos/compact-patient-strip';
+import { DenseBottomBar } from '@/components/pos/dense-bottom-bar';
+import { getStoreProfile } from '@/actions/settings-actions';
 import { getDynamicRelationship } from '@/lib/patient-relationship';
 import {
   PlusCircle,
@@ -70,10 +73,19 @@ import {
   AlertCircle,
   Store,
   MapPin,
+  CreditCard,
+  ArrowRight,
+  Maximize2,
+  Columns2,
+  LayoutGrid,
 } from 'lucide-react';
 
 export function PosView() {
   const {
+    posLayoutType,
+    posAdaptiveMode,
+    setPosLayoutType,
+    setPosAdaptiveMode,
     activePatients,
     selectedPatient,
     prescriptions,
@@ -139,6 +151,25 @@ export function PosView() {
       setActiveBillingBranchId(orgBranches[0].id);
     }
   }, [selectedBranchIds, orgBranches, activeBillingBranchId]);
+
+  // Load default POS layout from localStorage or store settings
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('optixos_pos_layout') as 'adaptive' | 'dense' | 'split' | null;
+      if (saved && ['adaptive', 'dense', 'split'].includes(saved)) {
+        setPosLayoutType(saved);
+        return;
+      }
+    } catch {}
+
+    getStoreProfile()
+      .then((p) => {
+        if (p?.defaultPosLayout) {
+          setPosLayoutType(p.defaultPosLayout as 'adaptive' | 'dense' | 'split');
+        }
+      })
+      .catch(console.error);
+  }, [setPosLayoutType]);
 
   const activeBranch = useMemo(() => {
     return orgBranches.find((b) => b.id === activeBillingBranchId) || orgBranches[0];
@@ -555,6 +586,11 @@ export function PosView() {
       } else if (e.key === 'F2') {
         e.preventDefault();
         setIsAddProductModalOpen(true);
+      } else if (e.key === 'F4') {
+        e.preventDefault();
+        if (posLayoutType === 'adaptive') {
+          setPosAdaptiveMode(posAdaptiveMode === 'billing_focus' ? 'split' : 'billing_focus');
+        }
       } else if (e.key === 'F5') {
         e.preventDefault();
         if (completedOrder) {
@@ -564,7 +600,7 @@ export function PosView() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [completedOrder, setPrintMode]);
+  }, [completedOrder, setPrintMode, posLayoutType, posAdaptiveMode, setPosAdaptiveMode]);
 
   const handleConfigureSpectaclePair = (config: SpectaclePairConfig) => {
     // 1. If prescription was entered/confirmed, save to store
@@ -718,7 +754,7 @@ export function PosView() {
           </button>
         </div>
 
-        {/* Right Actions: Billing Store Location & New Order */}
+        {/* Right Actions: Billing Store Location, Layout Switcher & New Order */}
         <div className="flex items-center space-x-3">
           {orgBranches.length > 0 && (
             <div
@@ -749,10 +785,81 @@ export function PosView() {
             </div>
           )}
 
+          {/* POS Layout & View Mode Switcher */}
+          <div
+            data-testid="pos-layout-switcher"
+            className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/90 p-1 rounded-lg border border-slate-200 dark:border-slate-700/80 text-xs shadow-2xs"
+          >
+            {/* Layout Architecture Selector */}
+            <select
+              data-testid="pos-layout-type-select"
+              value={posLayoutType}
+              onChange={(e) => {
+                const val = e.target.value as 'adaptive' | 'dense' | 'split';
+                setPosLayoutType(val);
+                try {
+                  localStorage.setItem('optixos_pos_layout', val);
+                } catch {}
+                toast.success(`POS Layout: ${val === 'adaptive' ? 'Adaptive Modes' : val === 'dense' ? 'Dense Split View' : 'Classic Split'}`);
+              }}
+              className="bg-transparent text-[11px] font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer px-1.5 py-0.5"
+              title="Choose POS Workspace Layout"
+            >
+              <option value="adaptive">Adaptive Modes</option>
+              <option value="dense">Dense Split</option>
+              <option value="split">Classic Split</option>
+            </select>
+
+            {/* If in Adaptive Layout, show quick mode pills */}
+            {posLayoutType === 'adaptive' && (
+              <div data-testid="pos-adaptive-mode-pills" className="flex items-center gap-0.5 pl-1.5 border-l border-slate-300 dark:border-slate-700">
+                <button
+                  type="button"
+                  data-testid="btn-mode-rx-focus"
+                  onClick={() => setPosAdaptiveMode('rx_focus')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                    posAdaptiveMode === 'rx_focus'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                  title="Rx Refraction Focus"
+                >
+                  👁️ Rx
+                </button>
+                <button
+                  type="button"
+                  data-testid="btn-mode-split"
+                  onClick={() => setPosAdaptiveMode('split')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                    posAdaptiveMode === 'split'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                  title="Split View"
+                >
+                  ⚖️ Split
+                </button>
+                <button
+                  type="button"
+                  data-testid="btn-mode-billing-focus"
+                  onClick={() => setPosAdaptiveMode('billing_focus')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                    posAdaptiveMode === 'billing_focus'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                  title="Billing & Cart Focus [F4]"
+                >
+                  🛒 Cart [F4]
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={resetOrder}
-            className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-95"
+            className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-95 cursor-pointer"
           >
             <PlusCircle className="h-3.5 w-3.5" />
             <span>New Order [F1]</span>
@@ -760,569 +867,803 @@ export function PosView() {
         </div>
       </div>
 
-      {/* ── POS Two-Column Split Layout ── */}
-      <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full">
-        {/* ══════════════════════════════════════════════════════════════════
-            LEFT WORKSPACE PANE (Cols 1-7): Patient Summary & Clinical Specs
-            ══════════════════════════════════════════════════════════════════ */}
-        <div className="col-span-7 flex flex-col gap-4 overflow-y-auto">
-          {/* Patient Header / Card with Family Support */}
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-              {selectedPatient ? (
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/80 px-2.5 py-1 text-xs">
-                    <Crown className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                      Invoice Account:
-                    </span>
-                    <span className="font-bold text-slate-900 dark:text-slate-100">
-                      {selectedPatient.fullName}
-                    </span>
+      {/* ── WORKSPACE RENDERING LOGIC ── */}
+      {(() => {
+        // 1. Patient Clinical Workspace (Profile, Refraction Grid, Order History)
+        const renderPatientClinicalWorkspace = (colSpanClass: string) => (
+          <div className={`${colSpanClass} flex flex-col gap-4 overflow-y-auto`}>
+            {/* Patient Header / Card with Family Support */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                {selectedPatient ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/80 px-2.5 py-1 text-xs">
+                      <Crown className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                        Invoice Account:
+                      </span>
+                      <span className="font-bold text-slate-900 dark:text-slate-100">
+                        {selectedPatient.fullName}
+                      </span>
 
-                    {activePatients.length > 1 ? (
-                      <select
-                        id="select-invoice-account"
-                        data-testid="select-invoice-account"
-                        value={selectedPatient.id}
-                        onChange={(e) => handleSwitchInvoiceAccount(e.target.value)}
-                        className="rounded-md border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-900 dark:text-slate-100 shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-emerald-500 cursor-pointer ml-1"
-                        title="Change invoice account"
-                      >
-                        {dynamicActivePatients.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.fullName} ({p.relationType})
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <select
-                        id="select-invoice-account"
-                        disabled
-                        data-testid="select-invoice-account"
-                        className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/60 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-300 cursor-not-allowed ml-1"
-                        title="Only 1 member on order. Add family members to change invoice account."
-                      >
-                        <option value="">(Only 1 Member)</option>
-                      </select>
+                      {activePatients.length > 1 ? (
+                        <select
+                          id="select-invoice-account"
+                          data-testid="select-invoice-account"
+                          value={selectedPatient.id}
+                          onChange={(e) => handleSwitchInvoiceAccount(e.target.value)}
+                          className="rounded-md border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-900 dark:text-slate-100 shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-emerald-500 cursor-pointer ml-1"
+                          title="Change invoice account"
+                        >
+                          {dynamicActivePatients.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.fullName} ({p.relationType})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <select
+                          id="select-invoice-account"
+                          disabled
+                          data-testid="select-invoice-account"
+                          className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/60 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-300 cursor-not-allowed ml-1"
+                          title="Only 1 member on order. Add family members to change invoice account."
+                        >
+                          <option value="">(Only 1 Member)</option>
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-300">
+                    <UserCheck className="h-4 w-4" />
+                    <span>Search or enter phone to populate patient</span>
+                  </div>
+                )}
+
+                {selectedPatient && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      data-testid="add-family-member-btn"
+                      onClick={() => setIsAddFamilyModalOpen(true)}
+                      className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition active:scale-95 cursor-pointer"
+                    >
+                      <UserPlus className="h-3.5 w-3.5" />
+                      <span>+ Add Family Member</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {selectedPatient ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                    <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
+                      <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
+                        Active Customer
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm truncate block">
+                        {selectedPatient.fullName}
+                      </span>
+                    </div>
+                    <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
+                      <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
+                        Contact Phone
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-100 font-mono">
+                        {selectedPatient.phone}
+                      </span>
+                    </div>
+                    <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
+                      <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
+                        Demographics
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
+                        {selectedPatient.gender ?? '—'}
+                        {selectedPatient.age ? `, ${selectedPatient.age} yrs` : ''}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      data-testid="btn-patient-past-purchases"
+                      onClick={() => setActiveLeftTab('orders')}
+                      className="rounded-md bg-purple-50/80 dark:bg-purple-950/40 p-2 border border-purple-200 dark:border-purple-800/60 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 cursor-pointer"
+                      title="Click to view purchase order history"
+                    >
+                      <span className="text-[10px] uppercase font-medium text-purple-600 dark:text-purple-400 flex items-center justify-between">
+                        <span>Past Purchases</span>
+                        <Receipt className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                      </span>
+                      <span className="font-bold text-purple-800 dark:text-purple-200 font-mono text-sm block mt-0.5">
+                        {(patientOrderHistories[selectedPatient.id] || []).length} Orders
+                      </span>
+                    </button>
+                    {selectedPatient.city && (
+                      <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
+                        <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
+                          Location
+                        </span>
+                        <span className="font-medium text-slate-800 dark:text-slate-200">
+                          {selectedPatient.city}
+                        </span>
+                      </div>
+                    )}
+                    {selectedPatient.advanceBalance && (
+                      <div className="rounded-md bg-emerald-50/60 dark:bg-emerald-950/40 p-2 border border-emerald-100 dark:border-emerald-800/60">
+                        <span className="text-[10px] uppercase font-medium text-emerald-600 dark:text-emerald-400 block">
+                          Available Credit
+                        </span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 font-mono">
+                          ₹{selectedPatient.advanceBalance}
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-300">
-                  <UserCheck className="h-4 w-4" />
-                  <span>Search or enter phone to populate patient</span>
-                </div>
-              )}
-
-              {selectedPatient && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    data-testid="add-family-member-btn"
-                    onClick={() => setIsAddFamilyModalOpen(true)}
-                    className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition active:scale-95"
-                  >
-                    <UserPlus className="h-3.5 w-3.5" />
-                    <span>+ Add Family Member</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {selectedPatient ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                  <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
-                      Active Customer
-                    </span>
-                    <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm truncate block">
-                      {selectedPatient.fullName}
-                    </span>
-                  </div>
-                  <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
-                      Contact Phone
-                    </span>
-                    <span className="font-semibold text-slate-900 dark:text-slate-100 font-mono">
-                      {selectedPatient.phone}
-                    </span>
-                  </div>
-                  <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
-                      Demographics
-                    </span>
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">
-                      {selectedPatient.gender ?? '—'}
-                      {selectedPatient.age ? `, ${selectedPatient.age} yrs` : ''}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    data-testid="btn-patient-past-purchases"
-                    onClick={() => setActiveLeftTab('orders')}
-                    className="rounded-md bg-purple-50/80 dark:bg-purple-950/40 p-2 border border-purple-200 dark:border-purple-800/60 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500"
-                    title="Click to view purchase order history"
-                  >
-                    <span className="text-[10px] uppercase font-medium text-purple-600 dark:text-purple-400 flex items-center justify-between">
-                      <span>Past Purchases</span>
-                      <Receipt className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                    </span>
-                    <span className="font-bold text-purple-800 dark:text-purple-200 font-mono text-sm block mt-0.5">
-                      {(patientOrderHistories[selectedPatient.id] || []).length} Orders
-                    </span>
-                  </button>
-                  {selectedPatient.city && (
-                    <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                      <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
-                        Location
-                      </span>
-                      <span className="font-medium text-slate-800 dark:text-slate-200">
-                        {selectedPatient.city}
-                      </span>
-                    </div>
-                  )}
-                  {selectedPatient.advanceBalance && (
-                    <div className="rounded-md bg-emerald-50/60 dark:bg-emerald-950/40 p-2 border border-emerald-100 dark:border-emerald-800/60">
-                      <span className="text-[10px] uppercase font-medium text-emerald-600 dark:text-emerald-400 block">
-                        Available Credit
-                      </span>
-                      <span className="font-bold text-emerald-700 dark:text-emerald-400 font-mono">
-                        ₹{selectedPatient.advanceBalance}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 flex flex-col items-center justify-center rounded-md border border-dashed border-slate-200 dark:border-slate-800 py-6 text-center text-slate-500 dark:text-slate-300">
-                <UserCheck className="h-8 w-8 text-slate-300 dark:text-slate-600" />
-                <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-                  No patient selected
-                </p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-300">
-                  Search above or type phone to lookup previous prescriptions & orders
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* ── View Switcher: Clinical Refraction Power vs. Purchase Order History ── */}
-          {selectedPatient && (
-            <div className="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-t-lg overflow-hidden shrink-0 shadow-xs">
-              <button
-                type="button"
-                data-testid="tab-view-clinical-power"
-                onClick={() => setActiveLeftTab('rx')}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition ${
-                  activeLeftTab === 'rx'
-                    ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-950/30'
-                    : 'border-transparent text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100'
-                }`}
-              >
-                <Eye className="h-4 w-4" />
-                <span>Clinical Refraction & Rx Matrix</span>
-              </button>
-
-              <button
-                type="button"
-                data-testid="tab-view-purchase-history"
-                onClick={() => setActiveLeftTab('orders')}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition ${
-                  activeLeftTab === 'orders'
-                    ? 'border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400 bg-purple-50/40 dark:bg-purple-950/30'
-                    : 'border-transparent text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100'
-                }`}
-              >
-                <Receipt className="h-4 w-4" />
-                <span>
-                  Purchase Order History (
-                  {(patientOrderHistories[selectedPatient.id] || []).length})
-                </span>
-              </button>
-            </div>
-          )}
-
-          {/* ── Tab 1: Clinical Prescription Matrix (Default) ── */}
-          {(activeLeftTab === 'rx' || !selectedPatient) && (
-            <PrescriptionGrid
-              value={
-                activePrescriptionPatientId && prescriptions[activePrescriptionPatientId]
-                  ? prescriptions[activePrescriptionPatientId]
-                  : prescription
-              }
-              onChange={(newVal) => {
-                if (activePrescriptionPatientId) {
-                  setPatientPrescription(activePrescriptionPatientId, newVal);
-                } else {
-                  setPrescription(newVal);
-                }
-              }}
-              patients={dynamicActivePatients}
-              activePatientId={activePrescriptionPatientId || selectedPatient?.id}
-              onSelectPatientTab={(pId) => setActivePrescriptionPatientId(pId)}
-              prescriptionsMap={prescriptions}
-              patientPrescriptionHistory={
-                currentActivePatient?.id
-                  ? patientPrescriptionHistories[currentActivePatient.id]
-                  : []
-              }
-              isAddingNewPower={
-                currentActivePatient?.id
-                  ? !!isAddingNewPower[currentActivePatient.id]
-                  : false
-              }
-              onToggleAddNewPower={(isAdding) => {
-                if (currentActivePatient?.id) {
-                  setIsAddingNewPower(currentActivePatient.id, isAdding);
-                }
-              }}
-              onUsePrescriptionHistory={(historyItem) => {
-                if (!currentActivePatient?.id) return;
-                const rxVals = historyToPrescriptionValues(historyItem);
-                setPatientPrescription(currentActivePatient.id, rxVals);
-                toast.info('Prescription Loaded', {
-                  description: `Applied ${new Date(historyItem.prescribedAt).toLocaleDateString('en-IN')} refraction to order.`,
-                });
-              }}
-              onSaveNewPower={async (rx) => {
-                if (!currentActivePatient?.id) return;
-                const patientId = currentActivePatient.id;
-                const res = await saveNewPrescription(patientId, {
-                  odSphere: rx.odSphere,
-                  odCylinder: rx.odCylinder,
-                  odAxis: rx.odAxis,
-                  odAdd: rx.odAdd,
-                  odPd: rx.odPd,
-                  osSphere: rx.osSphere,
-                  osCylinder: rx.osCylinder,
-                  osAxis: rx.osAxis,
-                  osAdd: rx.osAdd,
-                  osPd: rx.osPd,
-                  binocularPd: rx.binocularPd,
-                  clinicalRemarks: rx.clinicalRemarks,
-                });
-                if (res.success && res.prescription) {
-                  const prevHist = patientPrescriptionHistories[patientId] || [];
-                  setPatientPrescriptionHistory(patientId, [res.prescription, ...prevHist]);
-                  setIsAddingNewPower(patientId, false);
-                  setPatientPrescription(patientId, rx);
-                  toast.success('New Prescription Saved', {
-                    description: 'Saved to patient record & applied to current order.',
-                  });
-                } else {
-                  toast.error('Failed to Save Prescription', {
-                    description: res.error || 'Please check input values.',
-                  });
-                }
-              }}
-            />
-          )}
-
-          {/* ── Tab 2: Purchase Order History Panel ── */}
-          {activeLeftTab === 'orders' && selectedPatient && (
-            <div className="rounded-b-lg border border-t-0 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                <div className="flex items-center space-x-2">
-                  <Receipt className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
-                    Purchase Invoices for {selectedPatient.fullName}
-                  </h3>
-                </div>
-                <span className="text-[11px] font-mono text-slate-600 dark:text-slate-300">
-                  {(patientOrderHistories[selectedPatient.id] || []).length} Past Invoices
-                </span>
-              </div>
-
-              {isLoadingOrders ? (
-                <div className="flex flex-col items-center justify-center py-12 space-y-2 text-slate-400">
-                  <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                  <span className="text-xs">Loading order invoices...</span>
-                </div>
-              ) : (patientOrderHistories[selectedPatient.id] || []).length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center rounded-lg border border-dashed border-slate-200 dark:border-slate-800 p-6">
-                  <Receipt className="h-8 w-8 text-slate-300 dark:text-slate-600 mb-2" />
-                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    No Previous Purchase Orders
+                <div className="mt-4 flex flex-col items-center justify-center rounded-md border border-dashed border-slate-200 dark:border-slate-800 py-6 text-center text-slate-500 dark:text-slate-300">
+                  <UserCheck className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                  <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    No patient selected
                   </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-300">
-                    This customer does not have any prior purchase invoices on record.
+                    Search above or type phone to lookup previous prescriptions & orders
                   </p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-                  {(patientOrderHistories[selectedPatient.id] || []).map((order) => {
-                    const orderDate = new Date(order.createdAt);
-                    return (
-                      <div
-                        key={order.id}
-                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-3.5 space-y-2.5 transition hover:border-slate-300 dark:hover:border-slate-700"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400">
-                              {order.invoiceNumber}
-                            </span>
-                            <span
-                              className={`rounded px-1.5 py-0.2 text-[9px] font-bold uppercase ${
-                                order.paymentStatus === 'PAID'
-                                  ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
-                                  : order.paymentStatus === 'PARTIAL'
-                                  ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
-                                  : 'bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300'
-                              }`}
-                            >
-                              {order.paymentStatus}
-                            </span>
-                            <span className="rounded bg-slate-200 dark:bg-slate-800 px-1.5 py-0.2 text-[9px] font-semibold text-slate-600 dark:text-slate-300 uppercase">
-                              {order.orderStatus.replace(/_/g, ' ')}
-                            </span>
-                            {order.isWearerOnly && (
-                              <span className="rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 text-[9px] font-bold">
-                                Wearer on Family Bill
-                              </span>
-                            )}
-                            {order.branchName && (
-                              <span
-                                data-testid="order-history-branch-badge"
-                                className="rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.2 text-[9px] font-medium border border-slate-200 dark:border-slate-700 flex items-center gap-0.5"
-                              >
-                                <MapPin className="h-2.5 w-2.5 text-slate-400" />
-                                <span>{order.branchName}</span>
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[11px] text-slate-600 dark:text-slate-300 font-mono">
-                            {orderDate.toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
-                          </span>
-                        </div>
-
-                        {/* Items preview */}
-                        {order.itemDescriptions.length > 0 && (
-                          <div className="space-y-1">
-                            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-300 tracking-wider">
-                              Purchased Items ({order.itemDescriptions.length})
-                            </span>
-                            <ul className="text-xs text-slate-700 dark:text-slate-300 space-y-0.5 pl-3 list-disc">
-                              {order.itemDescriptions.map((desc, idx) => (
-                                <li key={idx} className="text-[11px]">
-                                  {desc}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Amounts Strip */}
-                        <div className="flex flex-wrap items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
-                          <div className="flex items-center gap-3">
-                            <span className="text-slate-600 dark:text-slate-300">
-                              Total:{' '}
-                              <strong className="text-slate-900 dark:text-slate-100 font-mono">
-                                ₹{order.grandTotal}
-                              </strong>
-                            </span>
-                            <span className="text-slate-600 dark:text-slate-300">
-                              Advance:{' '}
-                              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium">
-                                ₹{order.advancePaid}
-                              </span>
-                            </span>
-                          </div>
-                          <span className="text-slate-600 dark:text-slate-300">
-                            Balance:{' '}
-                            <span
-                              className={`font-mono font-bold ${
-                                Number(order.balanceDue) > 0
-                                  ? 'text-amber-600 dark:text-amber-400'
-                                  : 'text-slate-600 dark:text-slate-300'
-                              }`}
-                            >
-                              ₹{order.balanceDue}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
               )}
             </div>
-          )}
 
-          {/* Placeholder Pane: Lens Specification */}
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-              <div className="flex items-center space-x-2">
-                <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
-                  Ophthalmic Lens Specification
-                </h3>
-              </div>
-              <span className="rounded bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-600 dark:text-slate-300">
-                Type · Coating · Material
-              </span>
-            </div>
-            <div className="mt-3 flex items-center justify-center py-4 text-xs text-slate-500 dark:text-slate-300 italic">
-              Lens type selection (Single Vision, Progressive, Blue-Cut) and lab attributes
-            </div>
-          </div>
-        </div>
-
-        {/* ══════════════════════════════════════════════════════════════════
-            RIGHT CHECKOUT LEDGER (Cols 8-12): Billing Cart & Payment Settlement
-            ══════════════════════════════════════════════════════════════════ */}
-        <div className="col-span-5 flex flex-col gap-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm overflow-y-auto">
-          <div className="flex flex-col">
-            {/* Cart Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-              <div className="flex items-center space-x-2">
-                <ShoppingBag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
-                  Invoice Cart
-                </h2>
-                <span className="rounded bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-300">
-                  {totals.totalItems} {totals.totalItems === 1 ? 'Item' : 'Items'}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
+            {/* ── View Switcher: Clinical Refraction Power vs. Purchase Order History ── */}
+            {selectedPatient && (
+              <div className="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-t-lg overflow-hidden shrink-0 shadow-xs">
                 <button
                   type="button"
-                  data-testid="add-product-btn"
-                  onClick={() => setIsAddProductModalOpen(true)}
-                  className="flex items-center gap-1 rounded-md bg-blue-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition active:scale-95"
+                  data-testid="tab-view-clinical-power"
+                  onClick={() => setActiveLeftTab('rx')}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition cursor-pointer ${
+                    activeLeftTab === 'rx'
+                      ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-950/30'
+                      : 'border-transparent text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100'
+                  }`}
                 >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>+ Add Product [F2]</span>
+                  <Eye className="h-4 w-4" />
+                  <span>Clinical Refraction & Rx Matrix</span>
                 </button>
-                {cartItems.length > 0 && (
+
+                <button
+                  type="button"
+                  data-testid="tab-view-purchase-history"
+                  onClick={() => setActiveLeftTab('orders')}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition cursor-pointer ${
+                    activeLeftTab === 'orders'
+                      ? 'border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400 bg-purple-50/40 dark:bg-purple-950/30'
+                      : 'border-transparent text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100'
+                  }`}
+                >
+                  <Receipt className="h-4 w-4" />
+                  <span>
+                    Purchase Order History (
+                    {(patientOrderHistories[selectedPatient.id] || []).length})
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {/* ── Tab 1: Clinical Prescription Matrix (Default) ── */}
+            {(activeLeftTab === 'rx' || !selectedPatient) && (
+              <PrescriptionGrid
+                value={
+                  activePrescriptionPatientId && prescriptions[activePrescriptionPatientId]
+                    ? prescriptions[activePrescriptionPatientId]
+                    : prescription
+                }
+                onChange={(newVal) => {
+                  if (activePrescriptionPatientId) {
+                    setPatientPrescription(activePrescriptionPatientId, newVal);
+                  } else {
+                    setPrescription(newVal);
+                  }
+                }}
+                patients={dynamicActivePatients}
+                activePatientId={activePrescriptionPatientId || selectedPatient?.id}
+                onSelectPatientTab={(pId) => setActivePrescriptionPatientId(pId)}
+                prescriptionsMap={prescriptions}
+                patientPrescriptionHistory={
+                  currentActivePatient?.id
+                    ? patientPrescriptionHistories[currentActivePatient.id]
+                    : []
+                }
+                isAddingNewPower={
+                  currentActivePatient?.id
+                    ? !!isAddingNewPower[currentActivePatient.id]
+                    : false
+                }
+                onToggleAddNewPower={(isAdding) => {
+                  if (currentActivePatient?.id) {
+                    setIsAddingNewPower(currentActivePatient.id, isAdding);
+                  }
+                }}
+                onUsePrescriptionHistory={(historyItem) => {
+                  if (!currentActivePatient?.id) return;
+                  const rxVals = historyToPrescriptionValues(historyItem);
+                  setPatientPrescription(currentActivePatient.id, rxVals);
+                  toast.info('Prescription Loaded', {
+                    description: `Applied ${new Date(historyItem.prescribedAt).toLocaleDateString('en-IN')} refraction to order.`,
+                  });
+                }}
+                onSaveNewPower={async (rx) => {
+                  if (!currentActivePatient?.id) return;
+                  const patientId = currentActivePatient.id;
+                  const res = await saveNewPrescription(patientId, {
+                    odSphere: rx.odSphere,
+                    odCylinder: rx.odCylinder,
+                    odAxis: rx.odAxis,
+                    odAdd: rx.odAdd,
+                    odPd: rx.odPd,
+                    osSphere: rx.osSphere,
+                    osCylinder: rx.osCylinder,
+                    osAxis: rx.osAxis,
+                    osAdd: rx.osAdd,
+                    osPd: rx.osPd,
+                    binocularPd: rx.binocularPd,
+                    clinicalRemarks: rx.clinicalRemarks,
+                  });
+                  if (res.success && res.prescription) {
+                    const prevHist = patientPrescriptionHistories[patientId] || [];
+                    setPatientPrescriptionHistory(patientId, [res.prescription, ...prevHist]);
+                    setIsAddingNewPower(patientId, false);
+                    setPatientPrescription(patientId, rx);
+                    toast.success('New Prescription Saved', {
+                      description: 'Saved to patient record & applied to current order.',
+                    });
+                  } else {
+                    toast.error('Failed to Save Prescription', {
+                      description: res.error || 'Please check input values.',
+                    });
+                  }
+                }}
+              />
+            )}
+
+            {/* ── Tab 2: Purchase Order History Panel ── */}
+            {activeLeftTab === 'orders' && selectedPatient && (
+              <div className="rounded-b-lg border border-t-0 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                  <div className="flex items-center space-x-2">
+                    <Receipt className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                      Purchase Invoices for {selectedPatient.fullName}
+                    </h3>
+                  </div>
+                  <span className="text-[11px] font-mono text-slate-600 dark:text-slate-300">
+                    {(patientOrderHistories[selectedPatient.id] || []).length} Past Invoices
+                  </span>
+                </div>
+
+                {isLoadingOrders ? (
+                  <div className="flex flex-col items-center justify-center py-12 space-y-2 text-slate-400">
+                    <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                    <span className="text-xs">Loading order invoices...</span>
+                  </div>
+                ) : (patientOrderHistories[selectedPatient.id] || []).length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-center rounded-lg border border-dashed border-slate-200 dark:border-slate-800 p-6">
+                    <Receipt className="h-8 w-8 text-slate-300 dark:text-slate-600 mb-2" />
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      No Previous Purchase Orders
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-300">
+                      This customer does not have any prior purchase invoices on record.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                    {(patientOrderHistories[selectedPatient.id] || []).map((order) => {
+                      const orderDate = new Date(order.createdAt);
+                      return (
+                        <div
+                          key={order.id}
+                          className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-3.5 space-y-2.5 transition hover:border-slate-300 dark:hover:border-slate-700"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400">
+                                {order.invoiceNumber}
+                              </span>
+                              <span
+                                className={`rounded px-1.5 py-0.2 text-[9px] font-bold uppercase ${
+                                  order.paymentStatus === 'PAID'
+                                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                                    : order.paymentStatus === 'PARTIAL'
+                                    ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
+                                    : 'bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300'
+                                }`}
+                              >
+                                {order.paymentStatus}
+                              </span>
+                              <span className="rounded bg-slate-200 dark:bg-slate-800 px-1.5 py-0.2 text-[9px] font-semibold text-slate-600 dark:text-slate-300 uppercase">
+                                {order.orderStatus.replace(/_/g, ' ')}
+                              </span>
+                              {order.isWearerOnly && (
+                                <span className="rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 text-[9px] font-bold">
+                                  Wearer on Family Bill
+                                </span>
+                              )}
+                              {order.branchName && (
+                                <span
+                                  data-testid="order-history-branch-badge"
+                                  className="rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.2 text-[9px] font-medium border border-slate-200 dark:border-slate-700 flex items-center gap-0.5"
+                                >
+                                  <MapPin className="h-2.5 w-2.5 text-slate-400" />
+                                  <span>{order.branchName}</span>
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-slate-600 dark:text-slate-300 font-mono">
+                              {orderDate.toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </span>
+                          </div>
+
+                          {/* Line items snippet */}
+                          <div className="space-y-1">
+                            {order.itemDescriptions?.map((desc, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400"
+                              >
+                                <span className="truncate max-w-[280px]">
+                                  {desc}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Order Financials */}
+                          <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                            <span className="text-slate-500">
+                              Grand Total:{' '}
+                              <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                                ₹{order.grandTotal}
+                              </span>
+                            </span>
+                            <span className="text-slate-500">
+                              Balance Due:{' '}
+                              <span
+                                className={`font-mono font-bold ${
+                                  Number(order.balanceDue) > 0
+                                    ? 'text-amber-600 dark:text-amber-400'
+                                    : 'text-slate-600 dark:text-slate-300'
+                                }`}
+                              >
+                                ₹{order.balanceDue}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Placeholder Pane: Lens Specification */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                    Ophthalmic Lens Specification
+                  </h3>
+                </div>
+                <span className="rounded bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-600 dark:text-slate-300">
+                  Type · Coating · Material
+                </span>
+              </div>
+              <div className="mt-3 flex items-center justify-center py-4 text-xs text-slate-500 dark:text-slate-300 italic">
+                Lens type selection (Single Vision, Progressive, Blue-Cut) and lab attributes
+              </div>
+            </div>
+          </div>
+        );
+
+        // 2. Checkout Ledger Inner (Financial Breakdown, Custom Invoice, Payment Panel, Complete Order)
+        const renderCheckoutLedgerInner = () => (
+          <>
+            {/* Financial Totals & Summary Breakdown */}
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-3 mt-3 flex-shrink-0">
+              <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                <div className="flex justify-between">
+                  <span>Cart Subtotal</span>
+                  <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
+                    ₹{totals.subtotal.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Cart Total Discount</span>
+                  <span
+                    className={`font-mono font-medium ${
+                      totals.totalDiscount.greaterThan(0)
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    {totals.totalDiscount.greaterThan(0)
+                      ? `−₹${totals.totalDiscount.toFixed(2)}`
+                      : '₹0.00'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Taxable Value</span>
+                  <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
+                    ₹{totals.taxableValue.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-600 dark:text-slate-300 text-[11px]">
+                  <span>CGST</span>
+                  <span className="font-mono">₹{totals.cgst.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600 dark:text-slate-300 text-[11px]">
+                  <span>SGST</span>
+                  <span className="font-mono">₹{totals.sgst.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-700 dark:text-slate-300">
+                  <span className="font-medium">Cart Total Tax</span>
+                  <span className="font-mono font-medium">
+                    ₹{totals.totalTax.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-slate-200 dark:border-slate-800 pt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <span>Grand Total</span>
+                  <span className="font-mono text-base text-blue-600 dark:text-blue-400">
+                    ₹{totals.grandTotal.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Custom Invoice / Billing Details Bar */}
+              <div className="mt-2.5 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 flex items-center justify-between">
+                <div className="flex flex-col text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300">Invoice To:</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {invoiceBillingDetails.billingName || selectedPatient?.fullName || 'Primary Patient'}
+                    </span>
+                    {invoiceBillingDetails.gstin && (
+                      <span className="rounded bg-blue-100 dark:bg-blue-950 px-1 py-0.5 text-[10px] font-mono font-bold text-blue-800 dark:text-blue-300">
+                        GSTIN: {invoiceBillingDetails.gstin}
+                      </span>
+                    )}
+                  </div>
+                  {invoiceBillingDetails.notes && (
+                    <span className="text-[10px] text-slate-500 italic mt-0.5 truncate max-w-[280px]">
+                      Note: {invoiceBillingDetails.notes}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  data-testid="edit-invoice-details-btn"
+                  onClick={() => setIsInvoiceDetailsModalOpen(true)}
+                  className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition cursor-pointer"
+                >
+                  <Edit3 className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                  <span>Edit Invoice Details</span>
+                </button>
+              </div>
+
+              {/* Mounted Payment Panel */}
+              <div className="mt-2.5">
+                <PaymentPanel
+                  grandTotal={totals.grandTotal}
+                  advancePaid={advancePaid}
+                  onAdvancePaidChange={setAdvancePaid}
+                  paymentMode={paymentMode}
+                  onPaymentModeChange={setPaymentMode}
+                  reference={paymentReference}
+                  onReferenceChange={setPaymentReference}
+                  disabled={isSubmitting || cartItems.length === 0}
+                />
+              </div>
+
+              {/* Checkout Action Button & Post-Order Print Flow */}
+              <div className="mt-2.5 space-y-2">
+                {completedOrder ? (
+                  <div className="rounded-lg border border-emerald-300 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-950/40 p-3 space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Order #{completedOrder.invoiceNumber} Placed!</span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setPrintMode('thermal')}
+                          className="flex items-center justify-center gap-1.5 rounded-md bg-slate-900 py-2 px-2 text-[11px] font-bold text-white shadow-sm hover:bg-slate-800 active:scale-[0.99] transition cursor-pointer"
+                        >
+                          <Printer className="h-3.5 w-3.5 text-emerald-400" />
+                          <span>Print Thermal Receipt</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPrintMode('a4')}
+                          className="flex items-center justify-center gap-1.5 rounded-md bg-blue-600 py-2 px-2 text-[11px] font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] transition cursor-pointer"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          <span>Print A4 Invoice</span>
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setPrintMode('workshop')}
+                        className="w-full flex items-center justify-center gap-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-1.5 px-2 text-[11px] font-bold text-slate-800 dark:text-slate-200 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-750 active:scale-[0.99] transition cursor-pointer"
+                      >
+                        <ClipboardList className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                        <span>Print Lab / Workshop Slip</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={resetOrder}
+                        className="w-full flex items-center justify-center gap-1 rounded-md bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.99] transition cursor-pointer"
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        <span>Start New Order (F1)</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={clearCart}
-                    className="text-[11px] font-medium text-slate-400 hover:text-red-600 transition"
+                    data-testid="btn-complete-order"
+                    disabled={cartItems.length === 0 || !selectedPatient || isSubmitting}
+                    onClick={handleCheckout}
+                    className="w-full flex items-center justify-center gap-2 rounded-md bg-blue-600 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-300 transition cursor-pointer"
                   >
-                    Clear
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Processing Order...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        <span>Complete Order (F10)</span>
+                      </>
+                    )}
                   </button>
                 )}
               </div>
             </div>
+          </>
+        );
 
-            {/* Mounted Debounced Inventory Search Component */}
-            <div className="mt-3">
-              <InventorySearch
-                onAdd={addInventoryItem}
-                onSelectFrame={(item) => setSelectedFrameForWizard(item)}
-                branchId={activeBillingBranchId || undefined}
-              />
+        // 3. Cart Workspace (Header, Inventory Search, BillingCart Table, and optional inline checkout)
+        const renderCartWorkspace = (
+          colSpanClass: string,
+          isCompactCart: boolean,
+          showInlineCheckout: boolean
+        ) => (
+          <div className={`${colSpanClass} flex flex-col gap-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm overflow-y-auto`}>
+            <div className="flex flex-col">
+              {/* Cart Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                <div className="flex items-center space-x-2">
+                  <ShoppingBag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                    Invoice Cart
+                  </h2>
+                  <span className="rounded bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-300">
+                    {totals.totalItems} {totals.totalItems === 1 ? 'Item' : 'Items'}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    data-testid="add-product-btn"
+                    onClick={() => setIsAddProductModalOpen(true)}
+                    className="flex items-center gap-1 rounded-md bg-blue-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition active:scale-95 cursor-pointer"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>+ Add Product [F2]</span>
+                  </button>
+                  {cartItems.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearCart}
+                      className="text-[11px] font-medium text-slate-400 hover:text-red-600 transition cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Mounted Debounced Inventory Search Component */}
+              <div className="mt-3">
+                <InventorySearch
+                  onAdd={addInventoryItem}
+                  onSelectFrame={(item) => setSelectedFrameForWizard(item)}
+                  branchId={activeBillingBranchId || undefined}
+                />
+              </div>
+
+              {/* Line Items Container / Billing Cart Table */}
+              <div className="mt-3 min-h-[140px]">
+                <BillingCart
+                  items={cartItems}
+                  activePatients={dynamicActivePatients}
+                  onUpdateQuantity={updateQuantity}
+                  onUpdateDiscount={updateDiscount}
+                  onUpdatePatient={updateCartItemPatient}
+                  onUpdateOwnFrame={updateCartItemOwnFrame}
+                  onEditItem={(item) => setEditingCartItem(item)}
+                  onRemoveItem={removeItem}
+                  onClearCart={clearCart}
+                  showSummary={false}
+                  isCompact={isCompactCart}
+                />
+              </div>
             </div>
 
-            {/* Line Items Container / Billing Cart Table */}
-            <div className="mt-3 min-h-[140px]">
-              <BillingCart
-                items={cartItems}
-                activePatients={dynamicActivePatients}
-                onUpdateQuantity={updateQuantity}
-                onUpdateDiscount={updateDiscount}
-                onUpdatePatient={updateCartItemPatient}
-                onUpdateOwnFrame={updateCartItemOwnFrame}
-                onEditItem={(item) => setEditingCartItem(item)}
-                onRemoveItem={removeItem}
-                onClearCart={clearCart}
-                showSummary={false}
-              />
-            </div>
+            {showInlineCheckout && renderCheckoutLedgerInner()}
           </div>
+        );
 
-          {/* Financial Totals & Summary Breakdown */}
-          <div className="border-t border-slate-200 dark:border-slate-800 pt-3 mt-3 flex-shrink-0">
-            <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
-              <div className="flex justify-between">
-                <span>Cart Subtotal</span>
-                <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
-                  ₹{totals.subtotal.toFixed(2)}
-                </span>
+        // 4. Standalone Checkout Ledger Pane (for Wide Cart layout in Billing Focus)
+        const renderCheckoutLedgerPane = (colSpanClass: string) => (
+          <div className={`${colSpanClass} flex flex-col gap-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm overflow-y-auto`}>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+              <div className="flex items-center space-x-2">
+                <CreditCard className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                  Payment & Settlement
+                </h2>
               </div>
-              <div className="flex justify-between">
-                <span>Cart Total Discount</span>
-                <span
-                  className={`font-mono font-medium ${
-                    totals.totalDiscount.greaterThan(0)
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-slate-600 dark:text-slate-300'
-                  }`}
+              <span className="text-[11px] font-mono text-slate-500 font-semibold">
+                Balance: ₹{totals.grandTotal.minus(new Decimal(advancePaid || '0')).toFixed(2)}
+              </span>
+            </div>
+
+            {renderCheckoutLedgerInner()}
+          </div>
+        );
+
+        // 5. Mini Cart Drawer for Rx Focus
+        const renderRxFocusMiniCart = (colSpanClass: string) => (
+          <div className={`${colSpanClass} flex flex-col justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm overflow-y-auto`}>
+            <div>
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                <div className="flex items-center space-x-1.5">
+                  <ShoppingBag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                    Cart ({totals.totalItems})
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  data-testid="btn-open-cart-from-rx"
+                  onClick={() => setPosAdaptiveMode('billing_focus')}
+                  className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer"
                 >
-                  {totals.totalDiscount.greaterThan(0)
-                    ? `−₹${totals.totalDiscount.toFixed(2)}`
-                    : '₹0.00'}
-                </span>
+                  <span>Open Cart</span>
+                  <ArrowRight className="h-3 w-3" />
+                </button>
               </div>
-              <div className="flex justify-between">
-                <span>Taxable Value</span>
-                <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
-                  ₹{totals.taxableValue.toFixed(2)}
-                </span>
+
+              <div className="mt-3 space-y-2 max-h-[350px] overflow-y-auto pr-1">
+                {cartItems.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
+                    No items in cart
+                  </div>
+                ) : (
+                  cartItems.map((ci) => (
+                    <div
+                      key={ci.id}
+                      className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 text-xs space-y-1"
+                    >
+                      <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        {ci.description}
+                      </div>
+                      <div className="flex justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                        <span>Qty: {ci.quantity}</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          ₹{ci.unitPrice}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-              <div className="flex justify-between text-slate-600 dark:text-slate-300 text-[11px]">
-                <span>CGST</span>
-                <span className="font-mono">₹{totals.cgst.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-slate-600 dark:text-slate-300 text-[11px]">
-                <span>SGST</span>
-                <span className="font-mono">₹{totals.sgst.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-slate-700 dark:text-slate-300">
-                <span className="font-medium">Cart Total Tax</span>
-                <span className="font-mono font-medium">
-                  ₹{totals.totalTax.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between border-t border-slate-200 dark:border-slate-800 pt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
-                <span>Grand Total</span>
-                <span className="font-mono text-base text-blue-600 dark:text-blue-400">
+            </div>
+
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2">
+              <div className="flex justify-between text-xs font-bold">
+                <span className="text-slate-600 dark:text-slate-400">Grand Total:</span>
+                <span className="font-mono text-sm text-blue-600 dark:text-blue-400">
                   ₹{totals.grandTotal.toFixed(2)}
                 </span>
               </div>
-            </div>
-
-            {/* Custom Invoice / Billing Details Bar */}
-            <div className="mt-2.5 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 flex items-center justify-between">
-              <div className="flex flex-col text-xs">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-600 dark:text-slate-300">Invoice To:</span>
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">
-                    {invoiceBillingDetails.billingName || selectedPatient?.fullName || 'Primary Patient'}
-                  </span>
-                  {invoiceBillingDetails.gstin && (
-                    <span className="rounded bg-blue-100 dark:bg-blue-950 px-1 py-0.5 text-[10px] font-mono font-bold text-blue-800 dark:text-blue-300">
-                      GSTIN: {invoiceBillingDetails.gstin}
-                    </span>
-                  )}
-                </div>
-                {invoiceBillingDetails.notes && (
-                  <span className="text-[10px] text-slate-500 italic mt-0.5 truncate max-w-[280px]">
-                    Note: {invoiceBillingDetails.notes}
-                  </span>
-                )}
-              </div>
               <button
                 type="button"
-                data-testid="edit-invoice-details-btn"
-                onClick={() => setIsInvoiceDetailsModalOpen(true)}
-                className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition"
+                onClick={() => setPosAdaptiveMode('billing_focus')}
+                className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white py-2 text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
               >
-                <Edit3 className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                <span>Edit Invoice Details</span>
+                <ShoppingBag className="h-3.5 w-3.5" />
+                <span>Switch to Billing [F4]</span>
               </button>
             </div>
+          </div>
+        );
 
-            {/* Mounted Payment Panel */}
-            <div className="mt-2.5">
-              <PaymentPanel
+        // ── Layout Switcher Resolution ──
+        if (posLayoutType === 'adaptive') {
+          if (posAdaptiveMode === 'billing_focus') {
+            return (
+              <div className="flex flex-col flex-1 gap-3 overflow-hidden min-h-0 w-full">
+                <CompactPatientStrip
+                  selectedPatient={selectedPatient}
+                  activePatients={activePatients}
+                  dynamicActivePatients={dynamicActivePatients}
+                  currentRx={
+                    activePrescriptionPatientId && prescriptions[activePrescriptionPatientId]
+                      ? prescriptions[activePrescriptionPatientId]
+                      : prescription
+                  }
+                  orderCount={(selectedPatient && (patientOrderHistories[selectedPatient.id] || []).length) || 0}
+                  onSwitchInvoiceAccount={handleSwitchInvoiceAccount}
+                  onOpenAddFamilyModal={() => setIsAddFamilyModalOpen(true)}
+                  onExpandRx={() => setPosAdaptiveMode('split')}
+                  onViewOrders={() => {
+                    setActiveLeftTab('orders');
+                    setPosAdaptiveMode('split');
+                  }}
+                />
+                <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full">
+                  {renderCartWorkspace('col-span-8', false, false)}
+                  {renderCheckoutLedgerPane('col-span-4')}
+                </div>
+              </div>
+            );
+          }
+
+          if (posAdaptiveMode === 'rx_focus') {
+            return (
+              <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full">
+                {renderPatientClinicalWorkspace('col-span-9 lg:col-span-10')}
+                {renderRxFocusMiniCart('col-span-3 lg:col-span-2')}
+              </div>
+            );
+          }
+
+          // Adaptive Split Mode (Balanced)
+          return (
+            <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full">
+              {renderPatientClinicalWorkspace('col-span-7')}
+              {renderCartWorkspace('col-span-5', false, true)}
+            </div>
+          );
+        }
+
+        if (posLayoutType === 'dense') {
+          return (
+            <div className="flex flex-col flex-1 gap-3 overflow-hidden min-h-0 w-full relative">
+              <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full pb-1">
+                {renderPatientClinicalWorkspace('col-span-6')}
+                {renderCartWorkspace('col-span-6', true, false)}
+              </div>
+              <DenseBottomBar
+                totalItems={totals.totalItems}
+                subtotal={totals.subtotal}
+                totalDiscount={totals.totalDiscount}
+                totalTax={totals.totalTax}
                 grandTotal={totals.grandTotal}
                 advancePaid={advancePaid}
                 onAdvancePaidChange={setAdvancePaid}
@@ -1330,84 +1671,28 @@ export function PosView() {
                 onPaymentModeChange={setPaymentMode}
                 reference={paymentReference}
                 onReferenceChange={setPaymentReference}
-                disabled={isSubmitting || cartItems.length === 0}
+                balanceDue={totals.grandTotal.minus(new Decimal(advancePaid || '0'))}
+                isSubmitting={isSubmitting}
+                canCheckout={cartItems.length > 0 && !!selectedPatient && !isSubmitting}
+                onCheckout={handleCheckout}
+                completedOrder={completedOrder}
+                onPrintThermal={() => setPrintMode('thermal')}
+                onPrintA4={() => setPrintMode('a4')}
+                onPrintWorkshop={() => setPrintMode('workshop')}
+                onResetOrder={resetOrder}
               />
             </div>
+          );
+        }
 
-            {/* Checkout Action Button & Post-Order Print Flow */}
-            <div className="mt-2.5 space-y-2">
-              {completedOrder ? (
-                <div className="rounded-lg border border-emerald-300 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-950/40 p-3 space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>Order #{completedOrder.invoiceNumber} Placed!</span>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setPrintMode('thermal')}
-                        className="flex items-center justify-center gap-1.5 rounded-md bg-slate-900 py-2 px-2 text-[11px] font-bold text-white shadow-sm hover:bg-slate-800 active:scale-[0.99] transition"
-                      >
-                        <Printer className="h-3.5 w-3.5 text-emerald-400" />
-                        <span>Print Thermal Receipt</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setPrintMode('a4')}
-                        className="flex items-center justify-center gap-1.5 rounded-md bg-blue-600 py-2 px-2 text-[11px] font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] transition"
-                      >
-                        <FileText className="h-3.5 w-3.5" />
-                        <span>Print A4 Invoice</span>
-                      </button>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setPrintMode('workshop')}
-                      className="w-full flex items-center justify-center gap-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-1.5 px-2 text-[11px] font-bold text-slate-800 dark:text-slate-200 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-750 active:scale-[0.99] transition"
-                    >
-                      <ClipboardList className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                      <span>Print Lab / Workshop Slip</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={resetOrder}
-                      className="w-full flex items-center justify-center gap-1 rounded-md bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.99] transition"
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                      <span>Start New Order (F1)</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  data-testid="btn-complete-order"
-                  disabled={cartItems.length === 0 || !selectedPatient || isSubmitting}
-                  onClick={handleCheckout}
-                  className="w-full flex items-center justify-center gap-2 rounded-md bg-blue-600 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-300 transition"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Processing Order...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4" />
-                      <span>Complete Order (F10)</span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
+        // Classic Split Layout (Preserved 7:5 Original)
+        return (
+          <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full">
+            {renderPatientClinicalWorkspace('col-span-7')}
+            {renderCartWorkspace('col-span-5', false, true)}
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* ── ORDER SUCCESS MODAL OVERLAY (PRD SECTION 3.4) ── */}
       {completedOrder && (

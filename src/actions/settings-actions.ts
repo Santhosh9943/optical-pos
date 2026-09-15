@@ -22,6 +22,7 @@ const storeProfileSchema = z.object({
       message: 'Default tax rate must be a percentage between 0 and 100',
     }),
   receiptType: z.enum(['THERMAL_80MM', 'A4_INVOICE']),
+  defaultPosLayout: z.enum(['adaptive', 'dense', 'split']).optional().default('adaptive'),
 });
 
 export type StoreProfileInput = z.infer<typeof storeProfileSchema>;
@@ -70,6 +71,7 @@ export async function getStoreProfile(): Promise<StoreProfile> {
         address: '123 Optical Plaza, MG Road, Bengaluru - 560001',
         defaultTaxRate: '18.00',
         receiptType: 'THERMAL_80MM',
+        defaultPosLayout: 'adaptive',
         branchId: session.branchId,
       })
       .returning();
@@ -87,6 +89,7 @@ export async function getStoreProfile(): Promise<StoreProfile> {
       address: '123 Optical Plaza, MG Road, Bengaluru - 560001',
       defaultTaxRate: '18.00',
       receiptType: 'THERMAL_80MM' as ReceiptType,
+      defaultPosLayout: 'adaptive',
       branchId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -117,6 +120,7 @@ export async function updateStoreProfile(
         address: validated.address.trim(),
         defaultTaxRate: formattedTaxRate,
         receiptType: validated.receiptType,
+        defaultPosLayout: validated.defaultPosLayout || 'adaptive',
         updatedAt: new Date(),
       })
       .where(eq(storeProfile.id, currentProfile.id))

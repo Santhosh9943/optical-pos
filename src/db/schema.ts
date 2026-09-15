@@ -566,6 +566,9 @@ export const storeProfile = pgTable('store_profile', {
   receiptType: receiptTypeEnum('receipt_type')
     .notNull()
     .default('THERMAL_80MM'),
+  defaultPosLayout: varchar('default_pos_layout', { length: 50 })
+    .notNull()
+    .default('adaptive'),
   branchId: uuid('branch_id').references(() => branches.id, {
     onDelete: 'set null',
   }),

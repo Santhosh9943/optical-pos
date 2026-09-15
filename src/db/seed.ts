@@ -185,6 +185,22 @@ const seedInventory = [
     taxRate: '18.00',
     hsnCode: '9004',
   },
+  // Sunglasses (18% GST, HSN 9004)
+  {
+    sku: 'SG-RB-3025-GLD',
+    barcode: '8901234567895',
+    category: 'SUNGLASS' as const,
+    brand: 'Ray-Ban',
+    model: 'RB 3025 Aviator',
+    description: 'Gold classic aviator sunglasses with UV400 polarized lenses',
+    costPrice: '1800.00',
+    sellingPrice: '4500.00',
+    mrp: '5490.00',
+    stockQuantity: 10,
+    lowStockThreshold: 2,
+    taxRate: '18.00',
+    hsnCode: '9004',
+  },
   // Accessories (18% GST, HSN varies)
   {
     sku: 'ACC-CASE-HARD',
@@ -262,7 +278,12 @@ export async function seedDatabase() {
   // Insert customers
   const insertedCustomers = await db
     .insert(customers)
-    .values(seedCustomers)
+    .values(
+      seedCustomers.map((c) => ({
+        ...c,
+        organizationId: '00000000-0000-0000-0000-000000000001',
+      }))
+    )
     .returning({ id: customers.id, fullName: customers.fullName });
 
   console.log(`  ✓ ${insertedCustomers.length} customers`);
@@ -270,7 +291,12 @@ export async function seedDatabase() {
   // Insert inventory
   const insertedInventory = await db
     .insert(inventoryItems)
-    .values(seedInventory)
+    .values(
+      seedInventory.map((item) => ({
+        ...item,
+        organizationId: '00000000-0000-0000-0000-000000000001',
+      }))
+    )
     .returning({ id: inventoryItems.id, sku: inventoryItems.sku });
 
   console.log(`  ✓ ${insertedInventory.length} inventory items`);

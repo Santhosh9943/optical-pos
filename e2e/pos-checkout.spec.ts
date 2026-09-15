@@ -5,6 +5,13 @@ test.describe('POS Core Workflows & Zero-Regression Test Suite', () => {
     // Navigate to POS new billing view
     await page.goto('/pos/new-bill');
     await page.waitForLoadState('networkidle');
+    const layoutSelect = page.getByTestId('pos-layout-type-select');
+    if (await layoutSelect.isVisible().catch(() => false)) {
+      const current = await layoutSelect.inputValue();
+      if (current === 'dense') {
+        await layoutSelect.selectOption('adaptive');
+      }
+    }
   });
 
   test('Test Case 1: SPA State Persistence across Route Navigation', async ({ page }) => {

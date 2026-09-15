@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { inventoryItems, branches } from '@/db/schema';
-import { and, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { and, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { cacheGet, cacheSet } from '@/lib/redis';
 import { getCurrentSession } from '@/lib/auth-utils';
@@ -38,9 +38,19 @@ export async function GET(request: Request) {
     if (branchParam && branchParam !== 'all') {
       const ids = branchParam.split(',').filter(Boolean);
       if (ids.length === 1) {
-        conditions.push(eq(inventoryItems.branchId, ids[0]));
+        conditions.push(
+          or(
+            eq(inventoryItems.branchId, ids[0]),
+            isNull(inventoryItems.branchId)
+          )!
+        );
       } else if (ids.length > 1) {
-        conditions.push(inArray(inventoryItems.branchId, ids));
+        conditions.push(
+          or(
+            inArray(inventoryItems.branchId, ids),
+            isNull(inventoryItems.branchId)
+          )!
+        );
       }
     }
 

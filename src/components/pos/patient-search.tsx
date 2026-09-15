@@ -99,11 +99,6 @@ export function PatientSearch({
       const patients: Patient[] = data.patients || [];
       setResults(patients);
       setIsOpen(true);
-
-      // Auto-select if exactly one match occurs on full 10-digit number
-      if (patients.length === 1 && trimmed.length === 10) {
-        handleSelect(patients[0], patients);
-      }
     } catch (err) {
       console.error('[patient-search] Failed to search:', err);
       setResults([]);

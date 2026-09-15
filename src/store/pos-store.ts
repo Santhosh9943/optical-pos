@@ -58,7 +58,13 @@ export interface POSState {
   // Active print mode (null = not printing, 'thermal' = 80mm roll, 'a4' = A4 tax invoice, 'workshop' = job slip)
   printMode: PrintMode;
 
+  // Layout & View Mode Architecture
+  posLayoutType: 'adaptive' | 'dense' | 'split';
+  posAdaptiveMode: 'split' | 'billing_focus' | 'rx_focus';
+
   // Actions
+  setPosLayoutType: (layout: 'adaptive' | 'dense' | 'split') => void;
+  setPosAdaptiveMode: (mode: 'split' | 'billing_focus' | 'rx_focus') => void;
   setActivePatients: (patients: POSPatient[]) => void;
   addFamilyMember: (patient: POSPatient) => void;
   removeFamilyMember: (patientId: string) => void;
@@ -119,6 +125,8 @@ export const initialInvoiceBillingDetails: InvoiceBillingDetails = {
 };
 
 export const usePOSStore = create<POSState>()((set, get) => ({
+  posLayoutType: 'adaptive',
+  posAdaptiveMode: 'split',
   activePatients: [],
   selectedPatient: null,
   activePrescriptionPatientId: null,
@@ -133,6 +141,9 @@ export const usePOSStore = create<POSState>()((set, get) => ({
   invoiceBillingDetails: { ...initialInvoiceBillingDetails },
   completedOrder: null,
   printMode: null,
+
+  setPosLayoutType: (layout) => set({ posLayoutType: layout }),
+  setPosAdaptiveMode: (mode) => set({ posAdaptiveMode: mode }),
 
   setActivePatients: (patients) => {
     const payer = patients.find((p) => p.isPayer) || patients[0] || null;

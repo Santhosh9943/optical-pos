@@ -14,6 +14,10 @@ import {
   Percent,
   Sparkles,
   Loader2,
+  LayoutGrid,
+  Columns2,
+  Maximize2,
+  Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateStoreProfile, type StoreProfileInput } from '@/actions/settings-actions';
@@ -23,7 +27,7 @@ interface SettingsViewProps {
   initialProfile: StoreProfile;
 }
 
-type TabType = 'general' | 'print';
+type TabType = 'general' | 'print' | 'pos';
 
 export function SettingsView({ initialProfile }: SettingsViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>('general');
@@ -39,6 +43,9 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
   );
   const [receiptType, setReceiptType] = useState<ReceiptType>(
     initialProfile.receiptType || 'THERMAL_80MM'
+  );
+  const [defaultPosLayout, setDefaultPosLayout] = useState<'adaptive' | 'dense' | 'split'>(
+    (initialProfile as any).defaultPosLayout || 'adaptive'
   );
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -67,6 +74,7 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
         address: address.trim(),
         defaultTaxRate: defaultTaxRate.trim() || '18.00',
         receiptType,
+        defaultPosLayout,
       };
 
       const result = await updateStoreProfile(payload);
@@ -145,6 +153,20 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
         >
           <Printer className="h-4 w-4" />
           <span>Print Configuration</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="tab-pos-layout"
+          onClick={() => setActiveTab('pos')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
+            activeTab === 'pos'
+              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <LayoutGrid className="h-4 w-4" />
+          <span>POS Counter Layout</span>
         </button>
       </div>
 
@@ -415,6 +437,153 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Workshop job slips triggered from the Lab Orders Kanban automatically render using the specialized <span className="font-semibold text-foreground">Workshop Lab Slip</span> layout with full clinical OD/OS refraction metrics and complete financial data redaction, regardless of the customer invoice default.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab 3: POS Counter Layout ── */}
+        {activeTab === 'pos' && (
+          <div className="space-y-4 max-w-3xl">
+            <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-2xs space-y-4">
+              <div className="border-b border-border pb-2">
+                <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <LayoutGrid className="h-4 w-4 text-blue-500" />
+                  <span>Default Counter Billing Experience</span>
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Select how the sales counter is laid out when starting new customer orders on /pos/new-bill.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Option 1: Adaptive View Modes */}
+                <div
+                  data-testid="pos-layout-adaptive-card"
+                  onClick={() => setDefaultPosLayout('adaptive')}
+                  className={`relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition ${
+                    defaultPosLayout === 'adaptive'
+                      ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 shadow-xs'
+                      : 'border-border bg-card hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300">
+                        <Maximize2 className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-bold text-foreground">Adaptive Modes</span>
+                    </div>
+                    <span className="rounded-full bg-blue-100 dark:bg-blue-950 px-2 py-0.5 text-[9px] font-bold text-blue-800 dark:text-blue-300 uppercase">
+                      Recommended
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">
+                    Dynamic 3-mode workflow. In Billing Focus, patient is summarized in a sleek 1-line strip while the Cart and Checkout Ledger expand side-by-side.
+                  </p>
+
+                  <div className="mt-3 pt-2 border-t border-border flex items-center justify-between text-[11px]">
+                    <span className="font-semibold text-foreground">Rx ↔ Split ↔ Cart</span>
+                    <input
+                      type="radio"
+                      name="defaultPosLayout"
+                      value="adaptive"
+                      checked={defaultPosLayout === 'adaptive'}
+                      onChange={() => setDefaultPosLayout('adaptive')}
+                      className="text-blue-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Option 2: Dense Split View */}
+                <div
+                  data-testid="pos-layout-dense-card"
+                  onClick={() => setDefaultPosLayout('dense')}
+                  className={`relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition ${
+                    defaultPosLayout === 'dense'
+                      ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 shadow-xs'
+                      : 'border-border bg-card hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-300">
+                        <Columns2 className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-bold text-foreground">Dense Split View</span>
+                    </div>
+                    <span className="rounded-full bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 text-[9px] font-bold text-emerald-800 dark:text-emerald-300 uppercase">
+                      Compact
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">
+                    Side-by-side 50/50 layout with compact 38px cart rows and a fixed bottom settlement bar that keeps checkout buttons always in view.
+                  </p>
+
+                  <div className="mt-3 pt-2 border-t border-border flex items-center justify-between text-[11px]">
+                    <span className="font-semibold text-foreground">Docked Bottom Bar</span>
+                    <input
+                      type="radio"
+                      name="defaultPosLayout"
+                      value="dense"
+                      checked={defaultPosLayout === 'dense'}
+                      onChange={() => setDefaultPosLayout('dense')}
+                      className="text-blue-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Option 3: Classic Split */}
+                <div
+                  data-testid="pos-layout-split-card"
+                  onClick={() => setDefaultPosLayout('split')}
+                  className={`relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition ${
+                    defaultPosLayout === 'split'
+                      ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 shadow-xs'
+                      : 'border-border bg-card hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        <LayoutGrid className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-bold text-foreground">Classic Split</span>
+                    </div>
+                    <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[9px] font-bold text-slate-600 dark:text-slate-300 uppercase">
+                      Standard
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">
+                    Original 7:5 side-by-side layout with full prescription matrix and vertically stacked checkout ledger.
+                  </p>
+
+                  <div className="mt-3 pt-2 border-t border-border flex items-center justify-between text-[11px]">
+                    <span className="font-semibold text-foreground">7:5 Grid Ratio</span>
+                    <input
+                      type="radio"
+                      name="defaultPosLayout"
+                      value="split"
+                      checked={defaultPosLayout === 'split'}
+                      onChange={() => setDefaultPosLayout('split')}
+                      className="text-blue-600"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Counter Terminal Info Box */}
+              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2 mt-4">
+                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                  <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <span>On-the-Fly Switching at Counter</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  The layout saved here sets the default across all store billing terminals. Cashiers and opticians can also toggle layout modes on-the-fly directly in the POS top bar using <span className="font-semibold text-foreground">[F4]</span> without altering store-wide defaults.
                 </p>
               </div>
             </div>

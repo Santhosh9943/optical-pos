@@ -68,6 +68,7 @@ interface BillingCartProps {
   onRemoveItem: (id: string) => void;
   onClearCart?: () => void;
   showSummary?: boolean;
+  isCompact?: boolean;
 }
 
 /**
@@ -302,6 +303,7 @@ export function BillingCart({
   onRemoveItem,
   onClearCart,
   showSummary = false,
+  isCompact = false,
 }: BillingCartProps) {
   const { lines, totals } = useMemo(() => calculateCartMetrics(items), [items]);
 
@@ -360,69 +362,93 @@ export function BillingCart({
                           {item.hsnCode && <span>• HSN {item.hsnCode}</span>}
                         </div>
 
-                        {/* Family Member Assignment & Own Frame note */}
-                        {activePatients && activePatients.length > 0 && (
-                          <div className="mt-1.5 space-y-1">
-                            <div className="flex items-center gap-1 text-[11px]">
-                              <span className="text-slate-600 dark:text-slate-300 font-medium">
-                                Assign to Patient:
+                        {/* Compact vs Full Family & Own Frame Assignment */}
+                        {isCompact ? (
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                            {item.patientId && (
+                              <span className="rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 px-1.5 py-0.5 font-semibold">
+                                👤 {activePatients?.find((p) => p.id === item.patientId)?.fullName || 'Patient'}
                               </span>
-                              <select
-                                aria-label="Assign to Patient"
-                                value={item.patientId || ''}
-                                onChange={(e) =>
-                                  onUpdatePatient?.(item.id, e.target.value || null)
-                                }
-                                className="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 py-0.5 text-[11px] font-semibold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                            )}
+                            {item.isCustomerOwnFrame && (
+                              <span className="rounded bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 px-1.5 py-0.5 font-medium">
+                                👓 Own Frame{item.fittingNote ? `: ${item.fittingNote}` : ''}
+                              </span>
+                            )}
+                            {onEditItem && (
+                              <button
+                                type="button"
+                                onClick={() => onEditItem(item)}
+                                className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-medium cursor-pointer"
                               >
-                                <option value="">Primary Customer</option>
-                                {activePatients.map((p) => (
-                                  <option key={p.id} value={p.id}>
-                                    {p.fullName} ({p.relationType || 'Current'})
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            {/* Own Frame Toggle on Lenses */}
-                            {(item.category === 'OPHTHALMIC_LENS' ||
-                              item.category === 'LENS' ||
-                              item.lensType) && (
-                              <div className="pt-0.5 space-y-1">
-                                <label className="inline-flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                                  <input
-                                    type="checkbox"
-                                    checked={!!item.isCustomerOwnFrame}
-                                    onChange={(e) =>
-                                      onUpdateOwnFrame?.(
-                                        item.id,
-                                        e.target.checked,
-                                        item.fittingNote
-                                      )
-                                    }
-                                    className="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 h-3 w-3"
-                                  />
-                                  <span>Fit to Customer&apos;s Own Frame</span>
-                                </label>
-
-                                {item.isCustomerOwnFrame && (
-                                  <input
-                                    type="text"
-                                    placeholder="Fitting note (e.g., Old brown rimless frame)"
-                                    value={item.fittingNote || ''}
-                                    onChange={(e) =>
-                                      onUpdateOwnFrame?.(
-                                        item.id,
-                                        true,
-                                        e.target.value
-                                      )
-                                    }
-                                    className="w-full rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-2 py-0.5 text-[10px] text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-                                  />
-                                )}
-                              </div>
+                                Edit Details
+                              </button>
                             )}
                           </div>
+                        ) : (
+                          activePatients && activePatients.length > 0 && (
+                            <div className="mt-1.5 space-y-1">
+                              <div className="flex items-center gap-1 text-[11px]">
+                                <span className="text-slate-600 dark:text-slate-300 font-medium">
+                                  Assign to Patient:
+                                </span>
+                                <select
+                                  aria-label="Assign to Patient"
+                                  value={item.patientId || ''}
+                                  onChange={(e) =>
+                                    onUpdatePatient?.(item.id, e.target.value || null)
+                                  }
+                                  className="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 py-0.5 text-[11px] font-semibold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                >
+                                  <option value="">Primary Customer</option>
+                                  {activePatients.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                      {p.fullName} ({p.relationType || 'Current'})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Own Frame Toggle on Lenses */}
+                              {(item.category === 'OPHTHALMIC_LENS' ||
+                                item.category === 'LENS' ||
+                                item.lensType) && (
+                                <div className="pt-0.5 space-y-1">
+                                  <label className="inline-flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={!!item.isCustomerOwnFrame}
+                                      onChange={(e) =>
+                                        onUpdateOwnFrame?.(
+                                          item.id,
+                                          e.target.checked,
+                                          item.fittingNote
+                                        )
+                                      }
+                                      className="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 h-3 w-3"
+                                    />
+                                    <span>Fit to Customer&apos;s Own Frame</span>
+                                  </label>
+
+                                  {item.isCustomerOwnFrame && (
+                                    <input
+                                      type="text"
+                                      placeholder="Fitting note (e.g., Old brown rimless frame)"
+                                      value={item.fittingNote || ''}
+                                      onChange={(e) =>
+                                        onUpdateOwnFrame?.(
+                                          item.id,
+                                          true,
+                                          e.target.value
+                                        )
+                                      }
+                                      className="w-full rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-2 py-0.5 text-[10px] text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                                    />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )
                         )}
                       </td>
 
