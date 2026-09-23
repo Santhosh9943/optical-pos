@@ -6,7 +6,10 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/db/seed.ts",
+    "typecheck": "tsc --noEmit",
+    "test:pos": "playwright test e2e/pos-checkout.spec.ts e2e/pos-layout-modes.spec.ts",
     "test:e2e": "playwright test",
+    "test:all": "playwright test",
     "check": "next lint && tsc --noEmit",
     "validate": "next lint && tsc --noEmit && npm run test:e2e"
   },

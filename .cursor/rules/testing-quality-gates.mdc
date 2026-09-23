@@ -1,0 +1,26 @@
+---
+description: Automated testing standards, Playwright E2E execution, and local CI validation quality gates.
+globs: ["e2e/**/*", "src/**/*"]
+alwaysApply: true
+---
+
+# Testing Standards & Quality Gate Rules
+
+## Zero-Regression Mandate
+- **Static Gate**: `npm run check` (runs ESLint and `tsc --noEmit`) must pass with **0 errors and 0 warnings** before committing code.
+- **E2E Gate**: Playwright test suites must maintain a **100% green pass rate** across all 13 core workflows.
+- Never disable or comment out failing tests to achieve a passing build. Fix the underlying root cause.
+
+## Playwright Best Practices
+- **No Hardcoded Sleep Timers**: Avoid `page.waitForTimeout()`. Always use declarative locator assertions that automatically retry:
+  ```typescript
+  await expect(page.locator("text=Invoice Generated")).toBeVisible();
+  ```
+- **Test Isolation**: Every test must run independently. Use `npm run db:seed` and `x-e2e-bypass-auth: true` headers.
+- **Cache Invalidation**: When testing data mutations, ensure synthetic tenant Redis keys are invalidated so assertions test PostgreSQL state.
+
+## Composite Validation Command
+Run the unified validation command before opening any pull request or declaring a vibe-coding task complete:
+```bash
+npm run validate
+```

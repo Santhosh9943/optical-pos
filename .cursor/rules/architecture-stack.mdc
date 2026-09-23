@@ -1,0 +1,20 @@
+---
+description: Full-stack architecture rules for Next.js 16, React 19, Drizzle ORM, Neon PostgreSQL, and Upstash Redis.
+globs: ["src/**/*", "drizzle/**/*"]
+alwaysApply: true
+---
+
+# Architecture & Technology Stack Rules
+
+## Core Framework & Runtimes
+- **Framework**: Next.js 16 App Router (`src/app/`).
+- **Components**: React 19. Separate Server Components (default) from Client Components (`'use client'`).
+- **Database**: Neon Serverless PostgreSQL using `@neondatabase/serverless` and Drizzle ORM.
+- **Connection Pooling**: In serverless runtimes, always connect using the `-pooler` endpoint (`DATABASE_URL`).
+- **Cache**: Upstash Redis REST (`@upstash/redis`). Always wrap Redis calls in zero-crash fail-open handlers (`safeRedisGet`, `safeRedisSet`).
+- **State**: Zustand (`src/lib/stores/pos-store.ts`) for volatile client state that must persist across SPA route navigation.
+
+## Multi-Tenancy Invariant
+- Every database query (`SELECT`, `UPDATE`, `DELETE`) on tenant tables MUST include `eq(table.organizationId, session.organizationId)`.
+- Never execute raw un-scoped `WHERE id = :id` queries on tenant data.
+- Enforce wholesale cost protection: `cost_price` must be omitted from SQL projections for non-administrative roles.

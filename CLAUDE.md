@@ -1,11 +1,22 @@
 # Optix OS - Project Rules & Coding Standards
 
-You are an expert full-stack engineer building a high-performance, cloud-native Optical Billing and Practice Management System. Always adhere to the specifications outlined in `docs/PRD.md`.
+You are an expert full-stack engineer building a high-performance, cloud-native Optical Billing and Practice Management System. Always adhere to the authoritative specifications outlined in the `docs/` suite:
+- [`docs/PRD.md`](file:///f:/hobby-projects/optical-pos/docs/PRD.md): Product Requirements, User Journeys, and Master Roadmap.
+- [`docs/ARCHITECTURE.md`](file:///f:/hobby-projects/optical-pos/docs/ARCHITECTURE.md): Full-stack Topology, 3-Tier Layering, Neon Pooler, Redis Fallback.
+- [`docs/DESIGN.md`](file:///f:/hobby-projects/optical-pos/docs/DESIGN.md): Design Tokens, WCAG AA Dark Mode Contrast, and the 4 POS Viewport Modes.
+- [`docs/RULES.md`](file:///f:/hobby-projects/optical-pos/docs/RULES.md): Strict Coding Invariants (decimal.js, 0.25 D diopters, atomic stock locks).
+- [`docs/DECISIONS.md`](file:///f:/hobby-projects/optical-pos/docs/DECISIONS.md): Architectural Decision Records (ADR-001 through ADR-008).
+- [`docs/SECURITY.md`](file:///f:/hobby-projects/optical-pos/docs/SECURITY.md): Multi-tenant Segregation, 4-Tier RBAC, and Cost Price Redaction.
+- [`docs/TEST_PLAN.md`](file:///f:/hobby-projects/optical-pos/docs/TEST_PLAN.md): Playwright E2E Strategy and 13-Workflow Test Matrix.
+- [`docs/TASKS.md`](file:///f:/hobby-projects/optical-pos/docs/TASKS.md): Task Ledger, Roadmap, and Definition of Done.
+- [`docs/MEMORY.md`](file:///f:/hobby-projects/optical-pos/docs/MEMORY.md): Current Tech Stack, Test Pass Rates, and Developer Gotchas.
+- [`docs/VIBE_WORKFLOW.md`](file:///f:/hobby-projects/optical-pos/docs/VIBE_WORKFLOW.md): The 9-Step Vibe Coding Playbook and Quality Gates.
+- [`docs/archive/ARCHIVE_LOG.md`](file:///f:/hobby-projects/optical-pos/docs/archive/ARCHIVE_LOG.md): Archive ledger of superseded or retired documentation.
 
 ---
 
 ## 1. Stack & Runtime
-- **Framework:** Next.js 15 (App Router, Server Components & Server Actions)
+- **Framework:** Next.js 16 (App Router, Server Components & Server Actions, React 19)
 - **Language:** TypeScript (strict mode, zero `any`)
 - **Database:** Neon Serverless PostgreSQL using connection pooler (`DATABASE_URL` must use `-pooler`)
 - **ORM:** Drizzle ORM (`drizzle-orm/pg-core`)
@@ -23,6 +34,11 @@ You are an expert full-stack engineer building a high-performance, cloud-native 
     - **Page Headers:** Use a standardized header block for admin pages: `<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">`. 
     - **Card & Table Gaps:** Internal component spacing should consistently use `gap-4`. 
     - **Layout Delegation:** The shared `layout.tsx` is responsible for the top navigation bar and sidebar; it must provide a clean `flex-1 overflow-auto` container for the children. Pages must NEVER try to adjust for the navigation bar using margins.
+  - **POS Counter Viewport Modes:**
+    - Supports 4 modes: `adaptive` (7:5 default), `rx-focus` (9:3 clinical matrix), `billing-focus` (1-line patient strip, 8-column cart), `dense-split` (50/50 ultra-compact, sticky `DenseBottomBar`).
+    - Hotkey switchable via `F4` and persisted in store settings.
+  - **Super Admin Perspective Simulator:**
+    - Platform admins can simulate roles/branches at `/admin/perspective`. Always render persistent `PerspectiveBanner.tsx` during active simulation.
 - **Validation:** Zod v3+
 - **Math Library:** `decimal.js` for all financial calculations
 
@@ -136,8 +152,10 @@ if (updated.length === 0) throw new InsufficientStockError(item.id);
 
 ---
 
-## Meta-Rule: Self-Evolving Guidelines
+## Meta-Rule: Self-Evolving Guidelines & Elastic Documentation
 - **Continuous Rule Refinement:** Whenever you successfully implement a new foundational technology (e.g., Redis, Better Auth, new UI spacing architecture), you MUST evaluate if it establishes a new project standard. If it does, you are required to automatically update this `CLAUDE.md` file to instruct future AI sessions to utilize this new standard. Do not wait for the user to tell you to update the rules for newly established infrastructure.
+- **Dynamically Elastic Documentation:** Active documents in `docs/` must expand when new features are added and contract/prune when features are refactored, reduced, or deprecated. Never leave stale or conflicting content in active documentation.
+- **Archive Protocol & Strict Isolation:** Superseded or obsolete documents are moved to `docs/archive/` and logged in `docs/archive/ARCHIVE_LOG.md`. Agents must ONLY inspect `docs/archive/` when explicitly requested by the user or when researching historical context. All active development must use only active `docs/`.
 
 ---
 

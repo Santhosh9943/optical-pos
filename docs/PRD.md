@@ -286,7 +286,32 @@ sequenceDiagram
 
 ---
 
-## 5. Security, RBAC & Redaction Architecture
+## 5. POS Counter Viewport Modes & Ergonomics
+
+To support diverse optical retail hardware (from 14" point-of-sale laptops to 27" widescreen optometrist consulting displays), OptixOS provides 4 specialized POS counter layout modes:
+
+1. **Adaptive Split View (Default - 7:5 Ratio)**:
+   - Balanced presentation balancing clinical refraction details with real-time cart ledger.
+   - Ideal for single-screen owner-operator stores where consultation and billing happen simultaneously.
+
+2. **Rx Refraction Focus (9:3 Ratio)**:
+   - Expands the patient refraction matrix and historical prescription comparisons.
+   - Collapses the checkout cart into a slide-over drawer (`CartDrawer`), giving maximum screen real estate to complex multifocal/progressive lens measurements.
+
+3. **Billing Focus (Full Width Cart & Compact Patient Strip)**:
+   - Replaces the multi-line patient card with a 1-line `CompactPatientStrip`.
+   - Expands the POS cart to an 8-column wide data table and presents a 4-column settlement grid (Subtotal, GST Split, Discount, Final Payable).
+   - Designed for dedicated cashier counters during high-volume retail rush hours.
+
+4. **Dense Split View (50/50 Ultra-Compact)**:
+   - 50/50 dual pane with table row heights compressed to 38px.
+   - Anchors key checkout actions to a sticky bottom action bar (`DenseBottomBar`).
+   - Keyboard hotkey `F4` seamlessly cycles between all layout modes without losing cart or patient state.
+   - Store managers can configure the store-wide default layout mode in Store Settings (`/settings/store`).
+
+---
+
+## 6. Security, RBAC & Redaction Architecture
 
 1. **Wholesale Cost Price Masking at Database Projection Level**:
    - The wholesale cost (`cost_price`) of inventory items represents sensitive business intelligence.
@@ -302,16 +327,21 @@ sequenceDiagram
    - Once an order transitions to `DELIVERED_AND_CLOSED`, it cannot be modified via standard POS mutations.
    - Financial adjustments require an administrative credit note or audit adjustment action.
 
+4. **Super Admin Perspective Simulator**:
+   - Platform administrators can simulate store staff, store admin, or organizer perspectives via `/admin/perspective`.
+   - Displays a persistent, non-dismissible amber banner (`PerspectiveBanner.tsx`) warning developers of active simulation mode.
+   - Allows instant debugging of tenant-specific issues without credential sharing.
+
 ---
 
-## 6. Continuous Knowledge Graph (`graphify`) & Quality Assurance
+## 7. Continuous Knowledge Graph (`graphify`) & Quality Assurance
 
 ### Continuous Knowledge Graph Integration
 As mandated by project engineering standards, OptixOS maintains an automated semantic knowledge graph synced with the codebase:
 - Knowledge graph engine: **`graphify`**
 - Command: `graphify .` (or `graphify update .`)
 - Artifact output: `graphify-out/` (`graph.html`, `graph.json`, `GRAPH_REPORT.md`)
-- Captures over 400 structural nodes, 800 semantic edges, and 22 cohesive communities spanning clinical optical management, transactional order processing, database schemas, and analytics.
+- Captures structural nodes, semantic edges, and cohesive communities spanning clinical optical management, transactional order processing, database schemas, and analytics.
 
 ### Local CI Pipeline
 Every modification must pass the local CI verification pipeline before deployment:
@@ -321,13 +351,13 @@ npm run validate
 This single gatekeeper command executes:
 1. `next lint` (ESLint 9 syntax, imports, and accessibility rules)
 2. `tsc --noEmit` (Strict TypeScript compiler check with zero `any`)
-3. `npm run test:e2e` (Playwright End-to-End browser test suite across all 16 test cases)
+3. `npm run test:e2e` (Playwright End-to-End browser test suite across all 13 core test workflows)
 
 Following validation, `graphify .` is executed to synchronize the architectural knowledge graph.
 
 ---
 
-## 7. Master Implementation Roadmap (Phases 1 to 14)
+## 8. Master Implementation Roadmap (Phases 1 to 16)
 
 | Phase | Module / Capability | Status | Core Deliverables & Technical Scope |
 | :---: | :--- | :---: | :--- |
@@ -342,7 +372,8 @@ Following validation, `graphify .` is executed to synchronize the architectural 
 | **Phase 9** | **Store Settings & Print Engine Customization** | ✅ Completed | Singleton `store_profile` PostgreSQL table & enum, Server Actions (`getStoreProfile`, `updateStoreProfile`, `getInvoicePrintData`), `/admin/settings` page with General Profile & Print Configuration tabs, modular print components (`ThermalReceipt`, `A4TaxInvoice`, `WorkshopLabSlip`), POS & Patient history print buttons, and dedicated Playwright E2E suite (`settings-print.spec.ts`). |
 | **Phase 10** | **Infrastructure, Caching & Search Performance** | ✅ Completed | Official Upstash Redis integration (`@upstash/redis`), singleton client (`src/lib/redis.ts`) with zero-crash DB fallback, store profile caching (24h TTL) with invalidation on save, 5-minute search query result caching (`/api/inventory/search`, `/api/patients/search`), 300ms frontend debouncing, and automated E2E testing (`caching-performance.spec.ts`). |
 | **Phase 11** | **Multi-Tenant Architecture Preparation** | ✅ Completed | 3-Tier Hierarchy schema foundations (Platform -> Organization -> Branch), `organizations` and `branches` tables, schema foreign key injection (`customers`, `invoices`, `inventoryItems`, `payments`, `store_profile`), Drizzle SQL migration generation (`0002_cute_molly_hayes.sql`). |
-| **Phase 12** | **Authentication & Multi-Tenant Access Control** | ✅ Completed | Better Auth integration with Drizzle adapter & Organization plugin, Drizzle migration `0003_lying_captain_stacy.sql`, route protection middleware (`src/middleware.ts`), login UI (`/auth/login`), `getCurrentSession()` context helper, server action & API route data isolation (`inventory`, `patient`, `processOpticalOrder`, `payment`, `lab`, `report`, search APIs), top header UserNav profile widget with initials/avatar/role badge & Sign Out flow, multi-branch dropdown switcher (`BranchSwitcher`) with consolidated view; Dedicated Root Super Admin Governance Portal (`/super-admin/` layout, `/super-admin/dashboard`, `/super-admin/simulator`, `/super-admin/organizations`, `/super-admin/branches`, `/super-admin/settings`); Interactive Perspective Simulator ("Act as...") with live data injection and persistent sticky simulation banner; Dynamic Role-Scoped Panels in live application: Organizer (multi-store oversight, `/admin/branches`, `/admin/staff`), Store Admin (single-store locked, `/admin/staff`, local stock), Store Staff (counter billing F1, Rx, lab orders; management and settings hidden). |
-| **Phase 13** | **Patient Lifecycle, Family Optical Matrix & Responsive Inventory Management** | ✅ Completed | 1. POS Patient Search Quick Add (`+ Register New Patient` modal in search dropdown and subheader button `btn-pos-add-patient`).<br/>2. Patient Directory Full CRUD (`/admin/patients` with `+ Add Patient`, Edit, and soft-delete safeguards preserving historical invoices/prescriptions).<br/>3. Unclipped Patient Detail Sheet (expanded width `w-full max-w-4xl lg:max-w-5xl`, `min-w-[700px]` invoice table, unclipped Print & Collect Balance actions).<br/>4. Linked Family Optical Powers Matrix (name-wise numbering `#1. Name`, primary & personal phone display, embedded OD/OS SPH/CYL/AXIS/ADD/PD refraction cards).<br/>5. Inventory Full CRUD & Table Responsiveness (clickable table rows, Edit Inventory modal, Delete confirmation dialog with invoice usage protection, active catalog filtering).<br/>6. 100% passing Playwright E2E test suites (35/35 tests passing across all 9 specification files). |
-| **Phase 14** | **Clinical Appointments & Patient Recalls** | 🟡 Next Up | Optometrist appointment scheduling calendar, exam room slot booking, annual eye examination recall reminders via WhatsApp/SMS, expanded clinical notes & visual acuity charts. |
-| **Phase 15** | **Multi-Tenant SaaS Hardening & Enterprise ERP** | ⚪ Roadmap | Row-Level Security (RLS) policies for multi-tenant optical chains, consolidated corporate tax reporting, Indian GST 2.0 inverted duty credit reconciliation (HSN 9001 vs 9003/9004), immutable audit log stream. |
+| **Phase 12** | **Authentication & Multi-Tenant Access Control** | ✅ Completed | Better Auth integration with Drizzle adapter & Organization plugin, Drizzle migration `0003_lying_captain_stacy.sql`, route protection middleware (`src/middleware.ts`), login UI (`/auth/login`), `getCurrentSession()` context helper, server action & API route data isolation, multi-branch dropdown switcher with consolidated view, Super Admin Perspective Simulator with sticky banner. |
+| **Phase 13** | **Patient Lifecycle, Family Optical Matrix & Responsive Inventory Management** | ✅ Completed | POS Patient Quick Add, Patient Directory Full CRUD, expanded Patient Detail Sheet, Linked Family Optical Powers Matrix, Inventory Full CRUD with invoice usage protection. |
+| **Phase 14** | **Production-Level Vibe Coding Infrastructure & POS Viewport Modes** | ✅ Completed | 4 POS Counter Viewport Modes (Adaptive, Rx Focus, Billing Focus, Dense Split) with F4 hotkey switching & Store Settings persistence; Complete enterprise Vibe Coding framework (`ARCHITECTURE.md`, `DESIGN.md`, `RULES.md`, `DECISIONS.md`, `SECURITY.md`, `TEST_PLAN.md`, `TASKS.md`, `MEMORY.md`, `VIBE_WORKFLOW.md`, `.cursor/rules/*.mdc`, `AGENTS.md`). |
+| **Phase 15** | **Omnichannel Customer Engagement & Digital Receipts** | 🟡 Next Up | WhatsApp Business API for thermal receipt delivery, transactional SMS alerts for order pickup and recall reminders, lightweight patient prescription portal. |
+| **Phase 16** | **Hardware Barcode Scanner & Indian GST E-Invoicing** | ⚪ Roadmap | Global USB HID barcode scanner listener (`<10ms` latency), NIC E-invoicing API integration with IRN and signed QR generation, automated GSTR-1 JSON export. |

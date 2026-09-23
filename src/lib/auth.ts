@@ -25,6 +25,13 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      enabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    },
+  },
   plugins: [
     organization(),
   ],
@@ -32,6 +39,7 @@ export const auth = betterAuth({
   baseURL: getServerBaseURL(),
   trustedOrigins: [
     'http://localhost:3000',
+    'https://optical-pos-roan.vercel.app',
     'https://*.vercel.app',
     ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
     ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),

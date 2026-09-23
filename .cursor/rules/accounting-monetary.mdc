@@ -1,0 +1,44 @@
+---
+description: Retail accounting, monetary math with decimal.js, Indian GST splits, and atomic inventory rules.
+globs: ["src/lib/services/**/*", "src/components/pos/**/*", "src/actions/**/*", "src/lib/db/**/*"]
+alwaysApply: true
+---
+
+# Accounting, Monetary Math & Inventory Rules
+
+## Mandatory decimal.js Invariant
+- **Zero Native Floating-Point Math**: Native JavaScript operators (`+`, `-`, `*`, `/`) are STRICTLY FORBIDDEN on monetary values (prices, subtotals, taxes, discounts, balance due).
+- Always import and use `Decimal` from `decimal.js`:
+  ```typescript
+  import Decimal from "decimal.js";
+  const lineTotal = new Decimal(item.unitPrice).times(item.quantity);
+  const tax = lineTotal.times(item.taxRate).dividedBy(100);
+  const total = lineTotal.plus(tax).toFixed(2);
+  ```
+- All database columns for currency store `numeric(12, 2)`. Always format `Decimal` to string using `.toFixed(2)` before database persistence or JSON transmission.
+
+## Indian GST Statutory Splits
+- Ophthalmic prescription lenses: **5% GST** (HSN 9001).
+- Spectacle frames, sunglasses, and accessories: **18% GST** (HSN 9003 / 9004).
+- When a customer purchases a complete pair (Frame + Lens), calculate and display taxes independently per line item before summing into the final tax invoice.
+
+## Atomic Inventory Concurrency Lock
+- Never check stock in Node.js application memory prior to billing (TOCTOU race condition).
+- Always decrement inventory atomically using SQL conditional updates with `RETURNING` inside `db.transaction()`:
+  ```typescript
+  const [updated] = await tx
+    .update(inventoryItems)
+    .set({ stockQuantity: sql`${inventoryItems.stockQuantity} - ${item.quantity}` })
+    .where(
+      and(
+        eq(inventoryItems.id, item.inventoryItemId),
+        eq(inventoryItems.organizationId, session.organizationId),
+        sql`${inventoryItems.stockQuantity} >= ${item.quantity}`
+      )
+    )
+    .returning({ id: inventoryItems.id });
+
+  if (!updated) {
+    throw new Error(`Insufficient stock for item: ${item.name}`);
+  }
+  ```

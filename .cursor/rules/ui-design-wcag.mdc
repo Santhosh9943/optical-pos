@@ -1,0 +1,35 @@
+---
+description: UI design, native dark mode, WCAG AA compliance, fluid layouts, and POS layout modes.
+globs: ["src/components/**/*", "src/app/**/*"]
+alwaysApply: true
+---
+
+# UI Design & WCAG AA Compliance Rules
+
+## Native Dark Mode & Semantic Tokens
+- Use semantic Tailwind tokens (`bg-background`, `text-foreground`, `border-border`, `bg-card`, `text-card-foreground`, `bg-muted`, `text-muted-foreground`).
+- Never hardcode raw hex codes (`#121212`, `#ffffff`) or arbitrary un-themed colors.
+- Maintain a minimum **4.5:1 text contrast ratio** in dark mode. Avoid `opacity-*` or `text-zinc-600` for secondary text in dark mode; use `text-muted-foreground` or `text-zinc-300`/`text-zinc-400`.
+
+## Fluid Full-Width Layout Architecture
+- Standard page container padding and flex structure:
+  ```tsx
+  <div className="flex flex-col h-full w-full p-4 md:p-6 gap-6">
+  ```
+- **Prohibited**: Do NOT wrap operational dashboards or POS screens in artificial constraining containers (`max-w-7xl mx-auto`). OptixOS is a high-density POS designed to utilize 100% of the display width.
+
+## Accessibility (WCAG 2.5.3 Label in Name)
+- Every icon button or search input MUST have an accessible name via `aria-label` or visible text:
+  ```tsx
+  <button aria-label="Toggle layout mode (F4)">
+    <LayoutGrid className="w-4 h-4" />
+  </button>
+  ```
+
+## POS Counter Viewport Modes
+- `/pos/new-bill` supports 4 layout modes:
+  1. `adaptive`: 7:5 balanced layout (default).
+  2. `rx-focus`: 9:3 clinical matrix with slide-over `CartDrawer`.
+  3. `billing-focus`: 1-line `CompactPatientStrip` with 8-column wide cart and 4-column settlement grid.
+  4. `dense-split`: 50/50 split, 38px ultra-compact table rows, sticky bottom `DenseBottomBar`.
+- Layout mode is reactive via `usePOSStore`, cycleable via keyboard hotkey `F4`, and configurable store-wide in `/settings/store`.

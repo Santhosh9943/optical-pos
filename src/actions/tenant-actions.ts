@@ -7,8 +7,10 @@ import {
   invoices,
   customers,
   user as userTable,
+  member as memberTable,
+  organization as organizationTable,
 } from '@/db/schema';
-import { eq, sql, desc } from 'drizzle-orm';
+import { eq, sql, desc, and } from 'drizzle-orm';
 import { getCurrentSession } from '@/lib/auth-utils';
 import Decimal from 'decimal.js';
 
@@ -258,6 +260,18 @@ export async function createOrganizationAction(
       .returning();
 
     if (createdOrg) {
+      // Sync with Better Auth organization table for member relations
+      try {
+        await db.insert(organizationTable).values({
+          id: createdOrg.id,
+          name: trimmed,
+          slug: trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 7),
+          createdAt: new Date(),
+        });
+      } catch (authOrgErr) {
+        console.warn('[createOrganizationAction] Auth organization sync warning:', authOrgErr);
+      }
+
       // Automatically create a default main branch for the newly registered organization
       await db.insert(branches).values({
         name: 'Main Branch',
@@ -390,8 +404,23 @@ export async function getStaffMembersAction(
 
     const branchNameMap = new Map(allBranches.map((b) => [b.id, b.name]));
 
-    // Query actual users if existing
-    const existingUsers = await db.select().from(userTable);
+    // 1. Query users associated with THIS SPECIFIC organization in memberTable
+    let memberRows: { id: string; name: string; email: string; role: string; createdAt: Date }[] = [];
+    try {
+      memberRows = await db
+        .select({
+          id: userTable.id,
+          name: userTable.name,
+          email: userTable.email,
+          role: memberTable.role,
+          createdAt: memberTable.createdAt,
+        })
+        .from(memberTable)
+        .innerJoin(userTable, eq(memberTable.userId, userTable.id))
+        .where(eq(memberTable.organizationId, organizationId));
+    } catch (e) {
+      console.warn('[getStaffMembersAction] Member table query warning:', e);
+    }
 
     const merged: StaffMember[] = [];
 
@@ -401,24 +430,24 @@ export async function getStaffMembersAction(
       ? branchFilter[0]
       : allBranches[0]?.id || 'default-branch';
 
-    for (const u of existingUsers) {
-      if (u.email === 'admin@optix.com') continue; // Skip super admin
+    for (const m of memberRows) {
+      if (m.email === 'admin@optix.com' || m.email === 'admin@optixos.com') continue; // Skip super admin
       merged.push({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        role: (u.email.includes('admin') || u.email.includes('manager') ? 'admin' : 'staff') as 'admin' | 'staff',
+        id: m.id,
+        name: m.name,
+        email: m.email,
+        role: (m.role === 'admin' ? 'admin' : m.role === 'optometrist' ? 'optometrist' : 'staff') as 'admin' | 'staff' | 'optometrist',
         organizationId,
         branchId: defaultBranchId,
         branchName: branchNameMap.get(defaultBranchId) || allBranches[0]?.name || 'Main Branch',
         isActive: true,
-        createdAt: u.createdAt.toISOString(),
+        createdAt: m.createdAt ? m.createdAt.toISOString() : new Date().toISOString(),
       });
     }
 
-    // Include mock staff
+    // 2. Include mock staff ONLY if belonging to this exact organizationId
     for (const m of mockStaffStore) {
-      if (!merged.some((s) => s.email === m.email)) {
+      if (m.organizationId === organizationId && !merged.some((s) => s.email === m.email)) {
         merged.push({
           ...m,
           branchName: branchNameMap.get(m.branchId) || m.branchName || 'Main Branch',
@@ -496,13 +525,14 @@ export async function createStaffMemberAction(data: {
 
     const finalBranchId = branchRow?.id || '00000000-0000-0000-0000-000000000002';
     const finalBranchName = branchRow?.name || 'Main Branch';
+    const targetOrgId = data.organizationId || '00000000-0000-0000-0000-000000000001';
 
     const newStaff: StaffMember = {
       id: `staff-${Date.now()}`,
       name: trimmedName,
       email: trimmedEmail,
       role: data.role,
-      organizationId: data.organizationId || '00000000-0000-0000-0000-000000000001',
+      organizationId: targetOrgId,
       branchId: finalBranchId,
       branchName: finalBranchName,
       isActive: true,
@@ -511,16 +541,48 @@ export async function createStaffMemberAction(data: {
 
     mockStaffStore.push(newStaff);
 
-    // Also attempt creating in user table for auth compatibility
+    // Persist into user table and member table for strict tenant isolation
     try {
-      await db.insert(userTable).values({
-        id: newStaff.id,
-        name: trimmedName,
-        email: trimmedEmail,
-        emailVerified: false,
-      });
+      const [existingUser] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .where(eq(userTable.email, trimmedEmail))
+        .limit(1);
+
+      let userId = existingUser?.id;
+      if (!userId) {
+        userId = newStaff.id;
+        await db.insert(userTable).values({
+          id: userId,
+          name: trimmedName,
+          email: trimmedEmail,
+          emailVerified: false,
+        });
+      }
+
+      // Check if already a member of this organization
+      const [existingMember] = await db
+        .select({ id: memberTable.id })
+        .from(memberTable)
+        .where(
+          and(
+            eq(memberTable.organizationId, targetOrgId),
+            eq(memberTable.userId, userId)
+          )
+        )
+        .limit(1);
+
+      if (!existingMember) {
+        await db.insert(memberTable).values({
+          id: `member-${Date.now()}`,
+          organizationId: targetOrgId,
+          userId,
+          role: data.role,
+          createdAt: new Date(),
+        });
+      }
     } catch (e) {
-      console.warn('[createStaffMemberAction] User table insert skipped:', e);
+      console.warn('[createStaffMemberAction] DB sync warning:', e);
     }
 
     return { success: true, staff: newStaff };

@@ -1,0 +1,28 @@
+---
+description: Clinical optical domain rules, diopter quarter-step validation, axis invariants, and OD/OS separation.
+globs: ["src/components/pos/**/*", "src/components/patients/**/*", "src/lib/services/**/*"]
+alwaysApply: true
+---
+
+# Clinical Optical Domain Rules
+
+## Ophthalmic Diopter Validation (0.25 D Steps)
+- Sphere (SPH), Cylinder (CYL), and Addition (ADD) values MUST strictly be quarter-diopter multiples (0.25 D steps: `0.00`, `±0.25`, `±0.50`, `±0.75`, `±1.00`, etc.).
+- Validate using integer scaling to avoid IEEE float drift:
+  ```typescript
+  export function isValidDiopter(val: number): boolean {
+    return Math.round(val * 100) % 25 === 0;
+  }
+  ```
+
+## Astigmatic Axis Bounds & Invariants
+- If Cylinder (`CYL`) is non-zero (`CYL !== 0`), Axis (`AXIS`) is **mandatory** and must be an integer between `1` and `180` inclusive.
+- If Cylinder (`CYL`) is zero (`CYL === 0`), Axis (`AXIS`) must evaluate to `null` or empty string.
+
+## Decoupled Plano Dispensing
+- Fashion sunglasses, contact lens solutions, microfibre cloths, and computer glasses without power require **no prescription**.
+- `prescriptionId` must remain optional and nullable on cart items and invoice line items. Never force prescription creation for plano sales.
+
+## Independent OD (Right) and OS (Left) Powers
+- Right eye (`OD`) and Left eye (`OS`) must never share state or sync automatically unless the user explicitly toggles a "Copy OD to OS" action.
+- Pupillary Distance (`PD`) can be recorded as Monocular (OD PD / OS PD) or Binocular (total PD).

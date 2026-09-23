@@ -830,41 +830,8 @@
       "why": "connects across different repos/directories; peripheral node `payment_branch_idx` unexpectedly reaches hub `payments`"
     }
   ],
-  "questions": [
-    {
-      "type": "bridge_node",
-      "question": "Why does `react` connect `react` to `Decimal.js`, `lab-orders-view.tsx`, `pos-view.tsx`, `settings-actions.ts`, `package.json`, `login/page.tsx`, `pos-store.ts`, `add-product-modal.tsx`, `report-actions.ts`, `billing-cart.tsx`, `quick-add-patient-modal.tsx`, `app/layout.tsx`?",
-      "why": "High betweenness centrality (0.102) - this node is a cross-community bridge."
-    },
-    {
-      "type": "bridge_node",
-      "question": "Why does `lucide-react` connect `react` to `Decimal.js`, `lab-orders-view.tsx`, `pos-view.tsx`, `settings-actions.ts`, `package.json`, `login/page.tsx`, `pos-store.ts`, `add-product-modal.tsx`, `report-actions.ts`, `billing-cart.tsx`, `quick-add-patient-modal.tsx`?",
-      "why": "High betweenness centrality (0.074) - this node is a cross-community bridge."
-    },
-    {
-      "type": "bridge_node",
-      "question": "Why does `invoices` connect `auth-utils.ts` to `react`, `schema.ts`, `lab-orders-view.tsx`, `pos-view.tsx`, `0002_cute_molly_hayes.sql`, `report-actions.ts`, `process-optical-order.ts`?",
-      "why": "High betweenness centrality (0.060) - this node is a cross-community bridge."
-    },
-    {
-      "type": "isolated_nodes",
-      "question": "What connects `InventoryViewProps`, `OrgOption`, `TenantState` to the rest of the system?",
-      "why": "182 weakly-connected nodes found - possible documentation gaps or missing edges."
-    },
-    {
-      "type": "low_cohesion",
-      "question": "Should `react` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.07226107226107226 - nodes in this community are weakly interconnected."
-    },
-    {
-      "type": "low_cohesion",
-      "question": "Should `schema.ts` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.058823529411764705 - nodes in this community are weakly interconnected."
-    },
-    {
-      "type": "low_cohesion",
-      "question": "Should `Decimal.js` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.10227272727272728 - nodes in this community are weakly interconnected."
-    }
-  ]
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
 }

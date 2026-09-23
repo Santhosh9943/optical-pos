@@ -1,0 +1,20 @@
+---
+description: Rules for dynamic documentation elasticity, content expansion/pruning, and docs/archive management.
+globs: ["docs/**/*", "AGENTS.md", "CLAUDE.md"]
+alwaysApply: true
+---
+
+# Dynamic Documentation Elasticity & Archival Rules
+
+## 1. Dynamic Elasticity Invariant
+The documentation suite in `docs/` is **dynamically elastic**:
+- **Expansion**: When adding features, APIs, or database tables, expand the active documentation suite (`ARCHITECTURE.md`, `DESIGN.md`, `RULES.md`, `DECISIONS.md`, `TEST_PLAN.md`, `TASKS.md`, `MEMORY.md`) to reflect current reality.
+- **Reduction & Pruning**: When reducing, refactoring, or deprecating features, prune or condense the corresponding sections in active docs. Never allow obsolete, stale, or contradictory instructions to linger in active documentation.
+
+## 2. Archive Protocol (`docs/archive/`)
+- When an entire document or design specification is superseded or retired, move it to `docs/archive/` and log it in `docs/archive/ARCHIVE_LOG.md`.
+- Active `docs/` must contain ONLY current, maintained, and authoritative documentation.
+
+## 3. Strict Archive Access Constraint
+- AI agents and developers must **ONLY** look into `docs/archive/` if specifically requested by the user, or when explicitly tracing historical provenance or legacy migration context.
+- Default prompts, searches, and context retrieval must strictly exclude `docs/archive/`.
