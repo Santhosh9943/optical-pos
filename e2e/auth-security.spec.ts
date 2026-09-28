@@ -110,6 +110,10 @@ test.describe('Advanced Auth, 2FA, Forgot Password & Super Admin Isolation', () 
     await page.goto('/auth/login');
     await page.getByRole('button', { name: 'Create Account' }).click();
     await page.getByPlaceholder('Dr. Rajesh Sharma').fill('Admin Optix');
+    const orgInput = page.getByTestId('input-signup-org-name');
+    if (await orgInput.isVisible()) {
+      await orgInput.fill('Admin Optix Practice');
+    }
     await page.getByPlaceholder('admin@optixos.com').fill('admin@optix.com');
     await page.getByPlaceholder('••••••••').fill('AdminPass123!');
     await page.getByRole('button', { name: /Create Optical Practice/i }).click();

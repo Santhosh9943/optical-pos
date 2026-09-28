@@ -36,9 +36,9 @@
     "semantic_hash": ""
   },
   "e2e/balance-settlement.spec.ts": {
-    "mtime": 1790574451.758038,
-    "seen": 1790574974.3867657,
-    "ast_hash": "72c6f20bb4a8766adc08562d0ffb7e0a",
+    "mtime": 1790575297.4206116,
+    "seen": 1790575306.6934314,
+    "ast_hash": "76254f1fbcf4368ef3e81e520a874605",
     "semantic_hash": ""
   },
   "e2e/lab-orders.spec.ts": {
@@ -66,15 +66,15 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1790571895.386544,
-    "seen": 1790574974.3867657,
-    "ast_hash": "ffc978e6807d3ed872ac70296ad59faf",
+    "mtime": 1790575297.4420714,
+    "seen": 1790575306.6934314,
+    "ast_hash": "3314709501c437347232488dcec7ac85",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
-    "mtime": 1790573876.3272274,
-    "seen": 1790574974.3867657,
-    "ast_hash": "36896b660ecfffcbbcbcb857443fb8b4",
+    "mtime": 1790575297.443072,
+    "seen": 1790575306.6934314,
+    "ast_hash": "488a9511f845d32fc0a12ea431eddb27",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -84,38 +84,38 @@
     "semantic_hash": ""
   },
   "src/actions/inventory-actions.ts": {
-    "mtime": 1790574657.7973716,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.446072,
+    "seen": 1790575306.6934314,
     "ast_hash": "c1ae9296b33848ec5777932747f841b8",
     "semantic_hash": ""
   },
   "src/actions/lab-actions.ts": {
-    "mtime": 1790572752.6140738,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.4470701,
+    "seen": 1790575306.6934314,
     "ast_hash": "c36ede83ed7b930f7a266957cb2fe394",
     "semantic_hash": ""
   },
   "src/actions/patient-actions.ts": {
-    "mtime": 1790572214.8010788,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.4480698,
+    "seen": 1790575306.6934314,
     "ast_hash": "4f61f08c2ccd98c01e837a0e303dc706",
     "semantic_hash": ""
   },
   "src/actions/payment-actions.ts": {
-    "mtime": 1790574667.607141,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.44907,
+    "seen": 1790575306.6934314,
     "ast_hash": "0d753b023780d56ca8be3aef4162bda3",
     "semantic_hash": ""
   },
   "src/actions/process-optical-order.ts": {
-    "mtime": 1790574676.4895537,
-    "seen": 1790574974.3867657,
-    "ast_hash": "ff00cdf1d541ed409c0225eee2c5db05",
+    "mtime": 1790575297.44907,
+    "seen": 1790575306.6934314,
+    "ast_hash": "2e5f6996a76ed3b4ae8437037e060295",
     "semantic_hash": ""
   },
   "src/actions/report-actions.ts": {
-    "mtime": 1790572319.2338483,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.4500706,
+    "seen": 1790575306.6934314,
     "ast_hash": "e0c34153ffb00de8d35a1701fcf5aa49",
     "semantic_hash": ""
   },
@@ -162,14 +162,14 @@
     "semantic_hash": ""
   },
   "src/app/api/patients/search/route.ts": {
-    "mtime": 1790572223.5617497,
-    "seen": 1790574974.3877668,
-    "ast_hash": "882fa9788f045627e58d5a1e09554fea",
+    "mtime": 1790575297.4545825,
+    "seen": 1790575306.6934314,
+    "ast_hash": "719952deb42960be6d82c7062c92cb19",
     "semantic_hash": ""
   },
   "src/app/layout.tsx": {
-    "mtime": 1790571954.6159208,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.4575815,
+    "seen": 1790575306.6934314,
     "ast_hash": "41167678f94a90088ef9516eb40586e0",
     "semantic_hash": ""
   },
@@ -186,9 +186,9 @@
     "semantic_hash": ""
   },
   "src/components/admin/inventory-table.tsx": {
-    "mtime": 1790572322.8604736,
-    "seen": 1790574974.3877668,
-    "ast_hash": "9a8fe6bfa4e24643203fbb8ceca773fc",
+    "mtime": 1790575297.4622314,
+    "seen": 1790575306.6934314,
+    "ast_hash": "c2fce1a9d893cedefae4f93bfd9ea409",
     "semantic_hash": ""
   },
   "src/components/admin/inventory-view.tsx": {
@@ -198,15 +198,15 @@
     "semantic_hash": ""
   },
   "src/components/admin/lab-orders-view.tsx": {
-    "mtime": 1790572492.5442832,
-    "seen": 1790574974.3877668,
-    "ast_hash": "d4f9468c1518b2dc5bbfeaa4fecfa022",
+    "mtime": 1790575297.4632392,
+    "seen": 1790575306.6934314,
+    "ast_hash": "24e1a507e92fc6ea5b7f2d2d1a58c8c8",
     "semantic_hash": ""
   },
   "src/components/admin/patient-detail-sheet.tsx": {
-    "mtime": 1790572328.6720538,
-    "seen": 1790574974.3877668,
-    "ast_hash": "795a3a88e7676de2bea3482f0ceb3f20",
+    "mtime": 1790575297.4642396,
+    "seen": 1790575306.6934314,
+    "ast_hash": "1fc7d0d2a80bf639d8a867628825ef5d",
     "semantic_hash": ""
   },
   "src/components/admin/patients-view.tsx": {
@@ -216,9 +216,9 @@
     "semantic_hash": ""
   },
   "src/components/admin/reports-view.tsx": {
-    "mtime": 1790572127.4649217,
-    "seen": 1790574974.3877668,
-    "ast_hash": "d1b6324208bf8e532771bd3f05f16607",
+    "mtime": 1790575297.4652386,
+    "seen": 1790575306.6934314,
+    "ast_hash": "7b9385ef70f982284e967fcede68ac3b",
     "semantic_hash": ""
   },
   "src/components/admin/settle-balance-modal.tsx": {
@@ -240,21 +240,21 @@
     "semantic_hash": ""
   },
   "src/components/pos/add-product-modal.tsx": {
-    "mtime": 1790572423.5524085,
-    "seen": 1790574974.3877668,
-    "ast_hash": "fa4b322f12fdea9c0c8ff79efcc0fedf",
+    "mtime": 1790575297.4682572,
+    "seen": 1790575306.6934314,
+    "ast_hash": "46f33066e793ecc57838b9e296c422b3",
     "semantic_hash": ""
   },
   "src/components/pos/billing-cart.tsx": {
-    "mtime": 1790572679.9466145,
-    "seen": 1790574974.3877668,
-    "ast_hash": "0fb7d69def3529a9459bf5e05227a01f",
+    "mtime": 1790575297.4692633,
+    "seen": 1790575306.6934314,
+    "ast_hash": "bfc98592ecdbde4801dadd3df40e8f07",
     "semantic_hash": ""
   },
   "src/components/pos/cart-item-edit-modal.tsx": {
-    "mtime": 1790572680.0355346,
-    "seen": 1790574974.3877668,
-    "ast_hash": "bfbee68bef559b25ab08b9f9601c2dcd",
+    "mtime": 1790575297.4692633,
+    "seen": 1790575306.6934314,
+    "ast_hash": "795fd5ae6c32f845e99717ae308a1489",
     "semantic_hash": ""
   },
   "src/components/pos/inventory-search.tsx": {
@@ -282,8 +282,8 @@
     "semantic_hash": ""
   },
   "src/components/pos/pos-view.tsx": {
-    "mtime": 1790574657.813067,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.4708536,
+    "seen": 1790575306.6934314,
     "ast_hash": "c16ab70d4936c1b4a8a18e6bdff93cf2",
     "semantic_hash": ""
   },
@@ -294,14 +294,14 @@
     "semantic_hash": ""
   },
   "src/components/pos/print-a4-invoice.tsx": {
-    "mtime": 1790572694.9608188,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.4718604,
+    "seen": 1790575306.6934314,
     "ast_hash": "53d860a71abf6f3fc90bed741eefa977",
     "semantic_hash": ""
   },
   "src/components/pos/print-layouts.tsx": {
-    "mtime": 1790572721.5526564,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.4723666,
+    "seen": 1790575306.6934314,
     "ast_hash": "5b9c6c54c77335a5f3cef31c5e4fe009",
     "semantic_hash": ""
   },
@@ -330,8 +330,8 @@
     "semantic_hash": ""
   },
   "src/db/schema.ts": {
-    "mtime": 1790571963.3277152,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.4753728,
+    "seen": 1790575306.6934314,
     "ast_hash": "b0b19099a6c660af8aab96b9fcbcc80c",
     "semantic_hash": ""
   },
@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "src/lib/errors.ts": {
-    "mtime": 1790572177.764871,
-    "seen": 1790574974.3877668,
-    "ast_hash": "c3d9b3cc526526d6b9b690fba05bdc14",
+    "mtime": 1790575297.4783735,
+    "seen": 1790575306.6934314,
+    "ast_hash": "e91675eaaa06ea0e99fa8ec89ff55bc6",
     "semantic_hash": ""
   },
   "src/lib/patient-relationship.ts": {
@@ -366,8 +366,8 @@
     "semantic_hash": ""
   },
   "src/lib/validators/prescription.ts": {
-    "mtime": 1790574657.7857797,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.479373,
+    "seen": 1790575306.6934314,
     "ast_hash": "68b73ab54fd653c3086f36916138c70a",
     "semantic_hash": ""
   },
@@ -378,9 +378,9 @@
     "semantic_hash": ""
   },
   "tailwind.config.ts": {
-    "mtime": 1790571936.2559252,
-    "seen": 1790574974.3877668,
-    "ast_hash": "d1c8e977983234a95181ddee64d2df7b",
+    "mtime": 1790575297.480372,
+    "seen": 1790575306.6934314,
+    "ast_hash": "1fc212403949047f627808f704d2e2bf",
     "semantic_hash": ""
   },
   "tsconfig.json": {
@@ -390,8 +390,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1790572846.8314526,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.416912,
+    "seen": 1790575306.6934314,
     "ast_hash": "dd638e538e80a05c48694208f9a68e35",
     "semantic_hash": ""
   },
@@ -414,8 +414,8 @@
     "semantic_hash": ""
   },
   "src/actions/settings-actions.ts": {
-    "mtime": 1790572008.8614185,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.4510696,
+    "seen": 1790575306.6934314,
     "ast_hash": "d26d2c42ed760e2c8c1e22b2267550a1",
     "semantic_hash": ""
   },
@@ -426,9 +426,9 @@
     "semantic_hash": ""
   },
   "src/components/admin/settings-view.tsx": {
-    "mtime": 1790572770.790746,
-    "seen": 1790574974.3877668,
-    "ast_hash": "3b2a0e3ed109d7379083ad14e235c8bf",
+    "mtime": 1790575297.4667442,
+    "seen": 1790575306.6934314,
+    "ast_hash": "7b3872f7d206785484b4e4e63e3b0818",
     "semantic_hash": ""
   },
   "src/components/print/A4TaxInvoice.tsx": {
@@ -438,14 +438,14 @@
     "semantic_hash": ""
   },
   "src/components/print/ThermalReceipt.tsx": {
-    "mtime": 1790572721.5526564,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.4723666,
+    "seen": 1790575306.6934314,
     "ast_hash": "f68ea91f6cdea2b782cb3a5d85e95fec",
     "semantic_hash": ""
   },
   "src/components/print/WorkshopLabSlip.tsx": {
-    "mtime": 1790571987.6304777,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.4733725,
+    "seen": 1790575306.6934314,
     "ast_hash": "8a7d49c1f464d42c2e903c1ea40185ed",
     "semantic_hash": ""
   },
@@ -456,9 +456,9 @@
     "semantic_hash": ""
   },
   "e2e/caching-performance.spec.ts": {
-    "mtime": 1790573935.5458102,
-    "seen": 1790574974.3867657,
-    "ast_hash": "68a73af45c5024a0ceff584512f4c3c4",
+    "mtime": 1790575297.4211419,
+    "seen": 1790575306.6934314,
+    "ast_hash": "e46a3e7ec6be70be69fbaed90530c495",
     "semantic_hash": ""
   },
   "src/lib/redis.ts": {
@@ -516,9 +516,9 @@
     "semantic_hash": ""
   },
   "src/lib/auth-utils.ts": {
-    "mtime": 1790572247.7654264,
-    "seen": 1790574974.3877668,
-    "ast_hash": "48c20adf8fa6e602cd4e01a6d8cbbc96",
+    "mtime": 1790575297.476372,
+    "seen": 1790575306.6934314,
+    "ast_hash": "f773918d3cdaf0cccbd64ff211e41053",
     "semantic_hash": ""
   },
   "src/lib/auth.ts": {
@@ -534,15 +534,15 @@
     "semantic_hash": ""
   },
   "e2e/tenant-roles.spec.ts": {
-    "mtime": 1790573943.3449728,
-    "seen": 1790574974.3867657,
-    "ast_hash": "03d5e080669ed258619b547dc4441b2c",
+    "mtime": 1790575297.4237757,
+    "seen": 1790575306.6934314,
+    "ast_hash": "fd38cfb6ae57b160fa3680a31ba28b47",
     "semantic_hash": ""
   },
   "src/actions/tenant-actions.ts": {
-    "mtime": 1790572555.5511055,
-    "seen": 1790574974.3867657,
-    "ast_hash": "ba8d8757719f2916f1366d1d61912bfb",
+    "mtime": 1790575297.4525812,
+    "seen": 1790575306.6934314,
+    "ast_hash": "5abecf910dec51fd8f488639e1cdcfa0",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/super-admin/page.tsx": {
@@ -558,8 +558,8 @@
     "semantic_hash": ""
   },
   "src/components/layout/user-nav.tsx": {
-    "mtime": 1790572498.2535582,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.4677513,
+    "seen": 1790575306.6934314,
     "ast_hash": "646038281abcfca75890d7f99e819523",
     "semantic_hash": ""
   },
@@ -576,9 +576,9 @@
     "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/staff/page.tsx": {
-    "mtime": 1790572547.4606545,
-    "seen": 1790574974.3867657,
-    "ast_hash": "ba32a249a5958ceed35bddf956900f74",
+    "mtime": 1790575297.4535813,
+    "seen": 1790575306.6934314,
+    "ast_hash": "d39070983e9408f26536479735522f27",
     "semantic_hash": ""
   },
   "src/app/super-admin/branches/page.tsx": {
@@ -594,9 +594,9 @@
     "semantic_hash": ""
   },
   "src/app/super-admin/layout.tsx": {
-    "mtime": 1790572770.742694,
-    "seen": 1790574974.3877668,
-    "ast_hash": "f216f8b2106e3dd38981171ec8fb0f0c",
+    "mtime": 1790575297.4595833,
+    "seen": 1790575306.6934314,
+    "ast_hash": "9f33776fb030b0d9667e27f82930ddc5",
     "semantic_hash": ""
   },
   "src/app/super-admin/organizations/page.tsx": {
@@ -624,9 +624,9 @@
     "semantic_hash": ""
   },
   "e2e/multi-branch-relations.spec.ts": {
-    "mtime": 1790573925.639311,
-    "seen": 1790574974.3867657,
-    "ast_hash": "3ab6a471c243f221c99ec2f783b01be3",
+    "mtime": 1790575297.422202,
+    "seen": 1790575306.6934314,
+    "ast_hash": "041904711e3dc990f9a4eaef99acdd71",
     "semantic_hash": ""
   },
   "e2e/patient-inventory-crud.spec.ts": {
@@ -642,27 +642,27 @@
     "semantic_hash": ""
   },
   "src/components/admin/add-patient-modal.tsx": {
-    "mtime": 1790572452.5475566,
-    "seen": 1790574974.3877668,
-    "ast_hash": "e5020997e82153e4f08b201203655e2e",
+    "mtime": 1790575297.4605813,
+    "seen": 1790575306.6934314,
+    "ast_hash": "b45b8a54ca08df7b28c2c772b77e927f",
     "semantic_hash": ""
   },
   "src/components/admin/edit-inventory-modal.tsx": {
-    "mtime": 1790574657.8120294,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.4616463,
+    "seen": 1790575306.6934314,
     "ast_hash": "a1f84216567e5b87b25910385c781cdb",
     "semantic_hash": ""
   },
   "src/components/admin/edit-patient-modal.tsx": {
-    "mtime": 1790572452.548559,
-    "seen": 1790574974.3877668,
-    "ast_hash": "942ca2b1d34265b96e8e64d177cd121e",
+    "mtime": 1790575297.4622314,
+    "seen": 1790575306.6934314,
+    "ast_hash": "34543aa1d65ec0c299dcd9a711863de0",
     "semantic_hash": ""
   },
   "src/components/pos/compact-patient-strip.tsx": {
-    "mtime": 1790572328.6400146,
-    "seen": 1790574974.3877668,
-    "ast_hash": "ac6e4a95039b56dc576f448afd37a04a",
+    "mtime": 1790575297.4702628,
+    "seen": 1790575306.6934314,
+    "ast_hash": "a0e2de18f0026e5222490e0ec1697968",
     "semantic_hash": ""
   },
   "src/components/pos/dense-bottom-bar.tsx": {
@@ -696,9 +696,9 @@
     "semantic_hash": ""
   },
   "docs/DESIGN.md": {
-    "mtime": 1790572615.4901729,
-    "seen": 1790574974.3877668,
-    "ast_hash": "3f862093197ccf45eddab24304773884",
+    "mtime": 1790575297.4174395,
+    "seen": 1790575306.6934314,
+    "ast_hash": "bd66508ae47988310dc1bb37743ac6a5",
     "semantic_hash": ""
   },
   "docs/MEMORY.md": {
@@ -720,8 +720,8 @@
     "semantic_hash": ""
   },
   "docs/TASKS.md": {
-    "mtime": 1790572834.503459,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.418496,
+    "seen": 1790575306.6934314,
     "ast_hash": "18f668263e7ffc3aea0abebcf0b82bfc",
     "semantic_hash": ""
   },
@@ -780,8 +780,8 @@
     "semantic_hash": ""
   },
   "src/actions/email-actions.ts": {
-    "mtime": 1790574865.7761607,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.446072,
+    "seen": 1790575306.6934314,
     "ast_hash": "d562927432e5bfcbcc3a45e93e85b9b5",
     "semantic_hash": ""
   },
@@ -852,14 +852,14 @@
     "semantic_hash": ""
   },
   "src/hooks/use-idle-timeout.ts": {
-    "mtime": 1790572498.2535582,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.476372,
+    "seen": 1790575306.6934314,
     "ast_hash": "817f00560ee238c0104bd763d1b3531f",
     "semantic_hash": ""
   },
   "src/lib/email.ts": {
-    "mtime": 1790572238.096583,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.4773722,
+    "seen": 1790575306.6934314,
     "ast_hash": "6cde0cbe4c98cbd12d72a548f343c0fe",
     "semantic_hash": ""
   },
@@ -888,14 +888,14 @@
     "semantic_hash": ""
   },
   "docs/agent-memory/BUG_FIX_LOG.md": {
-    "mtime": 1790574973.4607034,
-    "seen": 1790574974.3877668,
-    "ast_hash": "3a9b6066295908527afd2bf560d02918",
+    "mtime": 1790575297.4190257,
+    "seen": 1790575306.6934314,
+    "ast_hash": "4833503436edd4dbd8c46c5d31e4d4ce",
     "semantic_hash": ""
   },
   "docs/agent-memory/SESSION_HANDOFF.md": {
-    "mtime": 1790575086.0692563,
-    "seen": 1790575209.0373085,
+    "mtime": 1790575297.420083,
+    "seen": 1790575306.6934314,
     "ast_hash": "5742f1be6bb866eabca74960719814ba",
     "semantic_hash": ""
   },
@@ -954,15 +954,15 @@
     "semantic_hash": ""
   },
   "docs/agent-memory/SECURITY_LOG.md": {
-    "mtime": 1790572813.623108,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.419542,
+    "seen": 1790575306.6934314,
     "ast_hash": "7110c72ba3525837a82c8f627aaf764a",
     "semantic_hash": ""
   },
   "e2e/saas-subscription-razorpay.spec.ts": {
-    "mtime": 1790573886.7489696,
-    "seen": 1790574974.3867657,
-    "ast_hash": "c99ad190d36ad9297f47a8c1740aa527",
+    "mtime": 1790575297.4227278,
+    "seen": 1790575306.6934314,
+    "ast_hash": "268e67adc38cbe495db42ab193cf9f14",
     "semantic_hash": ""
   },
   "scripts/migrate-subscriptions.ts": {
@@ -978,14 +978,14 @@
     "semantic_hash": ""
   },
   "src/actions/subscription-actions.ts": {
-    "mtime": 1790574764.2927775,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.451576,
+    "seen": 1790575306.6934314,
     "ast_hash": "d6429091ec2bd189d651e9d17e7152c8",
     "semantic_hash": ""
   },
   "src/app/api/webhooks/razorpay/route.ts": {
-    "mtime": 1790574792.6711643,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.455583,
+    "seen": 1790575306.6934314,
     "ast_hash": "1f4b839d9253234f6c430b69ae196937",
     "semantic_hash": ""
   },
@@ -1068,9 +1068,9 @@
     "semantic_hash": ""
   },
   "src/components/ui/dialog.tsx": {
-    "mtime": 1790572180.5473218,
-    "seen": 1790574974.3877668,
-    "ast_hash": "45c545f04074269e0225576f53309d31",
+    "mtime": 1790575297.474372,
+    "seen": 1790575306.6934314,
+    "ast_hash": "554439b58bdf4ded4e9e85174bf92c65",
     "semantic_hash": ""
   },
   "src/components/ui/empty-state.tsx": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "src/components/ui/index.ts": {
-    "mtime": 1790572180.5527148,
-    "seen": 1790574974.3877668,
-    "ast_hash": "ef57fe862f890457506a394a06e342c4",
+    "mtime": 1790575297.474372,
+    "seen": 1790575306.6934314,
+    "ast_hash": "4dbf1208ed22b03ff915b01b8397dfdc",
     "semantic_hash": ""
   },
   "src/components/ui/input.tsx": {
@@ -1110,9 +1110,9 @@
     "semantic_hash": ""
   },
   "e2e/priority-notes.spec.ts": {
-    "mtime": 1790574045.7177682,
-    "seen": 1790574974.3867657,
-    "ast_hash": "009a0127d9d4d1cc0d7eeb2360c87f13",
+    "mtime": 1790575297.422202,
+    "seen": 1790575306.6934314,
+    "ast_hash": "aa43f76849cc0f08f9d4d04205cb54d8",
     "semantic_hash": ""
   },
   "src/components/priority-notes/index.ts": {
@@ -1188,8 +1188,8 @@
     "semantic_hash": ""
   },
   "src/actions/notification-actions.ts": {
-    "mtime": 1790572364.6306975,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.4480698,
+    "seen": 1790575306.6934314,
     "ast_hash": "2167ac80e2b1a812ed8c330c355ac722",
     "semantic_hash": ""
   },
@@ -1242,15 +1242,15 @@
     "semantic_hash": ""
   },
   "src/actions/customer-portal-actions.ts": {
-    "mtime": 1790572468.0442517,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.4450705,
+    "seen": 1790575306.6934314,
     "ast_hash": "f524edb18e7bfff74913d229b2885db7",
     "semantic_hash": ""
   },
   "src/actions/dashboard-actions.ts": {
-    "mtime": 1790574892.0868382,
-    "seen": 1790574974.3867657,
-    "ast_hash": "51150dd89f430159872c3416287595d1",
+    "mtime": 1790575297.4450705,
+    "seen": 1790575306.6934314,
+    "ast_hash": "91778b1a60a462ca8929d34257697e0c",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/dashboard/page.tsx": {
@@ -1260,9 +1260,9 @@
     "semantic_hash": ""
   },
   "src/app/portal/layout.tsx": {
-    "mtime": 1790572770.644886,
-    "seen": 1790574974.3877668,
-    "ast_hash": "1c383533a5a9289d06087d3a8964d8a1",
+    "mtime": 1790575297.4595833,
+    "seen": 1790575306.6934314,
+    "ast_hash": "3cfe6e99ed65aa5c4b5a9db4bc325e96",
     "semantic_hash": ""
   },
   "src/app/portal/page.tsx": {
@@ -1272,20 +1272,20 @@
     "semantic_hash": ""
   },
   "src/components/admin/dashboard-view.tsx": {
-    "mtime": 1790572106.5258987,
-    "seen": 1790574974.3877668,
-    "ast_hash": "329a8c9929bf406b0318783bf28944d5",
+    "mtime": 1790575297.4616463,
+    "seen": 1790575306.6934314,
+    "ast_hash": "6192d5cf4392da90f9f5012942bd90cd",
     "semantic_hash": ""
   },
   "src/actions/approval-actions.ts": {
-    "mtime": 1790572382.3059032,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.4440715,
+    "seen": 1790575306.6934314,
     "ast_hash": "8829055fd905283b264a71e804c15b67",
     "semantic_hash": ""
   },
   "src/actions/invoice-edit-actions.ts": {
-    "mtime": 1790572374.5033505,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.4470701,
+    "seen": 1790575306.6934314,
     "ast_hash": "eca0f4ae91469e520bf1de5cfc1322dd",
     "semantic_hash": ""
   },
@@ -1296,9 +1296,9 @@
     "semantic_hash": ""
   },
   "src/actions/return-refund-actions.ts": {
-    "mtime": 1790572352.8522053,
-    "seen": 1790574974.3867657,
-    "ast_hash": "7510aa677e3d8fa362ca99830206ee06",
+    "mtime": 1790575297.4500706,
+    "seen": 1790575306.6934314,
+    "ast_hash": "3976c293a5f4cf6e3f7df2c03da7ea9d",
     "semantic_hash": ""
   },
   "src/components/admin/edit-invoice-modal.tsx": {
@@ -1314,9 +1314,9 @@
     "semantic_hash": ""
   },
   "src/components/admin/return-refund-modal.tsx": {
-    "mtime": 1790572339.092735,
-    "seen": 1790574974.3877668,
-    "ast_hash": "19d01a80b8f45a03d07e76ad4cfcd49a",
+    "mtime": 1790575297.4652386,
+    "seen": 1790575306.6934314,
+    "ast_hash": "af0401ecbb475277b04c054cd0102cf8",
     "semantic_hash": ""
   },
   "src/db/migrate-product-types.ts": {
@@ -1344,14 +1344,14 @@
     "semantic_hash": ""
   },
   "src/actions/staff-auth-actions.ts": {
-    "mtime": 1790571979.7790258,
-    "seen": 1790574974.3867657,
+    "mtime": 1790575297.451576,
+    "seen": 1790575306.6934314,
     "ast_hash": "13c8bb4af4e65db865e2b85a3e26afe2",
     "semantic_hash": ""
   },
   "src/app/auth/staff-login/page.tsx": {
-    "mtime": 1790571979.781046,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.4565823,
+    "seen": 1790575306.6934314,
     "ast_hash": "5c32316e2615122461ebc311ce865559",
     "semantic_hash": ""
   },
@@ -1380,9 +1380,9 @@
     "semantic_hash": ""
   },
   "e2e/super-admin-otp-auth.spec.ts": {
-    "mtime": 1790573936.5721476,
-    "seen": 1790574974.3867657,
-    "ast_hash": "86b746449f988e01e0b3f3254cb1d903",
+    "mtime": 1790575297.4232516,
+    "seen": 1790575306.6934314,
+    "ast_hash": "2810d336b632b374c8f4e23018dd0c53",
     "semantic_hash": ""
   },
   "scripts/migrate-super-admin-otp.ts": {
@@ -1392,9 +1392,9 @@
     "semantic_hash": ""
   },
   "src/actions/super-admin-auth-actions.ts": {
-    "mtime": 1790572483.6447425,
-    "seen": 1790574974.3867657,
-    "ast_hash": "3428ac56e49b138d2e555686dc55ec85",
+    "mtime": 1790575297.4525812,
+    "seen": 1790575306.6934314,
+    "ast_hash": "c3beadb8ebd5be72e70468bbf2981464",
     "semantic_hash": ""
   },
   "src/lib/super-admin-session.ts": {
@@ -1452,9 +1452,9 @@
     "semantic_hash": ""
   },
   "src/app/owner/staff/page.tsx": {
-    "mtime": 1790572349.8430526,
-    "seen": 1790574974.3877668,
-    "ast_hash": "e2676371e14079a8f9e03f976160a794",
+    "mtime": 1790575297.4595833,
+    "seen": 1790575306.6934314,
+    "ast_hash": "b5641acd1cd3b9417cb2546e60ee16b6",
     "semantic_hash": ""
   },
   "next.config.mjs": {
@@ -1464,8 +1464,8 @@
     "semantic_hash": ""
   },
   "src/lib/crypto-utils.ts": {
-    "mtime": 1790572485.0675175,
-    "seen": 1790574974.3877668,
+    "mtime": 1790575297.476372,
+    "seen": 1790575306.6934314,
     "ast_hash": "d47fe2549b4ff0b6a361aab5366306ac",
     "semantic_hash": ""
   },
@@ -1506,93 +1506,1423 @@
     "semantic_hash": ""
   },
   "e2e/global-setup.ts": {
-    "mtime": 1790574677.0800912,
-    "seen": 1790574974.3867657,
-    "ast_hash": "a8b931dd039bbbaaa16fa785eec56f33",
+    "mtime": 1790575297.421673,
+    "seen": 1790575306.6934314,
+    "ast_hash": "72eb8ab45ed9ea171169267368843534",
     "semantic_hash": ""
   },
   "scripts/migrations/2026-09-28-tenant-hardening.sql": {
-    "mtime": 1790572401.5207539,
-    "seen": 1790574974.3867657,
-    "ast_hash": "ce96d6c145c7d0ae7a118c9247e932bd",
+    "mtime": 1790575297.443072,
+    "seen": 1790575306.6934314,
+    "ast_hash": "997afc186491d68bb78db52bbb042c02",
     "semantic_hash": ""
   },
   "scripts/run-sql-migration.ts": {
-    "mtime": 1790572402.5513418,
-    "seen": 1790574974.3867657,
-    "ast_hash": "9c40a05e2a72e9a2d4ad418ba575247a",
+    "mtime": 1790575297.4440715,
+    "seen": 1790575306.6934314,
+    "ast_hash": "e1333053b815d961b1048813684f46f1",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/error.tsx": {
-    "mtime": 1790572527.3889365,
-    "seen": 1790574974.3867657,
-    "ast_hash": "52dd601f812b0cbc2106bf08558280d0",
+    "mtime": 1790575297.4535813,
+    "seen": 1790575306.6934314,
+    "ast_hash": "633baad0de0c5d1af7e0e02be3b56bde",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/loading.tsx": {
-    "mtime": 1790572527.3983448,
-    "seen": 1790574974.3867657,
-    "ast_hash": "0a0d8f8ab151923c060857913e294222",
+    "mtime": 1790575297.4545825,
+    "seen": 1790575306.6934314,
+    "ast_hash": "93740e73d952c5f17ee99e24ebacd8bf",
     "semantic_hash": ""
   },
   "src/app/not-found.tsx": {
-    "mtime": 1790572536.258922,
-    "seen": 1790574974.3877668,
-    "ast_hash": "299b1c73c3a0ef494ce0b2c9241c057c",
+    "mtime": 1790575297.4575815,
+    "seen": 1790575306.6934314,
+    "ast_hash": "bd927bc2dd9db552e5a64497b064ab97",
     "semantic_hash": ""
   },
   "src/app/owner/error.tsx": {
-    "mtime": 1790572527.4281018,
-    "seen": 1790574974.3877668,
-    "ast_hash": "52cee23e5007deb627c6b9d5730bbe15",
+    "mtime": 1790575297.4585814,
+    "seen": 1790575306.6934314,
+    "ast_hash": "e07bf999d238a55b388d303cffb502fa",
     "semantic_hash": ""
   },
   "src/app/owner/loading.tsx": {
-    "mtime": 1790572527.4369,
-    "seen": 1790574974.3877668,
-    "ast_hash": "4339ccaaa1e5238d48b5275fc492c450",
+    "mtime": 1790575297.4585814,
+    "seen": 1790575306.6934314,
+    "ast_hash": "679470f84d3480715547417775567672",
     "semantic_hash": ""
   },
   "src/components/layout/route-states.tsx": {
-    "mtime": 1790572519.9261918,
-    "seen": 1790574974.3877668,
-    "ast_hash": "6f347143d0f5f7869dc7d6091dbc9009",
+    "mtime": 1790575297.4667442,
+    "seen": 1790575306.6934314,
+    "ast_hash": "3049a079d10551cdc11702319afcbe1f",
     "semantic_hash": ""
   },
   "src/components/ui/confirm-dialog.tsx": {
-    "mtime": 1790572171.4034076,
-    "seen": 1790574974.3877668,
-    "ast_hash": "8be782313e582c8a976854ff1103a9b4",
+    "mtime": 1790575297.4733725,
+    "seen": 1790575306.6934314,
+    "ast_hash": "d9210367b07ba1ea43e5a417fa001b8c",
     "semantic_hash": ""
   },
   "src/components/ui/skeleton.tsx": {
-    "mtime": 1790572026.1009722,
-    "seen": 1790574974.3877668,
-    "ast_hash": "a123401ee0d841dc103ed177785bd37c",
+    "mtime": 1790575297.4753728,
+    "seen": 1790575306.6934314,
+    "ast_hash": "dd9fecbac58f806c4832bc134dd799b5",
     "semantic_hash": ""
   },
   "src/lib/format.ts": {
-    "mtime": 1790571978.5095224,
-    "seen": 1790574974.3877668,
-    "ast_hash": "1c955231f876771b4e225d6001e23173",
+    "mtime": 1790575297.4783735,
+    "seen": 1790575306.6934314,
+    "ast_hash": "7372ce1829342d266614b10577e31f7b",
     "semantic_hash": ""
   },
   "src/lib/gst.ts": {
-    "mtime": 1790574638.0582614,
-    "seen": 1790574974.3877668,
-    "ast_hash": "c4ef06c2528abfac8d1fb4ca6f5cc7a6",
+    "mtime": 1790575297.4783735,
+    "seen": 1790575306.6934314,
+    "ast_hash": "1ee91d7b3b4b702e99201638bba10e8e",
     "semantic_hash": ""
   },
   "src/lib/notifications-internal.ts": {
-    "mtime": 1790572545.5837202,
-    "seen": 1790574974.3877668,
-    "ast_hash": "9dde9105123a3fb177866d8e99c53eab",
+    "mtime": 1790575297.479373,
+    "seen": 1790575306.6934314,
+    "ast_hash": "b96c27cbc058096a181d261e4fdb01f4",
     "semantic_hash": ""
   },
   "src/lib/store-profile.ts": {
-    "mtime": 1790571976.0797138,
-    "seen": 1790574974.3877668,
-    "ast_hash": "11b7cea0f82308335132c821d0fb823b",
+    "mtime": 1790575297.479373,
+    "seen": 1790575306.6934314,
+    "ast_hash": "19b192accb00c7946962c8c98077d746",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\drizzle.config.ts": {
+    "mtime": 1789309432.9330533,
+    "ast_hash": "00d4e9674b159e5698ccefabb8426a52",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\eslint.config.mjs": {
+    "mtime": 1789352096.9463284,
+    "ast_hash": "69831bf948317514cb968e1ad8dd71b2",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\next.config.mjs": {
+    "mtime": 1790560888.659762,
+    "ast_hash": "29987d12d29150e61bd694ade2a05838",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\package.json": {
+    "mtime": 1790575297.4420714,
+    "ast_hash": "3314709501c437347232488dcec7ac85",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\playwright.config.ts": {
+    "mtime": 1790575297.443072,
+    "ast_hash": "488a9511f845d32fc0a12ea431eddb27",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\postcss.config.mjs": {
+    "mtime": 1789310473.4449258,
+    "ast_hash": "d3fd1d29b05a09ff76b595a70e1e7d50",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\tailwind.config.ts": {
+    "mtime": 1790575297.480372,
+    "ast_hash": "1fc212403949047f627808f704d2e2bf",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\tsconfig.json": {
+    "mtime": 1789310565.0094025,
+    "ast_hash": "6cef58d02d19bd0536182f6c22247196",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\drizzle\\0000_dashing_runaways.sql": {
+    "mtime": 1789309585.037541,
+    "ast_hash": "47b39dde70f7d0d727424d25a64f4188",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\drizzle\\0001_nebulous_black_tom.sql": {
+    "mtime": 1789310045.0982766,
+    "ast_hash": "8e2097c0094abf8e6d28fff5cbc194c2",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\drizzle\\0002_cute_molly_hayes.sql": {
+    "mtime": 1789361324.2103205,
+    "ast_hash": "99771cb1912ab13860e41dfb232b051f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\drizzle\\0003_lying_captain_stacy.sql": {
+    "mtime": 1789363287.283243,
+    "ast_hash": "5d81f52ac9038d1468cda625746aae85",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\drizzle\\meta\\0000_snapshot.json": {
+    "mtime": 1789309585.0370002,
+    "ast_hash": "db537327fd940c842dab073b7ebcfadc",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\drizzle\\meta\\0001_snapshot.json": {
+    "mtime": 1789310045.0977547,
+    "ast_hash": "bdc1e8623d9b7058606568c8a8bae5cb",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\drizzle\\meta\\0002_snapshot.json": {
+    "mtime": 1789361324.2092674,
+    "ast_hash": "4f694dbb4dd881476eed7c055e3113f1",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\drizzle\\meta\\0003_snapshot.json": {
+    "mtime": 1789363287.2827158,
+    "ast_hash": "be4caa7c88397eb86ec813379ba8323f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\drizzle\\meta\\_journal.json": {
+    "mtime": 1789363287.283243,
+    "ast_hash": "5b51857f39ffffebe8debfeec9e02d36",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\auth-flow.spec.ts": {
+    "mtime": 1790276422.6784048,
+    "ast_hash": "7cc47a1a603b1d67b89bf50801cb0edc",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\auth-security.spec.ts": {
+    "mtime": 1790580571.5402212,
+    "ast_hash": "07233edb9490d44643e3230633978664",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\balance-settlement.spec.ts": {
+    "mtime": 1790575297.4206116,
+    "ast_hash": "76254f1fbcf4368ef3e81e520a874605",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\caching-performance.spec.ts": {
+    "mtime": 1790575297.4211419,
+    "ast_hash": "e46a3e7ec6be70be69fbaed90530c495",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\dashboard-routing.spec.ts": {
+    "mtime": 1790498954.307124,
+    "ast_hash": "5e44773093cbc5146707d7ab764315ed",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\digital-engagement.spec.ts": {
+    "mtime": 1790204321.763512,
+    "ast_hash": "b309226348a4a5dc27b8eed99c2403ff",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\global-setup.ts": {
+    "mtime": 1790575297.421673,
+    "ast_hash": "72eb8ab45ed9ea171169267368843534",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\lab-orders.spec.ts": {
+    "mtime": 1789348025.6825683,
+    "ast_hash": "91c58518736b5129b50e3d67ffca91a3",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\multi-branch-relations.spec.ts": {
+    "mtime": 1790575297.422202,
+    "ast_hash": "041904711e3dc990f9a4eaef99acdd71",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\multi-tenant-staff-portal.spec.ts": {
+    "mtime": 1790549296.0281923,
+    "ast_hash": "972d22fadb2b016c89c805bf98ab0e09",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\notifications.spec.ts": {
+    "mtime": 1790496986.4965062,
+    "ast_hash": "d6d19c1d8cceff37ce173bb5f1a9bf40",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\patient-inventory-crud.spec.ts": {
+    "mtime": 1790534657.410795,
+    "ast_hash": "fbb9c5c4d8e1ac8baa81ff4b14f553ce",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\pos-checkout.spec.ts": {
+    "mtime": 1790537363.6123536,
+    "ast_hash": "127e1e5da070bfd5559794d7862c1108",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\pos-layout-modes.spec.ts": {
+    "mtime": 1790537354.128904,
+    "ast_hash": "8cb766f3dfdf92783dc8048f8e061160",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\pos-settings-sidebar.spec.ts": {
+    "mtime": 1790568841.1150262,
+    "ast_hash": "b9654a8dd8a68d59c7c47341879288d6",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\priority-notes.spec.ts": {
+    "mtime": 1790575297.422202,
+    "ast_hash": "aa43f76849cc0f08f9d4d04205cb54d8",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\reports-ledger.spec.ts": {
+    "mtime": 1789347235.7576454,
+    "ast_hash": "76dd4ecee22ca8761cdcfb3a32118322",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\saas-subscription-razorpay.spec.ts": {
+    "mtime": 1790575297.4227278,
+    "ast_hash": "268e67adc38cbe495db42ab193cf9f14",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\security-penetration-audit.spec.ts": {
+    "mtime": 1790563768.7814376,
+    "ast_hash": "a32d6fc750b76763318cf43d3655f003",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\settings-autosave-navigation.spec.ts": {
+    "mtime": 1790401333.0848968,
+    "ast_hash": "d61dc959d45fdff548cf198b67d4cba8",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\settings-print.spec.ts": {
+    "mtime": 1790401257.4607487,
+    "ast_hash": "7b2ed20f58509131de9449ead1cd041d",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\signup-org-branch.spec.ts": {
+    "mtime": 1790553322.568705,
+    "ast_hash": "01f252e59f17e9e2b462e2451d9470b7",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\super-admin-otp-auth.spec.ts": {
+    "mtime": 1790575297.4232516,
+    "ast_hash": "2810d336b632b374c8f4e23018dd0c53",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\tenant-roles.spec.ts": {
+    "mtime": 1790575297.4237757,
+    "ast_hash": "fd38cfb6ae57b160fa3680a31ba28b47",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\scripts\\audit-design-system.ts": {
+    "mtime": 1790394727.3161979,
+    "ast_hash": "f87476cf2d009008cf77fa98e1402306",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\scripts\\migrate-subscriptions.ts": {
+    "mtime": 1790391773.67268,
+    "ast_hash": "35b4bc33201e5e906b69853f47ffa539",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\scripts\\migrate-super-admin-otp.ts": {
+    "mtime": 1790551549.669734,
+    "ast_hash": "f466f83341a11dcc92cc445e3787a957",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\scripts\\run-sql-migration.ts": {
+    "mtime": 1790575297.4440715,
+    "ast_hash": "e1333053b815d961b1048813684f46f1",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\scripts\\security-audit.ts": {
+    "mtime": 1790390067.422989,
+    "ast_hash": "0598dae193a39cfdb87869b72e3b8689",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\scripts\\test-caching-engine.ts": {
+    "mtime": 1790439599.9558468,
+    "ast_hash": "8518cb424240bb51c41ed75e3d042eab",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\scripts\\test-razorpay-integration.ts": {
+    "mtime": 1790440159.4403036,
+    "ast_hash": "9f119b2fc721b38438da881a73dd0e49",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\scripts\\test-signup-and-env-config.ts": {
+    "mtime": 1790553281.3953383,
+    "ast_hash": "48b7b9d7c86ffa2574b61a37ef59441a",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\scripts\\test-vertex-converter.ts": {
+    "mtime": 1790541955.8357594,
+    "ast_hash": "cde55e4678ed683f6e87bf71d2a74d79",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\scripts\\migrations\\2026-09-28-tenant-hardening.sql": {
+    "mtime": 1790575297.443072,
+    "ast_hash": "997afc186491d68bb78db52bbb042c02",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\middleware.ts": {
+    "mtime": 1790563264.9528368,
+    "ast_hash": "293a84aaf685343e9d2a72a6a7573c78",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\account-actions.ts": {
+    "mtime": 1790561919.0702302,
+    "ast_hash": "f7a27ca9782b6a8055225b886a7bfc3c",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\approval-actions.ts": {
+    "mtime": 1790575297.4440715,
+    "ast_hash": "8829055fd905283b264a71e804c15b67",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\customer-portal-actions.ts": {
+    "mtime": 1790575297.4450705,
+    "ast_hash": "f524edb18e7bfff74913d229b2885db7",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\dashboard-actions.ts": {
+    "mtime": 1790575297.4450705,
+    "ast_hash": "91778b1a60a462ca8929d34257697e0c",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\email-actions.ts": {
+    "mtime": 1790575297.446072,
+    "ast_hash": "d562927432e5bfcbcc3a45e93e85b9b5",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\inventory-actions.ts": {
+    "mtime": 1790575297.446072,
+    "ast_hash": "c1ae9296b33848ec5777932747f841b8",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\invoice-edit-actions.ts": {
+    "mtime": 1790575297.4470701,
+    "ast_hash": "eca0f4ae91469e520bf1de5cfc1322dd",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\lab-actions.ts": {
+    "mtime": 1790575297.4470701,
+    "ast_hash": "c36ede83ed7b930f7a266957cb2fe394",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\notification-actions.ts": {
+    "mtime": 1790575297.4480698,
+    "ast_hash": "2167ac80e2b1a812ed8c330c355ac722",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\patient-actions.ts": {
+    "mtime": 1790575297.4480698,
+    "ast_hash": "4f61f08c2ccd98c01e837a0e303dc706",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\payment-actions.ts": {
+    "mtime": 1790575297.44907,
+    "ast_hash": "0d753b023780d56ca8be3aef4162bda3",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\plan-actions.ts": {
+    "mtime": 1790548811.8473575,
+    "ast_hash": "12e5f8480d1f6004feb219643be3f9c1",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\process-optical-order.ts": {
+    "mtime": 1790575297.44907,
+    "ast_hash": "2e5f6996a76ed3b4ae8437037e060295",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\product-type-actions.ts": {
+    "mtime": 1790564677.712903,
+    "ast_hash": "9547e4aed9ab03a87a6ddaf92742dd75",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\receipt-actions.ts": {
+    "mtime": 1790563738.3265972,
+    "ast_hash": "5862a14fed7fe8d698cd8c35162e8759",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\report-actions.ts": {
+    "mtime": 1790575297.4500706,
+    "ast_hash": "e0c34153ffb00de8d35a1701fcf5aa49",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\return-refund-actions.ts": {
+    "mtime": 1790575297.4500706,
+    "ast_hash": "3976c293a5f4cf6e3f7df2c03da7ea9d",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\settings-actions.ts": {
+    "mtime": 1790580236.3300755,
+    "ast_hash": "71adc7fa213f8eaded1384c91024834a",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\staff-auth-actions.ts": {
+    "mtime": 1790575297.451576,
+    "ast_hash": "13c8bb4af4e65db865e2b85a3e26afe2",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\subscription-actions.ts": {
+    "mtime": 1790575297.451576,
+    "ast_hash": "d6429091ec2bd189d651e9d17e7152c8",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\super-admin-auth-actions.ts": {
+    "mtime": 1790575297.4525812,
+    "ast_hash": "c3beadb8ebd5be72e70468bbf2981464",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\actions\\tenant-actions.ts": {
+    "mtime": 1790575297.4525812,
+    "ast_hash": "5abecf910dec51fd8f488639e1cdcfa0",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\layout.tsx": {
+    "mtime": 1790575297.4575815,
+    "ast_hash": "41167678f94a90088ef9516eb40586e0",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\not-found.tsx": {
+    "mtime": 1790575297.4575815,
+    "ast_hash": "bd927bc2dd9db552e5a64497b064ab97",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\page.tsx": {
+    "mtime": 1790221477.1026537,
+    "ast_hash": "1f6620638ecd6decdbc04e11ce1d6e7d",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\error.tsx": {
+    "mtime": 1790575297.4535813,
+    "ast_hash": "633baad0de0c5d1af7e0e02be3b56bde",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\layout.tsx": {
+    "mtime": 1790566642.9498637,
+    "ast_hash": "2ff3def49009f7755eadfe6d32255b94",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\loading.tsx": {
+    "mtime": 1790575297.4545825,
+    "ast_hash": "93740e73d952c5f17ee99e24ebacd8bf",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\admin\\branches\\page.tsx": {
+    "mtime": 1790394811.398192,
+    "ast_hash": "72a3c98eaa5d5c99affcb207a48a6b24",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\admin\\dashboard\\page.tsx": {
+    "mtime": 1790497591.1362891,
+    "ast_hash": "0a1d13816e264de16437eec5bfc8585c",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\admin\\inventory\\page.tsx": {
+    "mtime": 1789328559.612784,
+    "ast_hash": "9a4b7f3a9529d7560157c58dd25bb8a5",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\admin\\lab-orders\\page.tsx": {
+    "mtime": 1790392058.012491,
+    "ast_hash": "b1103c39fb8a9ffddb4b40c5b4f97dbf",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\admin\\patients\\page.tsx": {
+    "mtime": 1789329444.9866247,
+    "ast_hash": "52ec2804a5337d61fb5dae517414101c",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\admin\\reports\\page.tsx": {
+    "mtime": 1789328906.8104227,
+    "ast_hash": "676b7a3af025294427df84c07c518965",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\admin\\settings\\page.tsx": {
+    "mtime": 1789356913.960578,
+    "ast_hash": "e02a47896f515368c139e9c99d3c5f9b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\admin\\staff\\page.tsx": {
+    "mtime": 1790575297.4535813,
+    "ast_hash": "d39070983e9408f26536479735522f27",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\admin\\super-admin\\page.tsx": {
+    "mtime": 1789369545.0819333,
+    "ast_hash": "1af530c50fe142e85220f5c7577551e4",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\(dashboard)\\pos\\new-bill\\page.tsx": {
+    "mtime": 1789328554.3885584,
+    "ast_hash": "10f5f6a446b5fbf206414755ae8b6896",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\api\\auth\\[...all]\\route.ts": {
+    "mtime": 1789363350.946293,
+    "ast_hash": "e6df51d1c3e966afd40aa83203193bad",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\api\\inventory\\search\\route.ts": {
+    "mtime": 1790561777.0927503,
+    "ast_hash": "02d7c3c231c08bcf64882a8a24e320b8",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\api\\patients\\search\\route.ts": {
+    "mtime": 1790575297.4545825,
+    "ast_hash": "719952deb42960be6d82c7062c92cb19",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\api\\webhooks\\razorpay\\route.ts": {
+    "mtime": 1790575297.455583,
+    "ast_hash": "1f4b839d9253234f6c430b69ae196937",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\auth\\2fa\\page.tsx": {
+    "mtime": 1790270425.7750783,
+    "ast_hash": "8218b54a0455dfdbd191de61cb23be2c",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\auth\\forgot-password\\page.tsx": {
+    "mtime": 1790274129.0485902,
+    "ast_hash": "6078f45cb4a016fce3860329801131e3",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\auth\\login\\page.tsx": {
+    "mtime": 1790560992.4598808,
+    "ast_hash": "a860e6b150afb6ac2f55d22a90bf699f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\auth\\reset-password\\page.tsx": {
+    "mtime": 1790270396.297332,
+    "ast_hash": "cc58fd0d6c67aec31617f7845b90661f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\auth\\staff-login\\page.tsx": {
+    "mtime": 1790575297.4565823,
+    "ast_hash": "5c32316e2615122461ebc311ce865559",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\onboarding\\page.tsx": {
+    "mtime": 1790553246.9916706,
+    "ast_hash": "3d25f19f092b8459d0c2b3dbd29b6a9b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\owner\\error.tsx": {
+    "mtime": 1790575297.4585814,
+    "ast_hash": "e07bf999d238a55b388d303cffb502fa",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\owner\\layout.tsx": {
+    "mtime": 1790557095.338618,
+    "ast_hash": "2a3e1488cc36c07c1a5e94512a0f7954",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\owner\\loading.tsx": {
+    "mtime": 1790575297.4585814,
+    "ast_hash": "679470f84d3480715547417775567672",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\owner\\page.tsx": {
+    "mtime": 1790557298.7128732,
+    "ast_hash": "981d30c8409dad0912ecb254ada8337b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\owner\\approvals\\page.tsx": {
+    "mtime": 1790557174.2521465,
+    "ast_hash": "44c54c43a4e03f0560ebad4c12c4ba96",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\owner\\branches\\page.tsx": {
+    "mtime": 1790557126.449004,
+    "ast_hash": "0ae0ed4f031a9f719cb14070bd973ba8",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\owner\\reports\\page.tsx": {
+    "mtime": 1790557328.5070057,
+    "ast_hash": "62c3165d6f7b236243e23cab3bb03bc2",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\owner\\settings\\page.tsx": {
+    "mtime": 1790557349.773114,
+    "ast_hash": "8d074c4af299a859419f4ade328f6f3a",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\owner\\staff\\page.tsx": {
+    "mtime": 1790575297.4595833,
+    "ast_hash": "b5641acd1cd3b9417cb2546e60ee16b6",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\portal\\layout.tsx": {
+    "mtime": 1790575297.4595833,
+    "ast_hash": "3cfe6e99ed65aa5c4b5a9db4bc325e96",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\portal\\page.tsx": {
+    "mtime": 1790497539.2906103,
+    "ast_hash": "b4a5f81e8763bdab407dcaf9f03c67df",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\pricing\\page.tsx": {
+    "mtime": 1790548770.474655,
+    "ast_hash": "488eb77e340b0d31722500becabcd80a",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\receipt\\[id]\\page.tsx": {
+    "mtime": 1790563754.987284,
+    "ast_hash": "13c8938af5fb43858037e802a53a63d2",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\super-admin\\layout.tsx": {
+    "mtime": 1790575297.4595833,
+    "ast_hash": "9f33776fb030b0d9667e27f82930ddc5",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\super-admin\\page.tsx": {
+    "mtime": 1789369470.6321247,
+    "ast_hash": "b17549693f7a129e79c51e6cefa28699",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\super-admin\\approvals\\page.tsx": {
+    "mtime": 1790557034.215989,
+    "ast_hash": "b230f27a8e23adeba6c19b98975e488f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\super-admin\\branches\\page.tsx": {
+    "mtime": 1790554581.0618782,
+    "ast_hash": "128298a2d9b60f1282cd387ffb74a760",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\super-admin\\dashboard\\page.tsx": {
+    "mtime": 1790554599.5070302,
+    "ast_hash": "3234c18b5285570a638d400817a45dd4",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\super-admin\\login\\page.tsx": {
+    "mtime": 1790551660.840544,
+    "ast_hash": "48c3a5bb151e824600932e2b2abba20f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\super-admin\\organizations\\page.tsx": {
+    "mtime": 1790554484.4283712,
+    "ast_hash": "89e730f8ea4ffd70a6ea41a68ba415ad",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\app\\super-admin\\settings\\page.tsx": {
+    "mtime": 1790301194.3655825,
+    "ast_hash": "db3a7a7923339925eba613db59727c6f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\theme-provider.tsx": {
+    "mtime": 1790464336.238927,
+    "ast_hash": "8790f0cc27bf58a10038531f5af9b8cc",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\theme-toggle.tsx": {
+    "mtime": 1789348992.812404,
+    "ast_hash": "7d1c19c0b9677cee1536ef90de9ed976",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\add-inventory-form.tsx": {
+    "mtime": 1790530929.3715727,
+    "ast_hash": "1e53cf44e75e9b52d9acfef55de93b77",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\add-patient-modal.tsx": {
+    "mtime": 1790575297.4605813,
+    "ast_hash": "b45b8a54ca08df7b28c2c772b77e927f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\dashboard-view.tsx": {
+    "mtime": 1790575297.4616463,
+    "ast_hash": "6192d5cf4392da90f9f5012942bd90cd",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\edit-inventory-modal.tsx": {
+    "mtime": 1790575297.4616463,
+    "ast_hash": "a1f84216567e5b87b25910385c781cdb",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\edit-invoice-modal.tsx": {
+    "mtime": 1790530563.6698036,
+    "ast_hash": "47e8afcd4bb66d3a174a5063777c6c49",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\edit-patient-modal.tsx": {
+    "mtime": 1790575297.4622314,
+    "ast_hash": "34543aa1d65ec0c299dcd9a711863de0",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\inventory-table.tsx": {
+    "mtime": 1790575297.4622314,
+    "ast_hash": "c2fce1a9d893cedefae4f93bfd9ea409",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\inventory-view.tsx": {
+    "mtime": 1790531667.144986,
+    "ast_hash": "b54ed1b9ac4e0452f1b14606b92da257",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\lab-orders-view.tsx": {
+    "mtime": 1790575297.4632392,
+    "ast_hash": "24e1a507e92fc6ea5b7f2d2d1a58c8c8",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\patient-detail-sheet.tsx": {
+    "mtime": 1790575297.4642396,
+    "ast_hash": "1fc7d0d2a80bf639d8a867628825ef5d",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\patients-view.tsx": {
+    "mtime": 1790531641.6379063,
+    "ast_hash": "be93e2ca02502f50043426c1a164ff66",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\product-types-settings.tsx": {
+    "mtime": 1790567065.157731,
+    "ast_hash": "5a3ea070515651d5f091eca488deb168",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\reports-view.tsx": {
+    "mtime": 1790575297.4652386,
+    "ast_hash": "7b9385ef70f982284e967fcede68ac3b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\return-refund-modal.tsx": {
+    "mtime": 1790575297.4652386,
+    "ast_hash": "af0401ecbb475277b04c054cd0102cf8",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\settings-view.tsx": {
+    "mtime": 1790580270.213259,
+    "ast_hash": "2f830f2849510b9ec4ccc0f532a10b2b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\settle-balance-modal.tsx": {
+    "mtime": 1789349793.655646,
+    "ast_hash": "0ab0121401d93a3262c4e4f76af4121b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\workshop-slip-modal.tsx": {
+    "mtime": 1789357130.6043756,
+    "ast_hash": "2b00a0038d1e79681982ae05e2be5916",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\layout\\branch-switcher.tsx": {
+    "mtime": 1790554724.2473593,
+    "ast_hash": "4cf7c3cc158eb56d206db78c6450df1e",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\layout\\route-states.tsx": {
+    "mtime": 1790575297.4667442,
+    "ast_hash": "3049a079d10551cdc11702319afcbe1f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\layout\\settings-sidebar.tsx": {
+    "mtime": 1790568831.984837,
+    "ast_hash": "775ce9c95da9d9a597584d4f21ce96b0",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\layout\\simulation-banner.tsx": {
+    "mtime": 1790466703.9805102,
+    "ast_hash": "803a8002b5869ff8bcf1bd728b47ecca",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\layout\\user-nav.tsx": {
+    "mtime": 1790575297.4677513,
+    "ast_hash": "646038281abcfca75890d7f99e819523",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\notifications\\index.ts": {
+    "mtime": 1790496826.6848667,
+    "ast_hash": "39e023b6a9cd708b796edd12ec95b060",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\notifications\\notification-bell-trigger.tsx": {
+    "mtime": 1790496820.2924216,
+    "ast_hash": "e08e5d682590a2bab6f342f069e07029",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\notifications\\notification-item-card.tsx": {
+    "mtime": 1790496795.4189177,
+    "ast_hash": "772f7471e32947e85e5cf15eefe9c00e",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\notifications\\notification-popover.tsx": {
+    "mtime": 1790496808.3872912,
+    "ast_hash": "842fbb52c95769da600b415849af2023",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\add-family-member-modal.tsx": {
+    "mtime": 1789350273.3493633,
+    "ast_hash": "15d15a9d94015b50e64430267a2efb72",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\add-product-modal.tsx": {
+    "mtime": 1790575297.4682572,
+    "ast_hash": "46f33066e793ecc57838b9e296c422b3",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\billing-cart.tsx": {
+    "mtime": 1790575297.4692633,
+    "ast_hash": "bfc98592ecdbde4801dadd3df40e8f07",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\cart-item-edit-modal.tsx": {
+    "mtime": 1790575297.4692633,
+    "ast_hash": "795fd5ae6c32f845e99717ae308a1489",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\compact-patient-strip.tsx": {
+    "mtime": 1790575297.4702628,
+    "ast_hash": "a0e2de18f0026e5222490e0ec1697968",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\dense-bottom-bar.tsx": {
+    "mtime": 1789455927.832768,
+    "ast_hash": "e24cb9127c571387252cc04404e90f1a",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\inventory-search.tsx": {
+    "mtime": 1789391186.6459174,
+    "ast_hash": "461e49d3396641327b06be78364c9826",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\invoice-details-modal.tsx": {
+    "mtime": 1789349766.3217893,
+    "ast_hash": "c0fe93b542085501df7fa52948892d2c",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\patient-search.tsx": {
+    "mtime": 1790542529.6191394,
+    "ast_hash": "21f7731ad58f777f5387e6982f361395",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\payment-panel.tsx": {
+    "mtime": 1790531492.968638,
+    "ast_hash": "cc28e97b6ba74affdafb4528fe4d11de",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\pos-view.tsx": {
+    "mtime": 1790575297.4708536,
+    "ast_hash": "c16ab70d4936c1b4a8a18e6bdff93cf2",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\prescription-grid.tsx": {
+    "mtime": 1790544335.8561978,
+    "ast_hash": "2241850f9811bf37f70663634533b67f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\print-a4-invoice.tsx": {
+    "mtime": 1790575297.4718604,
+    "ast_hash": "53d860a71abf6f3fc90bed741eefa977",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\print-layouts.tsx": {
+    "mtime": 1790575297.4723666,
+    "ast_hash": "5b9c6c54c77335a5f3cef31c5e4fe009",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\quick-add-patient-modal.tsx": {
+    "mtime": 1789371610.1600375,
+    "ast_hash": "168c0b7366d867e87d1dcc6b34a92d71",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\spectacle-wizard-modal.tsx": {
+    "mtime": 1789352197.0750637,
+    "ast_hash": "5a4577e2b292e67b119739efab85c327",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\print\\A4TaxInvoice.tsx": {
+    "mtime": 1789356961.1295214,
+    "ast_hash": "89bc156cfa209f23d36dc2edb53c4057",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\print\\index.ts": {
+    "mtime": 1789356980.1620736,
+    "ast_hash": "6bfc98760cdac3a360c5c53ed0fe2dac",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\print\\ThermalReceipt.tsx": {
+    "mtime": 1790575297.4723666,
+    "ast_hash": "f68ea91f6cdea2b782cb3a5d85e95fec",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\print\\WorkshopLabSlip.tsx": {
+    "mtime": 1790575297.4733725,
+    "ast_hash": "8a7d49c1f464d42c2e903c1ea40185ed",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\priority-notes\\index.ts": {
+    "mtime": 1790408937.809381,
+    "ast_hash": "14f380b492b1546d6da2b0f61a808ec8",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\priority-notes\\priority-note-card.tsx": {
+    "mtime": 1790410340.83786,
+    "ast_hash": "62de22fa8071e79b499e7e13776e3ed8",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\priority-notes\\priority-notes-drawer.tsx": {
+    "mtime": 1790467146.6736367,
+    "ast_hash": "0ada35104937a33e57db778b4cc29ddf",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\priority-notes\\priority-notes-trigger.tsx": {
+    "mtime": 1790467054.920189,
+    "ast_hash": "0b6f5c198f13289a94b441ed995a4f1c",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\subscription\\plan-upgrade-gate.tsx": {
+    "mtime": 1790391887.278291,
+    "ast_hash": "4397015ccb42404b5cbe7413707ca111",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\subscription\\plan-upgrade-modal.tsx": {
+    "mtime": 1790394917.5208318,
+    "ast_hash": "960e653e6fe12e0e465ef74493cb8089",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\subscription\\subscriber-onboarding-modal.tsx": {
+    "mtime": 1790391866.5715392,
+    "ast_hash": "f9ee8a0187d0022d484cb16a26544e3a",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\ui\\badge.tsx": {
+    "mtime": 1790394663.0119731,
+    "ast_hash": "eaea58fbfe5ec3d402fbebdec00cdfc0",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\ui\\button.tsx": {
+    "mtime": 1790394656.252267,
+    "ast_hash": "fc9f142dd7305b41b4729d48c9ad32f8",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\ui\\card.tsx": {
+    "mtime": 1790394671.0650089,
+    "ast_hash": "d64604133759ced7a98eeb58a960ebb5",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\ui\\confirm-dialog.tsx": {
+    "mtime": 1790575297.4733725,
+    "ast_hash": "d9210367b07ba1ea43e5a417fa001b8c",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\ui\\dialog.tsx": {
+    "mtime": 1790575297.474372,
+    "ast_hash": "554439b58bdf4ded4e9e85174bf92c65",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\ui\\empty-state.tsx": {
+    "mtime": 1790394702.9151087,
+    "ast_hash": "ac4bd945783d5bad4ebc8e933522af6f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\ui\\index.ts": {
+    "mtime": 1790575297.474372,
+    "ast_hash": "4dbf1208ed22b03ff915b01b8397dfdc",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\ui\\input.tsx": {
+    "mtime": 1790394680.4135199,
+    "ast_hash": "aa64a3bbebf9aab2807fcdcf69932cb1",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\ui\\page-header.tsx": {
+    "mtime": 1790394696.2616794,
+    "ast_hash": "490c8bc877a66aaed87bb3425f962756",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\ui\\skeleton.tsx": {
+    "mtime": 1790575297.4753728,
+    "ast_hash": "dd9fecbac58f806c4832bc134dd799b5",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\components\\ui\\stat-card.tsx": {
+    "mtime": 1790394709.9450235,
+    "ast_hash": "30c9823715c8326e981df9683bf54573",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\db\\clean.ts": {
+    "mtime": 1790551840.468605,
+    "ast_hash": "f5723f76ec94110198fb2a8bc1a1ad7a",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\db\\index.ts": {
+    "mtime": 1789309426.1952965,
+    "ast_hash": "6fab6fa2b192d782d9446343c5a6114e",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\db\\migrate-approvals.ts": {
+    "mtime": 1790300285.6611238,
+    "ast_hash": "51255e883f93bb5e57d26947593c7991",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\db\\migrate-multi-tenant-staff.ts": {
+    "mtime": 1790548328.2767913,
+    "ast_hash": "9586f2bef17226a5f93e5b6646dc7dec",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\db\\migrate-notifications.ts": {
+    "mtime": 1790496522.733995,
+    "ast_hash": "4a97e768f6d5095c55398afc621a1995",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\db\\migrate-product-types.ts": {
+    "mtime": 1790528807.574947,
+    "ast_hash": "33eaae4569982b784bb572036e7687af",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\db\\schema.ts": {
+    "mtime": 1790575297.4753728,
+    "ast_hash": "b0b19099a6c660af8aab96b9fcbcc80c",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\db\\seed.ts": {
+    "mtime": 1790579894.4865599,
+    "ast_hash": "02ac316f6483381b8580ea39ad7ec77b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\hooks\\use-barcode-scanner.ts": {
+    "mtime": 1790203864.7507374,
+    "ast_hash": "4ffd9fd8db4d194c76c312486798431c",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\hooks\\use-cached-resource.ts": {
+    "mtime": 1790555540.0347948,
+    "ast_hash": "8ee25b610e09cdebec589994d1823ce5",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\hooks\\use-idle-timeout.ts": {
+    "mtime": 1790575297.476372,
+    "ast_hash": "817f00560ee238c0104bd763d1b3531f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\hooks\\use-razorpay-checkout.ts": {
+    "mtime": 1790393702.5512543,
+    "ast_hash": "acd1f2cbf60a3cff49d3323060640d84",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\auth-client.ts": {
+    "mtime": 1790270130.6427684,
+    "ast_hash": "ec7b60b9570c02abf4de74dd5113a59e",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\auth-utils.ts": {
+    "mtime": 1790575297.476372,
+    "ast_hash": "f773918d3cdaf0cccbd64ff211e41053",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\auth.ts": {
+    "mtime": 1790275900.2337582,
+    "ast_hash": "89e68d6ad76cc94f2f1e1ed727a5c15c",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\cache.ts": {
+    "mtime": 1790439857.2809656,
+    "ast_hash": "694d5a7a03f1511b4a1764ff052fc47f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\crypto-utils.ts": {
+    "mtime": 1790575297.476372,
+    "ast_hash": "d47fe2549b4ff0b6a361aab5366306ac",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\default-product-types.ts": {
+    "mtime": 1790565375.6827304,
+    "ast_hash": "5fb1b822e8e76b34f53d9dfe79a929ff",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\email.ts": {
+    "mtime": 1790575297.4773722,
+    "ast_hash": "6cde0cbe4c98cbd12d72a548f343c0fe",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\errors.ts": {
+    "mtime": 1790575297.4783735,
+    "ast_hash": "e91675eaaa06ea0e99fa8ec89ff55bc6",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\feature-gate.ts": {
+    "mtime": 1790392234.9714231,
+    "ast_hash": "edc98860cd4a2670f894e948d4130441",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\format.ts": {
+    "mtime": 1790575297.4783735,
+    "ast_hash": "7372ce1829342d266614b10577e31f7b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\gst.ts": {
+    "mtime": 1790575297.4783735,
+    "ast_hash": "1ee91d7b3b4b702e99201638bba10e8e",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\notifications-internal.ts": {
+    "mtime": 1790575297.479373,
+    "ast_hash": "b96c27cbc058096a181d261e4fdb01f4",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\patient-relationship.ts": {
+    "mtime": 1789340671.3013294,
+    "ast_hash": "3449980ed75e2087da540eddbb02bc33",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\plans.ts": {
+    "mtime": 1790198674.212099,
+    "ast_hash": "661e6ff45fc8bdc0a1780781c283433f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\ratelimit.ts": {
+    "mtime": 1790560880.496229,
+    "ast_hash": "32f49c8e902af08cb7edd0d87a72aafb",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\razorpay.ts": {
+    "mtime": 1790391797.431014,
+    "ast_hash": "4959ca1a1bc7533d85aa32c86d366f50",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\redis.ts": {
+    "mtime": 1790439587.624809,
+    "ast_hash": "c5d2bddd75cb559abc9c6dd02f4f736d",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\settings-registry.ts": {
+    "mtime": 1790568814.9496498,
+    "ast_hash": "c3365b9b47b06e9f1b9020ea619a5c28",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\store-profile.ts": {
+    "mtime": 1790579535.9611826,
+    "ast_hash": "7c781c76206ff0e2be0a0811eeb5bd39",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\super-admin-session.ts": {
+    "mtime": 1790562698.9250982,
+    "ast_hash": "b4082c9b888e5d3345a2111c1eeecb37",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\utils.ts": {
+    "mtime": 1789310478.9777915,
+    "ast_hash": "a40ab276f43a0e0a273926a9fa5055cc",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\vertex-converter.ts": {
+    "mtime": 1790541942.5070057,
+    "ast_hash": "1bfe0f29f760493375ca86a51f1d1c7e",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\whatsapp-utils.ts": {
+    "mtime": 1790203681.4176934,
+    "ast_hash": "3c1528b58b34536378a88c69de73a565",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\notifications\\event-registry.ts": {
+    "mtime": 1790496572.3520358,
+    "ast_hash": "14f587b465efd296a614b8cf38f7ab92",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\notifications\\types.ts": {
+    "mtime": 1790496559.1517715,
+    "ast_hash": "26d54033da8fe63a0fa8080063a40f75",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\validators\\inventory.ts": {
+    "mtime": 1790530888.2268622,
+    "ast_hash": "ed80396d5907c4993d49654b895dafc3",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\validators\\prescription.ts": {
+    "mtime": 1790575297.479373,
+    "ast_hash": "68b73ab54fd653c3086f36916138c70a",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\store\\pos-store.ts": {
+    "mtime": 1789455853.7792356,
+    "ast_hash": "24042ff940a6cb65280c312214708be7",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\store\\priority-notes-store.ts": {
+    "mtime": 1790555360.131238,
+    "ast_hash": "219458bc3a6a452bd9a6f13dc183d4b1",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\store\\tenant-store.ts": {
+    "mtime": 1790554688.71924,
+    "ast_hash": "a9cf58c1b3357b01fe22d450aeb713dd",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\AGENTS.md": {
+    "mtime": 1790451092.8761454,
+    "ast_hash": "667cb74e4a4538c45a7a02d396b8c182",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\CLAUDE.md": {
+    "mtime": 1790575297.416912,
+    "ast_hash": "dd638e538e80a05c48694208f9a68e35",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\GEMINI.md": {
+    "mtime": 1790451109.6670353,
+    "ast_hash": "0d429ec9858181b87863549df92a2f2f",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\README.md": {
+    "mtime": 1789356730.637834,
+    "ast_hash": "e36ba75f1032e3cf387638fe7cc1315d",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\ARCHITECTURE.md": {
+    "mtime": 1790451159.9769323,
+    "ast_hash": "333c9d8de6208ee9c03f8d44aa2c7c21",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\DECISIONS.md": {
+    "mtime": 1790441504.630934,
+    "ast_hash": "a78d73a19da78a572aa1905a26e7249b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\DESIGN.md": {
+    "mtime": 1790575297.4174395,
+    "ast_hash": "bd66508ae47988310dc1bb37743ac6a5",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\MEMORY.md": {
+    "mtime": 1790557568.8723116,
+    "ast_hash": "2c25133e7a3b3a0a1c44cdb30652aae9",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\PRD.md": {
+    "mtime": 1790184259.0539596,
+    "ast_hash": "a7e0757c22e91300b363083b9388743b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\RULES.md": {
+    "mtime": 1790451079.328473,
+    "ast_hash": "d058915a26231614dc173787d93d6d60",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\SECURITY.md": {
+    "mtime": 1790389774.9886763,
+    "ast_hash": "25bba9d9d5fec29041dac38d1334c80b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\TASKS.md": {
+    "mtime": 1790575297.418496,
+    "ast_hash": "18f668263e7ffc3aea0abebcf0b82bfc",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\TEST_PLAN.md": {
+    "mtime": 1790184194.708347,
+    "ast_hash": "a8a2d6155a9aeabc85ddfa35b021bc13",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\VIBE_WORKFLOW.md": {
+    "mtime": 1790402338.1069727,
+    "ast_hash": "867b7789b574d0172998c0621d63aaf1",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\AGENT_HANDOFF_PROTOCOL.md": {
+    "mtime": 1790387710.7220023,
+    "ast_hash": "c5c7838fddb5ff6dc8a6387929388ace",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\BUG_FIX_LOG.md": {
+    "mtime": 1790575297.4190257,
+    "ast_hash": "4833503436edd4dbd8c46c5d31e4d4ce",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\SECURITY_LOG.md": {
+    "mtime": 1790575297.419542,
+    "ast_hash": "7110c72ba3525837a82c8f627aaf764a",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\SESSION_HANDOFF.md": {
+    "mtime": 1790575297.420083,
+    "ast_hash": "5742f1be6bb866eabca74960719814ba",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\archive\\ARCHIVE_LOG.md": {
+    "mtime": 1790194040.6853824,
+    "ast_hash": "cb839feb0f303debce6e372502b01bc9",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\docs\\archive\\Vibe Coding_ A Complete Beginner-to-Production Guide.md": {
+    "mtime": 1790183584.0828073,
+    "ast_hash": "34fbc4a37660d70df380bf560d8ffdc1",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\README.md": {
+    "mtime": 1790388150.1370976,
+    "ast_hash": "2e1328b0ecb9dc24c9de1720bd8f1d0e",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\024-gst-e-invoicing\\plan.md": {
+    "mtime": 1790388201.7812977,
+    "ast_hash": "1198c7771e42c4d02801bb6c17a1fea4",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\024-gst-e-invoicing\\spec.md": {
+    "mtime": 1790388193.7300293,
+    "ast_hash": "d72bb9e6ef63bd3ba40a7027888ff1cd",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\024-gst-e-invoicing\\tasks.md": {
+    "mtime": 1790388222.0796645,
+    "ast_hash": "9fb6f654c006aaa5f56e8539792c1164",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\025-razorpay-saas-subscription\\plan.md": {
+    "mtime": 1790391665.6681788,
+    "ast_hash": "db6a0c6e62ed0c31d86bc0b3d85d1929",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\025-razorpay-saas-subscription\\spec.md": {
+    "mtime": 1790391657.132313,
+    "ast_hash": "928456bc51784661e469f8c843a5984b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\025-razorpay-saas-subscription\\tasks.md": {
+    "mtime": 1790392360.926707,
+    "ast_hash": "9c0975d0563d7793cbb52ca7e866efd7",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\026-priority-temp-notes\\plan.md": {
+    "mtime": 1790408868.4599948,
+    "ast_hash": "511919b01b281de355aff5a9c174b1ef",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\026-priority-temp-notes\\spec.md": {
+    "mtime": 1790410242.7849314,
+    "ast_hash": "e97ece3e7cd3fefa73cbf17d254826c7",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\026-priority-temp-notes\\tasks.md": {
+    "mtime": 1790409217.4331906,
+    "ast_hash": "c3e0956d3c7144c46d6377d1ab3fb33b",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\027-multi-tenant-staff-portal\\plan.md": {
+    "mtime": 1790548251.8453283,
+    "ast_hash": "887fc77c2fa7f25c5a40b212594f7183",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\027-multi-tenant-staff-portal\\spec.md": {
+    "mtime": 1790548241.117018,
+    "ast_hash": "eabd668d237a688159db34341131b6e6",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\027-multi-tenant-staff-portal\\tasks.md": {
+    "mtime": 1790549406.347577,
+    "ast_hash": "6a473d1161cd70b9ba3a3d255fd9d384",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\archive\\README.md": {
+    "mtime": 1790388182.5120296,
+    "ast_hash": "5f5dca379de45c42633c3d6e7cfa5720",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\TEMPLATE\\plan.md": {
+    "mtime": 1790451145.8180754,
+    "ast_hash": "0d51de22600dca0305db47f15338f673",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\TEMPLATE\\spec.md": {
+    "mtime": 1790388158.7835076,
+    "ast_hash": "ef5d0e94667f7094379be2dface632bd",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\specs\\TEMPLATE\\tasks.md": {
+    "mtime": 1790388173.2415125,
+    "ast_hash": "b26eb06a48a0c62b15da2317dc5082a1",
     "semantic_hash": ""
   }
 }

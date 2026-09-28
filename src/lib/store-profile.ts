@@ -49,10 +49,10 @@ export async function ensureOrgStoreProfile(
     .insert(storeProfile)
     .values({
       organizationId,
-      storeName: org?.name || 'My Optical Store',
-      gstin: null,
-      phone: '',
-      address: '',
+      storeName: org?.name || 'Santhosh Optical Center',
+      gstin: '29AABCS1429B1Z8',
+      phone: '+91 98765 43210',
+      address: '123 Optical Plaza, MG Road, Bengaluru - 560001',
       defaultTaxRate: '18.00',
       receiptType: 'THERMAL_80MM',
       defaultPosLayout: 'adaptive',

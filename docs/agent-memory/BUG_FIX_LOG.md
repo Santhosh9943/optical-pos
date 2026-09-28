@@ -607,3 +607,27 @@
   5. Tenant SMTP settings page exposed the platform mailbox → tenant-only fields; platform fallback described generically.
   6. Dashboard threw on a not-yet-synced branch id → falls back to an authorized branch.
 - **Permanent Invariants**: Never use Zod `.uuid()` for ids that include seeded all-zero UUIDs; use the shared regex. All tax-rate enums come from `GST_RATES`.
+
+---
+
+### [BUG-039] Settings Auto-Save & Print Layout Failure Due to False Dirty State & Strict Validation Rejection on Partial Preference Updates
+- **Component**: Settings View, Store Profile Actions, Seed Engine & Auth Security E2E / `src/components/admin/settings-view.tsx`, `src/actions/settings-actions.ts`, `src/lib/store-profile.ts`, `src/db/seed.ts`, `e2e/auth-security.spec.ts`
+- **Symptom**:
+  1. Navigating from `tab=email` to `tab=system` in `/admin/settings` triggered an unexpected "Unsaved Changes" blocking modal even when no edits were made by the user.
+  2. Clicking print layout cards (e.g. `card-receipt-a4`) or updating general store settings failed with Zod validation errors (`phone: Phone number is required`, `address: Store address is required`), failing to display the success toast.
+  3. `storeProfile` creation in `ensureOrgStoreProfile` and `seed.ts` lacked standard default address and contact information on first access.
+  4. In `e2e/auth-security.spec.ts`, the test admin account creation step failed to submit because `input-signup-org-name` was left blank, triggering HTML `required` browser block and subsequent login timeout.
+- **Root Cause**:
+  1. `smtpUser` and `smtpFromEmail` were initialized in React state to hardcoded values (`msanthosh9943@gmail.com`), differing from the baseline profile (`savedProfile.smtpUser === null`), causing `isEmailDirty` to evaluate to `true`.
+  2. `storeProfileSchema` required all fields (`phone`, `address`) on every call to `updateStoreProfile`. When `handleAutoSave` dispatched preference updates (e.g. `receiptType: 'A4_INVOICE'`), any empty field in state triggered a Zod validation error.
+  3. `ensureOrgStoreProfile` inserted empty strings (`""`) for phone and address on first lazy tenant access.
+  4. In `auth-security.spec.ts`, the sign-up automation omitted the mandatory practice name input (`input-signup-org-name`).
+- **The Fix**:
+  1. Initialized `smtpUser` and `smtpFromEmail` in `settings-view.tsx` to `initialProfile.smtpUser || ''` and `initialProfile.smtpFromEmail || ''`, eliminating false dirty state.
+  2. Updated `storeProfileSchema` in `src/actions/settings-actions.ts` to make fields `.optional()`, assigning only supplied fields to `updateSet`.
+  3. Provided standard defaults (`'Santhosh Optical Center'`, `'+91 98765 43210'`, `'123 Optical Plaza, MG Road, Bengaluru - 560001'`) in `ensureOrgStoreProfile`, `buildFallbackStoreProfile`, `settings-view.tsx`, and `src/db/seed.ts` with `onConflictDoUpdate`.
+  4. Updated `e2e/auth-security.spec.ts` to fill `input-signup-org-name` during sign up.
+- **Permanent Invariants**:
+  1. Preference auto-saves (e.g. print layout, counter layout) must never require re-transmitting contact identity fields.
+  2. Form dirty tracking baselines must strictly equal the initial loaded state to prevent phantom navigation blocking.
+  3. Default store profile rows must always be provisioned with valid, non-empty placeholder contact details.

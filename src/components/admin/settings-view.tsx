@@ -111,10 +111,10 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   // Form State
-  const [storeName, setStoreName] = useState(initialProfile.storeName || '');
-  const [gstin, setGstin] = useState(initialProfile.gstin || '');
-  const [phone, setPhone] = useState(initialProfile.phone || '');
-  const [address, setAddress] = useState(initialProfile.address || '');
+  const [storeName, setStoreName] = useState(initialProfile.storeName || 'Santhosh Optical Center');
+  const [gstin, setGstin] = useState(initialProfile.gstin || '29AABCS1429B1Z8');
+  const [phone, setPhone] = useState(initialProfile.phone || '+91 98765 43210');
+  const [address, setAddress] = useState(initialProfile.address || '123 Optical Plaza, MG Road, Bengaluru - 560001');
   const [defaultTaxRate, setDefaultTaxRate] = useState(
     initialProfile.defaultTaxRate || '18.00'
   );
@@ -132,13 +132,13 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
   const [smtpHost, setSmtpHost] = useState(initialProfile.smtpHost || 'smtp.gmail.com');
   const [smtpPort, setSmtpPort] = useState<number>(initialProfile.smtpPort || 587);
   const [smtpSecure, setSmtpSecure] = useState<boolean>(initialProfile.smtpSecure ?? false);
-  const [smtpUser, setSmtpUser] = useState(initialProfile.smtpUser || 'msanthosh9943@gmail.com');
+  const [smtpUser, setSmtpUser] = useState(initialProfile.smtpUser || '');
   const [smtpPass, setSmtpPass] = useState(initialProfile.smtpPass ? '••••••••••••••••' : '');
-  const [smtpFromEmail, setSmtpFromEmail] = useState(initialProfile.smtpFromEmail || initialProfile.smtpUser || 'msanthosh9943@gmail.com');
+  const [smtpFromEmail, setSmtpFromEmail] = useState(initialProfile.smtpFromEmail || '');
   const [smtpFromName, setSmtpFromName] = useState(initialProfile.smtpFromName || 'OptixOS Eyecare');
   const [showSmtpPass, setShowSmtpPass] = useState(false);
   const [isTestingSmtp, setIsTestingSmtp] = useState(false);
-  const [testRecipient, setTestRecipient] = useState(initialProfile.smtpUser || 'msanthosh9943@gmail.com');
+  const [testRecipient, setTestRecipient] = useState(initialProfile.smtpUser || 'support@optixos.com');
   const [clearingCache, setClearingCache] = useState(false);
 
   const handleClearAllCaches = async () => {
@@ -175,7 +175,7 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
     smtpSecure !== (savedProfile.smtpSecure ?? false) ||
     smtpUser.trim() !== (savedProfile.smtpUser || '') ||
     (smtpPass.trim() !== '' && smtpPass !== '••••••••••••••••') ||
-    smtpFromEmail.trim() !== (savedProfile.smtpFromEmail || savedProfile.smtpUser || '') ||
+    smtpFromEmail.trim() !== (savedProfile.smtpFromEmail || '') ||
     smtpFromName.trim() !== (savedProfile.smtpFromName || 'OptixOS Eyecare');
 
   const isCurrentTabDirty =
@@ -561,11 +561,11 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
   const handleAutoSave = async (partial: Partial<StoreProfileInput>) => {
     startTransition(async () => {
       const payload: StoreProfileInput = {
-        storeName: storeName.trim(),
-        gstin: gstin.trim() || null,
-        phone: phone.trim(),
-        address: address.trim(),
-        defaultTaxRate: defaultTaxRate.trim() || '18.00',
+        storeName: storeName.trim() || savedProfile.storeName || 'Santhosh Optical Center',
+        gstin: gstin.trim() || savedProfile.gstin || '29AABCS1429B1Z8',
+        phone: phone.trim() || savedProfile.phone || '+91 98765 43210',
+        address: address.trim() || savedProfile.address || '123 Optical Plaza, MG Road, Bengaluru - 560001',
+        defaultTaxRate: defaultTaxRate.trim() || savedProfile.defaultTaxRate || '18.00',
         receiptType,
         defaultPosLayout,
         enableGst: enableGst ?? true,

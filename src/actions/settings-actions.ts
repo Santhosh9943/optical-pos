@@ -20,18 +20,19 @@ function storeProfileCacheKey(organizationId: string): string {
 }
 
 const storeProfileSchema = z.object({
-  storeName: z.string().min(1, 'Store Name is required'),
+  storeName: z.string().min(1, 'Store Name is required').optional(),
   gstin: z.string().max(15, 'GSTIN must not exceed 15 characters').optional().nullable(),
-  phone: z.string().min(1, 'Phone number is required'),
-  address: z.string().min(1, 'Store address is required'),
+  phone: z.string().min(1, 'Phone number is required').optional(),
+  address: z.string().min(1, 'Store address is required').optional(),
   defaultTaxRate: z
     .string()
     .refine((val) => !isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100, {
       message: 'Default tax rate must be a percentage between 0 and 100',
-    }),
-  receiptType: z.enum(['THERMAL_80MM', 'A4_INVOICE']),
-  defaultPosLayout: z.enum(['adaptive', 'dense', 'split']).optional().default('adaptive'),
-  enableGst: z.boolean().optional().default(true),
+    })
+    .optional(),
+  receiptType: z.enum(['THERMAL_80MM', 'A4_INVOICE']).optional(),
+  defaultPosLayout: z.enum(['adaptive', 'dense', 'split']).optional(),
+  enableGst: z.boolean().optional(),
   smtpHost: z.string().optional().nullable(),
   smtpPort: z.number().int().optional().nullable(),
   smtpSecure: z.boolean().optional().nullable(),
@@ -57,10 +58,10 @@ function buildFallbackStoreProfile(): StoreProfile {
   return {
     id: 'default',
     organizationId: null,
-    storeName: 'My Optical Store',
-    gstin: null,
-    phone: '',
-    address: '',
+    storeName: 'Santhosh Optical Center',
+    gstin: '29AABCS1429B1Z8',
+    phone: '+91 98765 43210',
+    address: '123 Optical Plaza, MG Road, Bengaluru - 560001',
     defaultTaxRate: '18.00',
     receiptType: 'THERMAL_80MM' as ReceiptType,
     defaultPosLayout: 'adaptive',
@@ -126,19 +127,20 @@ export async function updateStoreProfile(
 
     const currentProfile = await ensureOrgStoreProfile(session.organizationId, session.branchId || null);
 
-    const formattedTaxRate = new Decimal(validated.defaultTaxRate).toFixed(2);
-
     const updateSet: Partial<typeof storeProfile.$inferInsert> = {
-      storeName: validated.storeName.trim(),
-      gstin: validated.gstin?.trim() || null,
-      phone: validated.phone.trim(),
-      address: validated.address.trim(),
-      defaultTaxRate: formattedTaxRate,
-      receiptType: validated.receiptType,
-      defaultPosLayout: validated.defaultPosLayout || 'adaptive',
-      enableGst: validated.enableGst ?? true,
       updatedAt: new Date(),
     };
+
+    if (validated.storeName !== undefined) updateSet.storeName = validated.storeName.trim();
+    if (validated.gstin !== undefined) updateSet.gstin = validated.gstin?.trim() || null;
+    if (validated.phone !== undefined) updateSet.phone = validated.phone.trim();
+    if (validated.address !== undefined) updateSet.address = validated.address.trim();
+    if (validated.defaultTaxRate !== undefined) {
+      updateSet.defaultTaxRate = new Decimal(validated.defaultTaxRate).toFixed(2);
+    }
+    if (validated.receiptType !== undefined) updateSet.receiptType = validated.receiptType;
+    if (validated.defaultPosLayout !== undefined) updateSet.defaultPosLayout = validated.defaultPosLayout;
+    if (validated.enableGst !== undefined) updateSet.enableGst = validated.enableGst;
 
     if (validated.smtpHost !== undefined) updateSet.smtpHost = validated.smtpHost?.trim() || 'smtp.gmail.com';
     if (validated.smtpPort !== undefined) updateSet.smtpPort = validated.smtpPort || 587;

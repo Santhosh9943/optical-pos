@@ -10,6 +10,7 @@ import {
   organizations,
   branches,
   organization,
+  storeProfile,
 } from '@/db/schema';
 import { sql } from 'drizzle-orm';
 import { redis } from '@/lib/redis';
@@ -330,6 +331,37 @@ export async function seedDatabase() {
       },
     ])
     .onConflictDoNothing();
+
+  // Ensure default store profile exists
+  await db
+    .insert(storeProfile)
+    .values({
+      organizationId: defaultOrgId,
+      branchId: defaultBranchId,
+      storeName: 'Santhosh Optical Center',
+      gstin: '29AABCS1429B1Z8',
+      phone: '+91 98765 43210',
+      address: '123 Optical Plaza, MG Road, Bengaluru - 560001',
+      defaultTaxRate: '18.00',
+      receiptType: 'THERMAL_80MM',
+      defaultPosLayout: 'adaptive',
+      enableGst: true,
+      allowNegativeStock: false,
+    })
+    .onConflictDoUpdate({
+      target: storeProfile.organizationId,
+      set: {
+        storeName: 'Santhosh Optical Center',
+        gstin: '29AABCS1429B1Z8',
+        phone: '+91 98765 43210',
+        address: '123 Optical Plaza, MG Road, Bengaluru - 560001',
+        defaultTaxRate: '18.00',
+        receiptType: 'THERMAL_80MM',
+        defaultPosLayout: 'adaptive',
+        enableGst: true,
+        allowNegativeStock: false,
+      },
+    });
 
   // Ensure default product types & sequential workflows exist
   await seedDefaultProductTypesForOrganization(defaultOrgId);
