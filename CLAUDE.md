@@ -63,6 +63,9 @@ You are an expert full-stack engineer building a high-performance, cloud-native 
 ```
 
 4. Tax calculations must be computed on the net taxable amount after discounts, maintaining distinct 5% (corrective lenses - HSN 9001) and 18% (frames/sunglasses - HSN 9003/9004) splits.
+5. **Single GST engine:** All line/invoice GST math — server checkout, invoice edits, cart preview, modals and every print layout — MUST use `computeGstLine` / `computeGstInvoice` from `src/lib/gst.ts` (per-line paise ROUND_HALF_UP; CGST = round(tax/2), SGST = tax − CGST). Discounts are whole-line amounts; never re-derive them from display-rounded `discountPerUnit`.
+6. **Server-authoritative pricing:** For inventory-backed lines the server takes tax rate/HSN from the catalog and rejects prices below `sellingPrice` unless the caller is manager/admin/owner.
+7. **Money display:** Use `formatINR()` from `src/lib/format.ts` and `tabular-nums` on money cells.
 
 ---
 
@@ -128,6 +131,10 @@ if (updated.length === 0) throw new InsufficientStockError(item.id);
 ## 7. Code Organization & Workflow
 
 * Place database schemas in `src/db/schema.ts` and exports in `src/db/index.ts`.
+* **Store profile access:** never query `store_profile` directly — use `findOrgStoreProfile` / `ensureOrgStoreProfile` / `redactStoreProfile` from `src/lib/store-profile.ts` with the session org (SEC-004).
+* **Schema changes on the live DB:** write an idempotent SQL file in `scripts/migrations/` mirroring the `schema.ts` change and apply with `npx tsx scripts/run-sql-migration.ts <file>` (the `drizzle/` snapshot history is stale; avoid `db:push` against shared DBs).
+* **Tailwind is v3.4:** v4-only utilities (`shadow-xs`, `outline-hidden`, `backdrop-blur-xs`, `animate-in`) work only because they are shimmed in `tailwind.config.ts` / `tailwindcss-animate`. Verify any other v4 utility exists before using it.
+* **Server action auth:** every exported action starts with `requireAuthSession()` / `requireManagerOrAdmin()` / `requireOwnerOrSuperAdmin()`; tenant ids and branch ids from the client are never trusted (use `resolveTenantScope`, `getAuthorizedBranchIds`).
 * Keep Zod schemas in `src/lib/validators/`.
 * Server Actions live under `src/actions/`.
 * Follow a vertical slice flow: **Database Schema & Seed -> Backend Action -> UI Components -> Print Layouts**.

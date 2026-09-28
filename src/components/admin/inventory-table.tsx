@@ -238,7 +238,7 @@ export function InventoryTable({
                       </td>
 
                       {/* Selling Price */}
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-slate-900 dark:text-slate-100">
                         ₹
                         {Number(item.sellingPrice).toLocaleString('en-IN', {
                           minimumFractionDigits: 2,

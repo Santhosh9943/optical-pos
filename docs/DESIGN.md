@@ -18,14 +18,20 @@ OptixOS uses CSS custom variables compatible with Tailwind CSS:
 | :--- | :--- | :--- | :--- |
 | `background` | `hsl(0, 0%, 100%)` | `hsl(222.2, 84%, 4.9%)` | App background |
 | `foreground` | `hsl(222.2, 84%, 4.9%)` | `hsl(210, 40%, 98%)` | Primary high-contrast text |
-| `card` | `hsl(0, 0%, 100%)` | `hsl(222.2, 84%, 4.9%)` | Cards, panels, modals |
+| `card` | `hsl(0, 0%, 100%)` | `hsl(222.2, 47.4%, 8.2%)` | Cards, panels, modals (dark value is one elevation step above `background` so cards stay visible) |
+| `popover` | `hsl(0, 0%, 100%)` | `hsl(222.2, 47.4%, 9.8%)` | Popovers, dropdown menus |
 | `muted` | `hsl(210, 40%, 96.1%)` | `hsl(217.2, 32.6%, 17.5%)`| Inactive tabs, disabled backgrounds |
 | `muted-foreground`| `hsl(215.4, 16.3%, 46.9%)`| `hsl(215, 20.2%, 65.1%)` | Subtitles, labels, helpers |
 | `border` | `hsl(214.3, 31.8%, 91.4%)`| `hsl(217.2, 32.6%, 17.5%)`| Structural dividers, borders |
 | `primary` (Blue) | `#2563EB` (`blue-600`) | `#3B82F6` (`blue-500`) | CTAs, active highlights, links |
-| `success` (Emerald)| `#059669` (`emerald-600`)| `#10B981` (`emerald-500`)| Completed orders, full payments |
-| `warning` (Amber)| `#D97706` (`amber-600`) | `#F59E0B` (`amber-500`) | Balance due, low stock warnings |
+| `success` / `success-foreground` | `hsl(142.1, 76.2%, 28%)` / white | `hsl(142.1, 70.6%, 45.3%)` / `hsl(144.9, 80.4%, 10%)` | Completed orders, full payments (`bg-success text-success-foreground`) |
+| `warning` / `warning-foreground` | `hsl(37.7, 92.1%, 50.2%)` / `hsl(26, 83.3%, 14.1%)` | `hsl(45.4, 93.4%, 47.5%)` / `hsl(26, 83.3%, 14.1%)` | Balance due, low stock warnings (`bg-warning text-warning-foreground`) |
 | `destructive` (Red)| `#DC2626` (`red-600`) | `#EF4444` (`red-500`) | Delete actions, stock errors |
+
+### 1.1 Typography, Numbers & Tailwind Version
+- **Font:** Inter is loaded via `next/font/google` in `src/app/layout.tsx` as `--font-sans` and wired to Tailwind `font-sans` (with `cv11`/`ss01` features).
+- **Money display:** Render INR amounts with `formatINR()` from `@/lib/format` (decimal.js rounding, `en-IN` lakh grouping) and add `tabular-nums` to money cells/KPI values so digits align. Printed Rx powers use `formatDiopter()` from the same module.
+- **Tailwind is v3.4.** The codebase uses a few Tailwind v4 names (`outline-hidden`, `shadow-xs`, `shadow-2xs`, `backdrop-blur-xs`); these are shimmed in `tailwind.config.ts`. `animate-in`/`fade-in`/`zoom-in-*` come from the `tailwindcss-animate` plugin. Do not introduce other v4-only utilities without adding a shim.
 
 ---
 
@@ -136,6 +142,8 @@ To prevent visual fragmentation, ad-hoc inline styling, and mismatched user inte
 | **`PageHeader`**| `@/components/ui` | Unified page header ensuring consistent icon badge, title, subtitle, and action buttons container across every route. |
 | **`EmptyState`** | `@/components/ui` | Unified empty state with icon, title, descriptive helper, and action CTA. |
 | **`StatCard`** | `@/components/ui` | High-density metric KPI card with trend indicator (+/- percentage) and icon badge. |
+| **`Skeleton`** | `@/components/ui` | `animate-pulse bg-muted` placeholder. Show skeletons (never zero-filled fallback data) until real data arrives; route groups use `loading.tsx` + `error.tsx` (Next 16 `retry` prop) via `@/components/layout/route-states`. |
+| **`ConfirmDialog`** | `@/components/ui` | Destructive-action confirmation on top of `Dialog` (focus starts on Cancel). Required for one-click data-loss actions such as clearing the POS bill. |
 
 ### 6.1 Strict Component-First Rules:
 1. **Never write raw `<button>` in features**: Always import `<Button>` from `@/components/ui`.

@@ -23,8 +23,9 @@ test.describe('Phase 10: Infrastructure, Caching & Search Performance Suite', ()
     await page.getByTestId('btn-save-settings').click();
 
     // Verify success toast confirms save and cache invalidation
+    // (settings-view.tsx toast copy: "Store profile updated successfully" — no trailing "!")
     await expect(
-      page.locator('text=Store profile updated successfully!')
+      page.getByText('Store profile updated successfully').first()
     ).toBeVisible({ timeout: 10000 });
 
     // Reload page to verify cached/persisted value loads cleanly

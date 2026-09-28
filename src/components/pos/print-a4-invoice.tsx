@@ -1,15 +1,9 @@
 // src/components/pos/print-a4-invoice.tsx
 import React, { useMemo } from 'react';
 import Decimal from 'decimal.js';
+import { computeGstLine } from '@/lib/gst';
 import type { PrintOrderData } from './print-layouts';
-
-function formatDiopter(val: number | string | null | undefined): string {
-  if (val === null || val === undefined || val === '') return '—';
-  const num = typeof val === 'number' ? val : parseFloat(val);
-  if (isNaN(num)) return '—';
-  const sign = num > 0 ? '+' : num < 0 ? '−' : '';
-  return `${sign}${Math.abs(num).toFixed(2)}`;
-}
+import { formatDiopter } from '@/lib/format';
 
 export function A4Invoice({ order }: { order: PrintOrderData }) {
   const storeName = order.storeName ?? 'Santhosh MMSS Pvt Ltd';
@@ -46,17 +40,19 @@ export function A4Invoice({ order }: { order: PrintOrderData }) {
     let sgst = new Decimal(0);
 
     for (const item of order.items) {
-      const qty = new Decimal(item.quantity > 0 ? item.quantity : 1);
-      const unitPrice = new Decimal(item.unitPrice || '0.00');
-      const discount = new Decimal(item.discount || item.discountPerUnit || '0.00');
-      const taxRate = new Decimal(item.taxRate || '0.00');
-
-      const lineSubtotal = unitPrice.times(qty);
-      const diff = lineSubtotal.minus(discount);
-      const lineTaxable = diff.isNegative() ? new Decimal(0) : diff;
-      const lineTax = lineTaxable.times(taxRate).dividedBy(100);
-      const lineCgst = lineTax.dividedBy(2);
-      const lineSgst = lineTax.dividedBy(2);
+      // Shared GST engine — same per-line paise rounding as the persisted invoice.
+      const line = computeGstLine({
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        lineDiscount: item.discount || item.discountPerUnit || '0.00',
+        taxRate: item.taxRate || '0.00',
+      });
+      const lineSubtotal = line.gross;
+      const discount = line.discount;
+      const lineTaxable = line.taxable;
+      const lineTax = line.tax;
+      const lineCgst = line.cgst;
+      const lineSgst = line.sgst;
 
       subtotal = subtotal.plus(lineSubtotal);
       totalDiscount = totalDiscount.plus(discount);
@@ -283,14 +279,17 @@ export function A4Invoice({ order }: { order: PrintOrderData }) {
             {order.items.map((item, idx) => {
               const qty = new Decimal(item.quantity > 0 ? item.quantity : 1);
               const unitPrice = new Decimal(item.unitPrice || '0.00');
-              const discount = new Decimal(item.discount || item.discountPerUnit || '0.00');
               const taxRate = new Decimal(item.taxRate || '0.00');
-
-              const lineSubtotal = unitPrice.times(qty);
-              const diff = lineSubtotal.minus(discount);
-              const lineTaxable = diff.isNegative() ? new Decimal(0) : diff;
-              const lineTax = lineTaxable.times(taxRate).dividedBy(100);
-              const lineTotal = lineTaxable.plus(lineTax);
+              const line = computeGstLine({
+                unitPrice: item.unitPrice,
+                quantity: item.quantity,
+                lineDiscount: item.discount || item.discountPerUnit || '0.00',
+                taxRate: item.taxRate || '0.00',
+              });
+              const discount = line.discount;
+              const lineTaxable = line.taxable;
+              const lineTax = line.tax;
+              const lineTotal = line.total;
 
               return (
                 <tr key={item.id ?? idx} className="border-b border-black">

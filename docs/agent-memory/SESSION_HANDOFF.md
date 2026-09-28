@@ -7,21 +7,29 @@
 ---
 
 ## 1. Active Session Metadata
-- **Last Updated**: `2026-09-28T09:48:00+05:30`
-- **Active Platform / Agent**: Antigravity IDE (Gemini 3.8 Flash)
+- **Last Updated**: `2026-09-28T11:30:00+05:30`
+- **Active Platform / Agent**: Claude Code (Claude Opus 5.5) + parallel sub-agents
 - **Active Workspace**: `f:\hobby-projects\optical-pos`
 - **Current Git Branch**: `main`
-- **Latest Quality Gate State**:
-  - `npm run check`: **PASS (0 errors, 0 warnings)**
-  - `npm run audit:security`: **PASS (0 critical, SEC-002 and SEC-003 RESOLVED)**
-  - `npm run audit:design`: **PASS (0 critical, 86 components verified)**
-  - `npm run test:pos`: **PASS (12/12 100% green)**
-  - `e2e/pos-settings-sidebar.spec.ts`: **PASS (100% green)**
-  - `e2e/settings-autosave-navigation.spec.ts`: **PASS (100% green)**
-  - `e2e/settings-print.spec.ts`: **PASS (100% green)**
-  - `e2e/auth-security.spec.ts`: **PASS (8/8 100% green)**
-  - Knowledge Graph (`graphify`): **5,039 nodes, 8,367 edges, 431 communities synced**
-  - Bug Fix Log: **33 historical bugs documented (BUG-001 through BUG-033)**
+- **Latest Quality Gate State** (Phase 39, 2026-09-28):
+  - `tsc --noEmit`: **PASS (0 errors)** · `eslint src e2e`: **PASS (0 problems)**
+  - `npm run audit:security`: **PASS (0 critical; SEC-004..SEC-020 RESOLVED)** · `npm run audit:design`: **PASS (0 violations)**
+  - Full Playwright suite: **92/92 PASS** (3 shards: 31 + 34 + 27). New `e2e/global-setup.ts` pins the E2E default org fixture (plan `plus`, onboarding complete, frame SKU stock ≥ 12).
+  - Knowledge Graph (`graphify update .`): rebuilt (code graph 1,899 nodes / 4,019 edges / 119 communities; run `graphify label` to refresh community names).
+  - Bug Fix Log: BUG-001 … BUG-038
+
+---
+
+## 2. Most Recent Task Accomplishments (Phase 39: Full-Estate Audit — Security, Money Integrity, Data Layer & Premium UI)
+Four parallel audits (security/tenancy, money/domain, DB/cache, UI/a11y) → verified findings fixed. Uncommitted at time of writing.
+1. **Tenant isolation (SEC-004..SEC-020, see SECURITY_LOG)**: pre-auth staff password takeover closed; ~15 unauthenticated actions now guarded; client-supplied org/branch ids ignored (`resolveTenantScope`, `getAuthorizedBranchIds`, `canAccessBranches` in `src/lib/auth-utils.ts`); patient/prescription/family queries org-scoped; Razorpay verify uses stored order + `created→paid` transition; notifications dispatch internal-only (`src/lib/notifications-internal.ts`); customer portal name-matching removed (portal empty until verified link).
+2. **Store profile per tenant (SEC-004)**: `store_profile.organization_id` + `store_profile_org_uidx`; access only via `src/lib/store-profile.ts`; tenant cache key; per-tenant SMTP (system mail = env SMTP); secrets redacted on every path.
+3. **Checkout integrity (`process-optical-order.ts`)**: catalog tax/HSN; below-catalog price = manager-only; exact `lineDiscount`; atomic store-credit debit (`advance_balance >= amt`); org-scoped patient/prescription/branch checks; stock policy read before tx; post-commit cache invalidation.
+4. **Single GST engine `src/lib/gst.ts`** used by checkout, invoice edit, cart, edit modal, thermal/A4/print layouts; lab reprints use real tax slab + exact discount.
+5. **Refunds/payments/lab**: refunds bounded by Σpayments with row lock + `invoice_items.returned_quantity`; `collectBalance` `FOR UPDATE` + no overpay + Zod; `updateOrderStatus` auth + org + terminal-state guard; lab query bounded (open + last 50 closed); lab slip financial DOM removed; receipt email link now carries HMAC token.
+6. **DB migration applied to Neon** (`scripts/migrations/2026-09-28-tenant-hardening.sql`, runner `scripts/run-sql-migration.ts`): store_profile org column/backfill/unique index, `returned_quantity`, per-org SKU unique, composite org indexes.
+7. **Premium UI**: Tailwind v4-class shims + `tailwindcss-animate` (restores shadows/focus rings/animations app-wide), Inter via `next/font`, elevated dark `--card`, success/warning tokens, `formatINR` + `tabular-nums`, Skeleton/ConfirmDialog, route `loading.tsx`/`error.tsx`/`not-found.tsx`, dashboard skeleton+error states, lab-orders error banner, clear-cart confirm + remove-line Undo, div→button a11y conversions, label/htmlFor pairs, contrast fixes.
+8. **Pending / follow-ups** (also in TASKS.md backlog): per-org FY invoice series; IGST place-of-supply; drizzle migration re-baseline; NOT NULL organization_id; role discount caps; customer-portal verified link. **Data note**: tenant "Santhosh's Optical Care" profile row is named "Shine Vision Care 1790553340384" (legacy E2E data) — rename in Settings.
 
 ---
 

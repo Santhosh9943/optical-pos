@@ -11,13 +11,15 @@ import {
 } from '@/db/schema';
 import { eq, or, ilike, and } from 'drizzle-orm';
 import { hashPassword } from 'better-auth/crypto';
+import { headers } from 'next/headers';
+import { z } from 'zod';
+import { auth } from '@/lib/auth';
 
 export interface StaffPreflightResult {
   success: boolean;
   organizationId?: string;
   organizationName?: string;
   orgCode?: string;
-  userId?: string;
   mustChangePassword?: boolean;
   assignedBranches?: { id: string; name: string }[];
   error?: string;
@@ -166,7 +168,6 @@ export async function verifyStaffPortalLoginPreflightAction(data: {
       organizationId: org.id,
       organizationName: org.name,
       orgCode: org.orgCode || `OPT-${org.orgNumber || 1}`,
-      userId: user.id,
       mustChangePassword: user.mustChangePassword,
       assignedBranches: assigned,
     };
@@ -179,28 +180,62 @@ export async function verifyStaffPortalLoginPreflightAction(data: {
   }
 }
 
+/** Zod schema for the first-login password change payload. */
+const staffInitialPasswordChangeSchema = z.object({
+  newPassword: z
+    .string()
+    .transform((v) => v.trim())
+    .pipe(z.string().min(8, 'Password must be at least 8 characters in length').max(128)),
+});
+
 /**
- * Completes mandatory initial password change on first sign-in for store staff
+ * @description Completes the mandatory initial password change on first sign-in for store staff.
+ * Security: the target user is ALWAYS the authenticated Better Auth session user (the client can
+ * no longer supply a userId), and the change is only permitted while that user's
+ * `mustChangePassword` flag is true. This prevents pre-auth account takeover.
+ * @param data - `{ newPassword }` (any extra fields such as a legacy `userId` are ignored)
+ * @returns `{ success, error? }`
  */
 export async function completeStaffInitialPasswordChangeAction(data: {
-  userId: string;
   newPassword: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const trimmedPassword = (data.newPassword || '').trim();
-    if (!trimmedPassword || trimmedPassword.length < 8) {
-      return { success: false, error: 'Password must be at least 8 characters in length' };
+    const parsed = staffInitialPasswordChangeSchema.safeParse({ newPassword: data?.newPassword ?? '' });
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Invalid password' };
+    }
+    const trimmedPassword = parsed.data.newPassword;
+
+    // 1. Resolve the caller strictly from the authenticated session (never from client input)
+    const authResult = await auth.api.getSession({ headers: await headers() });
+    const sessionUserId = authResult?.user?.id;
+    if (!sessionUserId) {
+      return { success: false, error: 'Unauthorized: please sign in with your temporary password first' };
+    }
+
+    // 2. Only allow while an administrator-issued first-login change is pending
+    const [targetUser] = await db
+      .select({ id: userTable.id, mustChangePassword: userTable.mustChangePassword, banned: userTable.banned })
+      .from(userTable)
+      .where(eq(userTable.id, sessionUserId))
+      .limit(1);
+
+    if (!targetUser || targetUser.banned) {
+      return { success: false, error: 'Unauthorized' };
+    }
+    if (targetUser.mustChangePassword !== true) {
+      return { success: false, error: 'No pending initial password change for this account' };
     }
 
     const hashedPassword = await hashPassword(trimmedPassword);
 
-    // 1. Update password in Better Auth credential account
+    // 3. Update password in Better Auth credential account
     const [existingAccount] = await db
       .select({ id: accountTable.id })
       .from(accountTable)
       .where(
         and(
-          eq(accountTable.userId, data.userId),
+          eq(accountTable.userId, targetUser.id),
           eq(accountTable.providerId, 'credential')
         )
       )
@@ -217,30 +252,30 @@ export async function completeStaffInitialPasswordChangeAction(data: {
     } else {
       await db.insert(accountTable).values({
         id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        accountId: data.userId,
+        accountId: targetUser.id,
         providerId: 'credential',
-        userId: data.userId,
+        userId: targetUser.id,
         password: hashedPassword,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
     }
 
-    // 2. Clear mustChangePassword flag
+    // 4. Clear mustChangePassword flag
     await db
       .update(userTable)
       .set({
         mustChangePassword: false,
         updatedAt: new Date(),
       })
-      .where(eq(userTable.id, data.userId));
+      .where(eq(userTable.id, targetUser.id));
 
     return { success: true };
   } catch (err: unknown) {
     console.error('[completeStaffInitialPasswordChangeAction] Error:', err);
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'Failed to update initial password',
+      error: 'Failed to update initial password',
     };
   }
 }

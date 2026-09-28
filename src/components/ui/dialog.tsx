@@ -34,6 +34,8 @@ export function Dialog({
   maxWidth = 'lg',
   className,
 }: DialogProps) {
+  const titleId = React.useId();
+  const descriptionId = React.useId();
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -54,6 +56,8 @@ export function Dialog({
       }}
       role="dialog"
       aria-modal="true"
+      aria-labelledby={title ? titleId : undefined}
+      aria-describedby={description ? descriptionId : undefined}
     >
       <div
         className={cn(
@@ -76,12 +80,12 @@ export function Dialog({
         {(title || description) && (
           <div className="mb-5 space-y-1 pr-6">
             {title && (
-              <h2 className="text-lg md:text-xl font-bold tracking-tight text-foreground">
+              <h2 id={titleId} className="text-lg md:text-xl font-bold tracking-tight text-foreground">
                 {title}
               </h2>
             )}
             {description && (
-              <p className="text-xs md:text-sm text-muted-foreground">
+              <p id={descriptionId} className="text-xs md:text-sm text-muted-foreground">
                 {description}
               </p>
             )}

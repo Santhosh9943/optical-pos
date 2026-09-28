@@ -1,17 +1,25 @@
 'use server';
 
+import { GST_RATES, type GstRate } from '@/lib/gst';
 import { revalidatePath } from 'next/cache';
 import { and, desc, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import Decimal from 'decimal.js';
 import { db } from '@/db';
-import { inventoryItems, invoiceItems, branches } from '@/db/schema';
-import { getCurrentSession, isManagerOrAdmin, requireManagerOrAdmin } from '@/lib/auth-utils';
+import { inventoryItems, invoiceItems, branches, inventoryCategoryEnum } from '@/db/schema';
+import {
+  getCurrentSession,
+  isManagerOrAdmin,
+  requireAuthSession,
+  requireManagerOrAdmin,
+  canAccessBranches,
+} from '@/lib/auth-utils';
+import { z } from 'zod';
 import {
   createInventoryItemSchema,
   type CreateInventoryItemInput,
 } from '@/lib/validators/inventory';
 import { withCache, invalidateCache } from '@/lib/cache';
-import { dispatchNotificationAction } from '@/actions/notification-actions';
+import { dispatchNotificationInternal } from '@/lib/notifications-internal';
 import { createStoreApprovalRequestAction } from '@/actions/approval-actions';
 
 export type InventoryRow = Omit<typeof inventoryItems.$inferSelect, 'costPrice'> & {
@@ -25,8 +33,15 @@ export async function getInventoryList(branchIds?: string[]): Promise<{
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
     const isManager = await isManagerOrAdmin(session);
+
+    // Branch isolation: every client-chosen branch must belong to the caller's org & be accessible
+    const requestedBranchIds = (branchIds || []).filter((b) => b && b !== 'all');
+    if (!(await canAccessBranches(session, requestedBranchIds))) {
+      return { success: false, items: [], error: 'Forbidden: Branch not accessible' };
+    }
+
     const branchKey = branchIds && branchIds.length > 0 ? branchIds.slice().sort().join(',') : 'all';
 
     return await withCache(
@@ -136,6 +151,11 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
       else if (parsed.category === 'ACCESSORY') hsnCode = '9003';
     }
 
+    const targetBranchId = parsed.branchId || session.branchId;
+    if (targetBranchId && !(await canAccessBranches(session, [targetBranchId]))) {
+      return { success: false, error: 'Forbidden: Branch does not belong to your organization' };
+    }
+
     const [inserted] = await db
       .insert(inventoryItems)
       .values({
@@ -155,7 +175,7 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
         customCategory: parsed.customCategory?.trim() || null,
         isGstExempt: parsed.isGstExempt ?? false,
         organizationId: session.organizationId,
-        branchId: parsed.branchId || session.branchId,
+        branchId: targetBranchId,
         isActive: true,
       })
       .returning();
@@ -194,11 +214,45 @@ export interface UpdateInventoryItemInput {
   mrp?: string | null;
   stockQuantity?: number;
   lowStockThreshold?: number;
-  taxRate?: '5.00' | '18.00';
+  taxRate?: GstRate;
   hsnCode?: string | null;
   branchId?: string | null;
 }
 
+const moneyString = z.string().trim().regex(/^\d+(\.\d{1,2})?$/, 'Invalid monetary format');
+
+/** Zod schema for updateInventoryItem input (mirrors UpdateInventoryItemInput). */
+const updateInventoryItemSchema = z.object({
+  sku: z.string().max(64).optional(),
+  barcode: z.string().max(64).nullable().optional(),
+  category: z
+    .enum(inventoryCategoryEnum.enumValues)
+    .optional(),
+  brand: z.string().max(120).nullable().optional(),
+  model: z.string().max(120).nullable().optional(),
+  description: z.string().max(1000).nullable().optional(),
+  costPrice: z.union([moneyString, z.literal('')]).optional(),
+  sellingPrice: z.string().max(20).optional(),
+  mrp: z.union([moneyString, z.literal('')]).nullable().optional(),
+  stockQuantity: z.number().int().min(0).max(1_000_000).optional(),
+  lowStockThreshold: z.number().int().min(0).max(1_000_000).optional(),
+  taxRate: z.enum(GST_RATES).optional(),
+  hsnCode: z.string().max(10).nullable().optional(),
+  // Lenient UUID shape: seeded ids like 00000000-0000-0000-0000-000000000002 fail Zod 4's strict .uuid()
+  branchId: z
+    .string()
+    .regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/, 'Invalid branch id')
+    .nullable()
+    .optional(),
+});
+
+/**
+ * @description Updates an inventory item in the caller's organization (manager/admin only).
+ * A new `branchId` must belong to the caller's organization.
+ * @param id - Inventory item id
+ * @param rawInput - Partial fields validated by `updateInventoryItemSchema`
+ * @returns The updated row (cost price included, as caller is a manager)
+ */
 export async function updateInventoryItem(
   id: string,
   rawInput: UpdateInventoryItemInput
@@ -210,11 +264,21 @@ export async function updateInventoryItem(
   try {
     const session = await requireManagerOrAdmin();
 
+    const parsedInput = updateInventoryItemSchema.safeParse(rawInput);
+    if (!parsedInput.success) {
+      return { success: false, error: parsedInput.error.issues[0]?.message || 'Invalid inventory update' };
+    }
+    rawInput = parsedInput.data as UpdateInventoryItemInput;
+
     const updateData: Partial<typeof inventoryItems.$inferInsert> = {
       updatedAt: new Date(),
     };
 
     if (rawInput.branchId !== undefined) {
+      // Branch isolation: never allow pointing an item at another organization's branch
+      if (rawInput.branchId !== null && !(await canAccessBranches(session, [rawInput.branchId]))) {
+        return { success: false, error: 'Forbidden: Branch does not belong to your organization' };
+      }
       updateData.branchId = rawInput.branchId;
     }
 
@@ -305,7 +369,7 @@ export async function updateInventoryItem(
 
     // Automated Alert: If stock is at or below threshold, dispatch low stock notification
     if (updated.stockQuantity <= updated.lowStockThreshold) {
-      await dispatchNotificationAction({
+      await dispatchNotificationInternal({
         type: 'inventory.low_stock',
         organizationId: session.organizationId,
         branchId: updated.branchId || undefined,
@@ -451,7 +515,7 @@ export async function searchBarcodeItemAction(
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
     const isManager = await isManagerOrAdmin(session);
     const query = barcode.trim();
     if (!query) {

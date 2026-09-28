@@ -14,7 +14,10 @@ import {
   type PaymentStatus,
   type PaymentMode,
 } from '@/db/schema';
-import { getCurrentSession } from '@/lib/auth-utils';
+import { requireAuthSession, canAccessBranches } from '@/lib/auth-utils';
+
+/** Order statuses excluded from revenue / tax / receivable totals (drafts and cancelled-refunded orders). */
+const NON_REVENUE_ORDER_STATUSES: ReadonlySet<string> = new Set(['DRAFT', 'CANCELLED_REFUNDED']);
 
 export interface DailyReportTransaction {
   id: string;
@@ -231,9 +234,18 @@ export async function getFinancialsReport(
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
     const range = resolveDateRange(filterInput);
     const filterObj = typeof filterInput === 'object' && !(filterInput instanceof Date) ? filterInput : {};
+
+    // Branch isolation: client-chosen branches must belong to the caller's organization
+    const requestedBranches = [
+      ...(filterObj.branchScope && filterObj.branchScope !== 'all' ? [filterObj.branchScope] : []),
+      ...(filterObj.branchIds || []).filter((b) => b && b !== 'all'),
+    ];
+    if (!(await canAccessBranches(session, requestedBranches))) {
+      return { success: false, error: 'Forbidden: Branch not accessible' };
+    }
 
     const conditions: SQL[] = [eq(invoices.organizationId, session.organizationId)];
 
@@ -314,7 +326,12 @@ export async function getFinancialsReport(
       associatedPayments = await db
         .select()
         .from(payments)
-        .where(inArray(payments.invoiceId, invoiceIds));
+        .where(
+          and(
+            inArray(payments.invoiceId, invoiceIds),
+            eq(payments.organizationId, session.organizationId)
+          )
+        );
     }
 
     // Map payments by invoiceId for fast lookup
@@ -347,10 +364,13 @@ export async function getFinancialsReport(
       const advanceDec = new Decimal(inv.advancePaid || '0.00');
       const balanceDec = new Decimal(inv.balanceDue || '0.00');
 
-      totalRevenueDec = totalRevenueDec.plus(grandTotalDec);
-      totalTaxDec = totalTaxDec.plus(taxDec);
-      totalAdvancePaidDec = totalAdvancePaidDec.plus(advanceDec);
-      totalBalanceDueDec = totalBalanceDueDec.plus(balanceDec);
+      // Drafts and cancelled/refunded orders stay in the audit ledger but never count as revenue
+      if (!NON_REVENUE_ORDER_STATUSES.has(inv.orderStatus)) {
+        totalRevenueDec = totalRevenueDec.plus(grandTotalDec);
+        totalTaxDec = totalTaxDec.plus(taxDec);
+        totalAdvancePaidDec = totalAdvancePaidDec.plus(advanceDec);
+        totalBalanceDueDec = totalBalanceDueDec.plus(balanceDec);
+      }
 
       // Determine payment mode label
       const orderPayments = paymentsByInvoice.get(inv.id) || [];
@@ -427,9 +447,11 @@ export async function getFinancialsReport(
       };
 
       current.orderCount += 1;
-      current.revenueDec = current.revenueDec.plus(new Decimal(inv.grandTotal || '0.00'));
-      current.advanceDec = current.advanceDec.plus(new Decimal(inv.advancePaid || '0.00'));
-      current.balanceDec = current.balanceDec.plus(new Decimal(inv.balanceDue || '0.00'));
+      if (!NON_REVENUE_ORDER_STATUSES.has(inv.orderStatus)) {
+        current.revenueDec = current.revenueDec.plus(new Decimal(inv.grandTotal || '0.00'));
+        current.advanceDec = current.advanceDec.plus(new Decimal(inv.advancePaid || '0.00'));
+        current.balanceDec = current.balanceDec.plus(new Decimal(inv.balanceDue || '0.00'));
+      }
       storeMap.set(bId, current);
     }
 

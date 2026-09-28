@@ -32,6 +32,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatINR } from '@/lib/format';
 import { EditInvoiceModal } from './edit-invoice-modal';
 import { ReturnRefundModal } from './return-refund-modal';
 import {
@@ -558,11 +559,8 @@ export function ReportsView() {
                   </span>
                   <TrendingUp className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
                 </div>
-                <div className="font-mono text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
-                  ₹{Number(report?.totalRevenue || 0).toLocaleString('en-IN', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                <div className="font-mono tabular-nums text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                  {formatINR(report?.totalRevenue || 0)}
                 </div>
               </div>
 
@@ -574,7 +572,7 @@ export function ReportsView() {
                   </span>
                   <Receipt className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 </div>
-                <div className="flex items-baseline gap-1 font-mono text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
+                <div className="flex items-baseline gap-1 font-mono tabular-nums text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
                   <span data-testid="total-orders-metric">
                     {report?.totalOrders || 0}
                   </span>
@@ -590,11 +588,8 @@ export function ReportsView() {
                   </span>
                   <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 </div>
-                <div className="font-mono text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 truncate">
-                  ₹{Number(report?.totalAdvancePaid || 0).toLocaleString('en-IN', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                <div className="font-mono tabular-nums text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 truncate">
+                  {formatINR(report?.totalAdvancePaid || 0)}
                 </div>
               </div>
 
@@ -606,11 +601,8 @@ export function ReportsView() {
                   </span>
                   <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" />
                 </div>
-                <div className="font-mono text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 truncate">
-                  ₹{Number(report?.totalBalanceDue || 0).toLocaleString('en-IN', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                <div className="font-mono tabular-nums text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 truncate">
+                  {formatINR(report?.totalBalanceDue || 0)}
                 </div>
               </div>
 
@@ -622,10 +614,8 @@ export function ReportsView() {
                   </span>
                   <Banknote className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 </div>
-                <div className="font-mono text-xs sm:text-sm font-bold text-foreground truncate">
-                  ₹{Number(report?.paymentSplits?.cash || 0).toLocaleString('en-IN', {
-                    minimumFractionDigits: 2,
-                  })}
+                <div className="font-mono tabular-nums text-xs sm:text-sm font-bold text-foreground truncate">
+                  {formatINR(report?.paymentSplits?.cash || 0)}
                 </div>
               </div>
 
@@ -637,10 +627,8 @@ export function ReportsView() {
                   </span>
                   <QrCode className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
                 </div>
-                <div className="font-mono text-xs sm:text-sm font-bold text-foreground truncate">
-                  ₹{Number(report?.paymentSplits?.upi || 0).toLocaleString('en-IN', {
-                    minimumFractionDigits: 2,
-                  })}
+                <div className="font-mono tabular-nums text-xs sm:text-sm font-bold text-foreground truncate">
+                  {formatINR(report?.paymentSplits?.upi || 0)}
                 </div>
               </div>
 
@@ -652,10 +640,8 @@ export function ReportsView() {
                   </span>
                   <CreditCard className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
                 </div>
-                <div className="font-mono text-xs sm:text-sm font-bold text-foreground truncate">
-                  ₹{Number(report?.paymentSplits?.card || 0).toLocaleString('en-IN', {
-                    minimumFractionDigits: 2,
-                  })}
+                <div className="font-mono tabular-nums text-xs sm:text-sm font-bold text-foreground truncate">
+                  {formatINR(report?.paymentSplits?.card || 0)}
                 </div>
               </div>
             </div>
@@ -706,7 +692,7 @@ export function ReportsView() {
                     <div className="space-y-1">
                       <div className="flex justify-between items-baseline text-xs">
                         <span className="text-muted-foreground text-[11px]">Revenue:</span>
-                        <span className="font-extrabold text-foreground">₹{store.revenue}</span>
+                        <span className="font-extrabold tabular-nums text-foreground">{formatINR(store.revenue)}</span>
                       </div>
                       {/* Share Progress Bar */}
                       <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -717,14 +703,14 @@ export function ReportsView() {
                       </div>
                       <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
                         <span>Practice Share: {store.revenueSharePercent}%</span>
-                        <span>Collected: ₹{store.advanceCollected}</span>
+                        <span>Collected: {formatINR(store.advanceCollected)}</span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-800/60 text-[10px]">
                       <span className="text-muted-foreground">Balance Due:</span>
                       <span className={`font-semibold ${parseFloat(store.balanceDue) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                        ₹{store.balanceDue}
+                        {formatINR(store.balanceDue)}
                       </span>
                     </div>
                   </div>
@@ -988,18 +974,18 @@ export function ReportsView() {
                           </td>
 
                           {/* Advance Paid */}
-                          <td className="py-2 px-3 text-right font-mono font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                            ₹{Number(tx.advancePaid).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          <td className="py-2 px-3 text-right font-mono tabular-nums font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                            {formatINR(tx.advancePaid)}
                           </td>
 
                           {/* Balance Due */}
-                          <td className="py-2 px-3 text-right font-mono font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
-                            ₹{Number(tx.balanceDue).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          <td className="py-2 px-3 text-right font-mono tabular-nums font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                            {formatINR(tx.balanceDue)}
                           </td>
 
                           {/* Grand Total */}
-                          <td className="py-2 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                            ₹{Number(tx.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          <td className="py-2 px-3 text-right font-mono tabular-nums font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                            {formatINR(tx.grandTotal)}
                           </td>
 
                           {/* Action Button */}

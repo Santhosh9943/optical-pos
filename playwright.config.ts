@@ -6,6 +6,8 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
+  /* Pins the E2E bypass org to a deterministic plan (unlocks plan-gated screens like Lab Orders). */
+  globalSetup: './e2e/global-setup.ts',
   /* Maximum time one test can run for. */
   timeout: 60 * 1000,
   expect: {

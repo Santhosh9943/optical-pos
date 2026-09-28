@@ -60,5 +60,29 @@
   1. Add `organizationId: uuid("organization_id").references(() => organizations.id)` to `storeProfile`.
   2. Scope `getStoreProfile()` to `eq(storeProfile.organizationId, session.organizationId)`.
   3. Update Redis cache key from `store_profile` to `store_profile:{organizationId}`.
-- **Status**: `OPEN` (Tracked in Phase 25 backlog)
-- **In-Code Tag**: `// TODO(security-SEC-004): Add organizationId foreign key to storeProfile table for multi-tenant isolation`
+- **Status**: `RESOLVED` (Phase 39, BUG-034). `store_profile.organization_id` + unique index `store_profile_org_uidx`; all readers go through `src/lib/store-profile.ts`; cache key `optix:{orgId}:settings:store_profile`; SMTP & `allowNegativeStock` now per tenant. Migration: `scripts/migrations/2026-09-28-tenant-hardening.sql`.
+- **In-Code Tag**: N/A (Resolved)
+
+---
+
+## Phase 39 Full-Estate Audit (2026-09-28) — all `RESOLVED`
+
+| ID | Severity | CWE | Location | Finding | Remediation |
+|---|---|---|---|---|---|
+| SEC-005 | CRITICAL | CWE-620 / CWE-639 | `staff-auth-actions.ts` `completeStaffInitialPasswordChangeAction` | Pre-auth account takeover: password set for any client-supplied `userId`; preflight leaked `userId`. | Uses the Better Auth session user only, requires `mustChangePassword`, Zod; `userId` removed from preflight. |
+| SEC-006 | CRITICAL | CWE-639 | `tenant-actions.ts` `createStaffMemberAction` | Client-chosen `targetOrgId`; existing users' passwords overwritten. | `resolveTenantScope` (session org; super admin only override); never resets existing passwords; cross-org users rejected. |
+| SEC-007 | CRITICAL | CWE-306 | `tenant-actions.ts` (org/branch/staff actions) | 7+ exported actions with no auth (toggle org/branch, create branch/org, metrics, staff list). | Super-admin / owner guards; session org forced; Zod. |
+| SEC-008 | CRITICAL | CWE-639 | `patient-actions.ts`, `api/patients/search` | Unauthenticated cross-tenant read/write of patients, prescriptions, order history; family-link leak chain. | `requireAuthSession` + `organization_id` filter on every query. |
+| SEC-009 | CRITICAL | CWE-602 | `process-optical-order.ts` | Server trusted client price/tax; store-credit paid invoices with ₹0 balance; foreign customer/prescription/branch ids accepted. | Catalog price floor (manager override only), catalog tax/HSN, atomic `advance_balance >= amt` debit, org-scoped lookups. |
+| SEC-010 | HIGH | CWE-306 | `lab-actions.ts` `updateOrderStatus` | No auth/tenant scope; closed invoices could be reopened. | Auth + org filter + terminal-state guard in the `WHERE`. |
+| SEC-011 | HIGH | CWE-841 | `return-refund-actions.ts` | Unbounded, repeatable refunds; unbounded restock. | Row lock, refund ≤ Σpayments, `returned_quantity` conditional update, atomic credit, Zod. |
+| SEC-012 | HIGH | CWE-362 | `payment-actions.ts` `collectBalance` | Overpayment and lost-update race; no auth assertion. | `FOR UPDATE`, amount ≤ balance, Zod, auth. |
+| SEC-013 | HIGH | CWE-200 | `settings-actions.ts` `getInvoicePrintData`, `email-actions.ts` `sendReceiptEmailAction` | Anonymous invoice read / spam relay when no session. | `requireAuthSession` + org in query. |
+| SEC-014 | HIGH | CWE-345 | `subscription-actions.ts`, Razorpay webhook | Plan/cycle taken from client payload; replayable verification. | Plan from stored order; `created → paid` conditional transition in a transaction. |
+| SEC-015 | HIGH | CWE-601 / CWE-306 | `notification-actions.ts` | Unauthenticated dispatch into any tenant with arbitrary `actionUrl`. | Auth + session org; relative-URL sanitizer; internal helper `src/lib/notifications-internal.ts`. |
+| SEC-016 | MEDIUM | CWE-200 | `customer-portal-actions.ts` | Patients matched by display name. | Name matching removed; portal empty until a verified link exists (see TASKS backlog). |
+| SEC-017 | MEDIUM | CWE-639 | dashboard / inventory / reports | Client-chosen `branchId` not checked. | `getAuthorizedBranchIds` / `canAccessBranches` in `auth-utils.ts`. |
+| SEC-018 | MEDIUM | CWE-524 | client `localStorage` caches | Cached lists (incl. manager data) survived logout on shared counters. | `clearClientStorageCaches()` on every sign-out path. |
+| SEC-019 | MEDIUM | CWE-209 / CWE-532 | `crypto-utils.ts`, `super-admin-auth-actions.ts` | Hardcoded fallback key in prod; OTP logged in prod. | Throw in production without a key; OTP logging dev-only. |
+| SEC-020 | MEDIUM | CWE-200 | `lab-actions.ts`, `print-layouts.tsx` | `organization_id IS NULL` rows visible to all tenants; lab slip rendered totals into the DOM. | Strict org filter; financial block removed from `WorkshopSlip`. |
+

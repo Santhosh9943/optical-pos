@@ -11,7 +11,9 @@ import {
   opticalPrescriptions,
   branches,
 } from '@/db/schema';
-import { getCurrentSession, isManagerOrAdmin } from '@/lib/auth-utils';
+import { requireAuthSession, isManagerOrAdmin } from '@/lib/auth-utils';
+import { z } from 'zod';
+import { prescriptionSchema } from '@/lib/validators/prescription';
 import { createStoreApprovalRequestAction } from '@/actions/approval-actions';
 import { withCache, invalidateCache } from '@/lib/cache';
 import type { POSPatient } from '@/store/pos-store';
@@ -43,22 +45,75 @@ export interface UpdatePatientInput {
   relationType?: string;
 }
 
+const optionalTrimmedText = (max: number) => z.string().max(max).nullable().optional();
+const genderSchema = z.enum(['MALE', 'FEMALE', 'OTHER']).nullable().optional();
+const ageSchema = z.number().int().min(0).max(150).nullable().optional();
+
+/** Zod schema for createPatientAction input (mirrors CreatePatientInput). */
+const createPatientSchema = z.object({
+  fullName: z.string().trim().min(1, 'Full name is required').max(160),
+  phone: z.string().trim().min(1, 'Phone number is required').max(20),
+  age: ageSchema,
+  gender: genderSchema,
+  addressLine1: optionalTrimmedText(255),
+  addressLine2: optionalTrimmedText(255),
+  city: optionalTrimmedText(120),
+  state: optionalTrimmedText(120),
+  pincode: optionalTrimmedText(12),
+  relationType: z.string().max(40).optional(),
+  primaryCustomerId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for updatePatientAction input (mirrors UpdatePatientInput). */
+const updatePatientSchema = z.object({
+  fullName: z.string().max(160).optional(),
+  phone: z.string().max(20).optional(),
+  age: ageSchema,
+  gender: genderSchema,
+  addressLine1: optionalTrimmedText(255),
+  addressLine2: optionalTrimmedText(255),
+  city: optionalTrimmedText(120),
+  state: optionalTrimmedText(120),
+  pincode: optionalTrimmedText(12),
+  relationType: z.string().max(40).optional(),
+});
+
+/**
+ * @description Creates a new patient/customer record in the caller's organization.
+ * @param input - CreatePatientInput validated by `createPatientSchema`
+ * @returns The created patient row or an error
+ */
 export async function createPatientAction(input: CreatePatientInput): Promise<{
   success: boolean;
   patient?: typeof customers.$inferSelect;
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
 
-    const fullName = input.fullName.trim();
-    const phone = input.phone.trim();
-
-    if (!fullName) {
-      return { success: false, error: 'Full name is required' };
+    const parsed = createPatientSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Invalid patient details' };
     }
-    if (!phone) {
-      return { success: false, error: 'Phone number is required' };
+    input = parsed.data;
+    const fullName = parsed.data.fullName;
+    const phone = parsed.data.phone;
+
+    // Family link target must belong to the same organization
+    if (input.primaryCustomerId) {
+      const [primary] = await db
+        .select({ id: customers.id })
+        .from(customers)
+        .where(
+          and(
+            eq(customers.id, input.primaryCustomerId),
+            eq(customers.organizationId, session.organizationId)
+          )
+        )
+        .limit(1);
+      if (!primary) {
+        return { success: false, error: 'Primary family account not found' };
+      }
     }
 
     const [newCustomer] = await db
@@ -103,7 +158,13 @@ export async function updatePatientAction(
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
+
+    const parsed = updatePatientSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Invalid patient details' };
+    }
+    input = parsed.data;
 
     const updateData: Partial<typeof customers.$inferInsert> = {
       updatedAt: new Date(),
@@ -174,7 +235,7 @@ export async function deletePatientAction(
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
     if (!session?.organizationId) {
       return { success: false, error: 'Unauthorized: Session required' };
     }
@@ -400,7 +461,7 @@ export async function getPatients(branchIds?: string[]): Promise<{
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
     const branchKey = branchIds && branchIds.length > 0 ? branchIds.slice().sort().join(',') : 'all';
 
     return await withCache(
@@ -509,7 +570,7 @@ export async function getLinkedFamilyGroup(customerId: string): Promise<{
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
 
     const [target] = await db
       .select()
@@ -578,19 +639,62 @@ export async function linkExistingCustomerToFamily(
   relationType: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const session = await requireAuthSession();
+
+    const parsed = z
+      .object({
+        primaryCustomerId: z.string().uuid(),
+        targetCustomerId: z.string().uuid(),
+        relationType: z.string().max(40),
+      })
+      .safeParse({ primaryCustomerId, targetCustomerId, relationType: relationType ?? '' });
+    if (!parsed.success) {
+      return { success: false, error: 'Invalid family link request' };
+    }
+
     if (primaryCustomerId === targetCustomerId) {
       return { success: false, error: 'Cannot link customer to themselves' };
     }
 
-    await db
+    // Both customers must belong to the caller's organization
+    const pair = await db
+      .select({ id: customers.id, primaryCustomerId: customers.primaryCustomerId })
+      .from(customers)
+      .where(
+        and(
+          eq(customers.organizationId, session.organizationId),
+          inArray(customers.id, [primaryCustomerId, targetCustomerId]),
+          isNull(customers.deletedAt)
+        )
+      );
+    const primaryRow = pair.find((c) => c.id === primaryCustomerId);
+    if (!primaryRow || !pair.some((c) => c.id === targetCustomerId)) {
+      return { success: false, error: 'Customer not found' };
+    }
+    if (primaryRow.primaryCustomerId === targetCustomerId) {
+      return { success: false, error: 'Cannot create a circular family link' };
+    }
+
+    const updated = await db
       .update(customers)
       .set({
         primaryCustomerId,
-        relationType: relationType || 'Family',
+        relationType: parsed.data.relationType.trim() || 'Family',
         updatedAt: new Date(),
       })
-      .where(eq(customers.id, targetCustomerId));
+      .where(
+        and(
+          eq(customers.id, targetCustomerId),
+          eq(customers.organizationId, session.organizationId)
+        )
+      )
+      .returning({ id: customers.id });
 
+    if (updated.length === 0) {
+      return { success: false, error: 'Customer not found' };
+    }
+
+    await invalidateCache({ orgId: session.organizationId, namespace: 'patients' });
     return { success: true };
   } catch (err: unknown) {
     console.error('[linkExistingCustomerToFamily] Error:', err);
@@ -611,19 +715,34 @@ export async function updateCustomerPhone(
   newPhone: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const trimmed = newPhone.trim();
-    if (!trimmed) {
-      return { success: false, error: 'Phone number cannot be empty' };
+    const session = await requireAuthSession();
+
+    const parsed = z
+      .object({ customerId: z.string().uuid(), phone: z.string().trim().min(1, 'Phone number cannot be empty').max(20) })
+      .safeParse({ customerId, phone: newPhone ?? '' });
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Invalid phone update' };
     }
 
-    await db
+    const updated = await db
       .update(customers)
       .set({
-        phone: trimmed,
+        phone: parsed.data.phone,
         updatedAt: new Date(),
       })
-      .where(eq(customers.id, customerId));
+      .where(
+        and(
+          eq(customers.id, parsed.data.customerId),
+          eq(customers.organizationId, session.organizationId)
+        )
+      )
+      .returning({ id: customers.id });
 
+    if (updated.length === 0) {
+      return { success: false, error: 'Customer not found' };
+    }
+
+    await invalidateCache({ orgId: session.organizationId, namespace: 'patients' });
     return { success: true };
   } catch (err: unknown) {
     console.error('[updateCustomerPhone] Error:', err);
@@ -646,7 +765,7 @@ export async function getPatientHistory(
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
 
     const [customer] = await db
       .select()
@@ -934,11 +1053,33 @@ export async function getPatientOrderHistory(
   error?: string;
 }> {
   try {
+    const session = await requireAuthSession();
+
+    // 0. Customer must belong to the caller's organization
+    const [owned] = await db
+      .select({ id: customers.id })
+      .from(customers)
+      .where(
+        and(
+          eq(customers.id, customerId),
+          eq(customers.organizationId, session.organizationId)
+        )
+      )
+      .limit(1);
+    if (!owned) {
+      return { success: false, orders: [], error: 'Patient not found' };
+    }
+
     // 1. Direct invoices billed to this customer
     const directInvoiceRows = await db
       .select()
       .from(invoices)
-      .where(eq(invoices.customerId, customerId))
+      .where(
+        and(
+          eq(invoices.customerId, customerId),
+          eq(invoices.organizationId, session.organizationId)
+        )
+      )
       .orderBy(desc(invoices.createdAt));
 
     // 2. Invoices where customer was the wearer on someone else's bill
@@ -964,7 +1105,12 @@ export async function getPatientOrderHistory(
       wearerInvoiceRows = await db
         .select()
         .from(invoices)
-        .where(inArray(invoices.id, wearerInvoiceIds))
+        .where(
+          and(
+            inArray(invoices.id, wearerInvoiceIds),
+            eq(invoices.organizationId, session.organizationId)
+          )
+        )
         .orderBy(desc(invoices.createdAt));
     }
 
@@ -1044,24 +1190,58 @@ export async function getPatientPrescriptions(
   error?: string;
 }> {
   try {
-    const rxRows = await db
-      .select()
-      .from(opticalPrescriptions)
-      .where(eq(opticalPrescriptions.customerId, customerId))
-      .orderBy(desc(opticalPrescriptions.prescribedAt));
+    const session = await requireAuthSession();
 
     const [customer] = await db
       .select({ fullName: customers.fullName, relationType: customers.relationType })
       .from(customers)
-      .where(eq(customers.id, customerId))
+      .where(
+        and(
+          eq(customers.id, customerId),
+          eq(customers.organizationId, session.organizationId)
+        )
+      )
       .limit(1);
+
+    if (!customer) {
+      return { success: false, prescriptions: [], error: 'Patient not found' };
+    }
+
+    // Join to customers so prescriptions are strictly tenant-scoped
+    const rxRows = await db
+      .select({
+        id: opticalPrescriptions.id,
+        prescribedAt: opticalPrescriptions.prescribedAt,
+        customerId: opticalPrescriptions.customerId,
+        odSphere: opticalPrescriptions.odSphere,
+        odCylinder: opticalPrescriptions.odCylinder,
+        odAxis: opticalPrescriptions.odAxis,
+        odAdd: opticalPrescriptions.odAdd,
+        odPd: opticalPrescriptions.odPd,
+        osSphere: opticalPrescriptions.osSphere,
+        osCylinder: opticalPrescriptions.osCylinder,
+        osAxis: opticalPrescriptions.osAxis,
+        osAdd: opticalPrescriptions.osAdd,
+        osPd: opticalPrescriptions.osPd,
+        binocularPd: opticalPrescriptions.binocularPd,
+        clinicalRemarks: opticalPrescriptions.clinicalRemarks,
+      })
+      .from(opticalPrescriptions)
+      .innerJoin(customers, eq(opticalPrescriptions.customerId, customers.id))
+      .where(
+        and(
+          eq(opticalPrescriptions.customerId, customerId),
+          eq(customers.organizationId, session.organizationId)
+        )
+      )
+      .orderBy(desc(opticalPrescriptions.prescribedAt));
 
     const prescriptions: PatientPrescriptionHistory[] = rxRows.map((rx) => ({
       id: rx.id,
       prescribedAt: rx.prescribedAt.toISOString(),
       patientId: rx.customerId,
-      patientName: customer?.fullName || 'Patient',
-      relationType: customer?.relationType || 'Self',
+      patientName: customer.fullName || 'Patient',
+      relationType: customer.relationType || 'Self',
       isDependent: false,
       odSphere: rx.odSphere,
       odCylinder: rx.odCylinder,
@@ -1113,7 +1293,7 @@ export async function saveNewPrescription(
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
 
     const [customer] = await db
       .select()
@@ -1130,54 +1310,48 @@ export async function saveNewPrescription(
       return { success: false, error: 'Customer not found' };
     }
 
-    const hasOdCyl =
-      rx.odCylinder !== null &&
-      rx.odCylinder !== undefined &&
-      rx.odCylinder !== 0;
-    const hasOsCyl =
-      rx.osCylinder !== null &&
-      rx.osCylinder !== undefined &&
-      rx.osCylinder !== 0;
+    // Authoritative clinical validation: 0.25 D steps, AXIS 1-180 required iff CYL != 0, ADD/PD ranges
+    const parsedRx = prescriptionSchema.safeParse({
+      odSphere: rx.odSphere,
+      odCylinder: rx.odCylinder,
+      odAxis: rx.odAxis,
+      odAdd: rx.odAdd,
+      odPd: rx.odPd,
+      osSphere: rx.osSphere,
+      osCylinder: rx.osCylinder,
+      osAxis: rx.osAxis,
+      osAdd: rx.osAdd,
+      osPd: rx.osPd,
+      binocularPd: rx.binocularPd,
+      clinicalRemarks: rx.clinicalRemarks ?? null,
+    });
+    if (!parsedRx.success) {
+      return { success: false, error: parsedRx.error.issues[0]?.message || 'Invalid prescription values' };
+    }
+    const v = parsedRx.data;
+
+    // Axis invariant: AXIS is persisted only when CYL != 0; otherwise null
+    const hasOdCyl = v.odCylinder !== null && v.odCylinder !== 0;
+    const hasOsCyl = v.osCylinder !== null && v.osCylinder !== 0;
+    const fmt = (val: number | null, dp: number): string | null =>
+      val === null ? null : new Decimal(val).toFixed(dp);
 
     const [inserted] = await db
       .insert(opticalPrescriptions)
       .values({
         customerId,
-        odSphere: rx.odSphere != null ? rx.odSphere.toFixed(2) : null,
-        odCylinder: rx.odCylinder != null ? rx.odCylinder.toFixed(2) : null,
-        odAxis:
-          hasOdCyl && rx.odAxis != null && rx.odAxis >= 1 && rx.odAxis <= 180
-            ? rx.odAxis
-            : null,
-        odAdd:
-          rx.odAdd != null && rx.odAdd >= 0.75 && rx.odAdd <= 4.0
-            ? rx.odAdd.toFixed(2)
-            : null,
-        odPd:
-          rx.odPd != null && rx.odPd >= 20 && rx.odPd <= 80
-            ? rx.odPd.toFixed(1)
-            : null,
-        osSphere: rx.osSphere != null ? rx.osSphere.toFixed(2) : null,
-        osCylinder: rx.osCylinder != null ? rx.osCylinder.toFixed(2) : null,
-        osAxis:
-          hasOsCyl && rx.osAxis != null && rx.osAxis >= 1 && rx.osAxis <= 180
-            ? rx.osAxis
-            : null,
-        osAdd:
-          rx.osAdd != null && rx.osAdd >= 0.75 && rx.osAdd <= 4.0
-            ? rx.osAdd.toFixed(2)
-            : null,
-        osPd:
-          rx.osPd != null && rx.osPd >= 20 && rx.osPd <= 80
-            ? rx.osPd.toFixed(1)
-            : null,
-        binocularPd:
-          rx.binocularPd != null &&
-          rx.binocularPd >= 20 &&
-          rx.binocularPd <= 80
-            ? rx.binocularPd.toFixed(1)
-            : null,
-        clinicalRemarks: rx.clinicalRemarks || null,
+        odSphere: fmt(v.odSphere, 2),
+        odCylinder: fmt(v.odCylinder, 2),
+        odAxis: hasOdCyl ? v.odAxis : null,
+        odAdd: fmt(v.odAdd, 2),
+        odPd: fmt(v.odPd, 1),
+        osSphere: fmt(v.osSphere, 2),
+        osCylinder: fmt(v.osCylinder, 2),
+        osAxis: hasOsCyl ? v.osAxis : null,
+        osAdd: fmt(v.osAdd, 2),
+        osPd: fmt(v.osPd, 1),
+        binocularPd: fmt(v.binocularPd, 1),
+        clinicalRemarks: v.clinicalRemarks || null,
       })
       .returning();
 

@@ -1021,27 +1021,29 @@ export function AddProductModal({
                     catalogItems.map((item) => {
                       const isSelected = selectedFrame?.id === item.id;
                       return (
-                        <div
+                        <button
+                          type="button"
                           key={item.id}
                           onClick={() => setSelectedFrame(item as any)}
-                          className={`cursor-pointer rounded-lg border p-3 flex items-center justify-between transition ${
+                          aria-pressed={isSelected}
+                          className={`w-full text-left cursor-pointer rounded-lg border p-3 flex items-center justify-between transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                             isSelected
                               ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 ring-1 ring-blue-600'
                               : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                           }`}
                         >
-                          <div>
-                            <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                          <span className="block">
+                            <span className="block font-bold text-xs text-slate-900 dark:text-slate-100">
                               {item.brand} {item.model}
                             </span>
-                            <span className="block text-[11px] font-mono text-slate-400">
+                            <span className="block text-[11px] font-mono text-slate-500 dark:text-slate-300">
                               SKU: {item.sku} · Stock: {item.stockQuantity}
                             </span>
-                          </div>
-                          <span className="font-bold font-mono text-xs text-blue-600 dark:text-blue-400">
+                          </span>
+                          <span className="font-bold font-mono tabular-nums text-xs text-blue-600 dark:text-blue-400">
                             ₹{item.sellingPrice}
                           </span>
-                        </div>
+                        </button>
                       );
                     })
                   ) : (
@@ -1154,27 +1156,29 @@ export function AddProductModal({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto pr-1">
                   {catalogItems.map((item) => (
-                    <div
+                    <button
+                      type="button"
                       key={item.id}
                       onClick={() => setSelectedFrame(item as any)}
-                      className={`cursor-pointer rounded-lg border p-3 flex items-center justify-between transition ${
+                      aria-pressed={selectedFrame?.id === item.id}
+                      className={`w-full text-left cursor-pointer rounded-lg border p-3 flex items-center justify-between transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                         selectedFrame?.id === item.id
                           ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 ring-1 ring-blue-600'
                           : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
                       }`}
                     >
-                      <div>
-                        <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                      <span className="block">
+                        <span className="block font-bold text-xs text-slate-900 dark:text-slate-100">
                           {item.brand} {item.model}
                         </span>
-                        <span className="block text-[11px] font-mono text-slate-400">
+                        <span className="block text-[11px] font-mono text-slate-500 dark:text-slate-300">
                           SKU: {item.sku}
                         </span>
-                      </div>
-                      <span className="font-bold font-mono text-xs text-blue-600">
+                      </span>
+                      <span className="font-bold font-mono tabular-nums text-xs text-blue-600 dark:text-blue-400">
                         ₹{item.sellingPrice}
                       </span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -1338,27 +1342,29 @@ export function AddProductModal({
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-40 overflow-y-auto pr-1">
                   {catalogItems.map((item) => (
-                    <div
+                    <button
+                      type="button"
                       key={item.id}
                       onClick={() => setSelectedContactLens(item as any)}
-                      className={`cursor-pointer rounded-lg border p-3 flex items-center justify-between transition ${
+                      aria-pressed={selectedContactLens?.id === item.id}
+                      className={`w-full text-left cursor-pointer rounded-lg border p-3 flex items-center justify-between transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                         selectedContactLens?.id === item.id
                           ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 ring-1 ring-blue-600'
                           : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
                       }`}
                     >
-                      <div>
-                        <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                      <span className="block">
+                        <span className="block font-bold text-xs text-slate-900 dark:text-slate-100">
                           {item.brand} {item.model}
                         </span>
-                        <span className="block text-[11px] font-mono text-slate-400">
+                        <span className="block text-[11px] font-mono text-slate-500 dark:text-slate-300">
                           SKU: {item.sku}
                         </span>
-                      </div>
-                      <span className="font-bold font-mono text-xs text-blue-600">
+                      </span>
+                      <span className="font-bold font-mono tabular-nums text-xs text-blue-600 dark:text-blue-400">
                         ₹{item.sellingPrice}/box
                       </span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -1757,10 +1763,13 @@ export function AddProductModal({
                   {selectedType.workflowSteps.map((step, idx) => {
                     const stepName = getStepName(step, idx);
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={stepName + idx}
                         onClick={() => idx <= currentStepIndex && setCurrentStepIndex(idx)}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+                        disabled={idx > currentStepIndex}
+                        aria-current={idx === currentStepIndex ? 'step' : undefined}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                           idx === currentStepIndex
                             ? 'bg-blue-600 text-white shadow-xs'
                             : idx < currentStepIndex
@@ -1772,7 +1781,7 @@ export function AddProductModal({
                           {idx + 1}
                         </span>
                         <span>{stepName}</span>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -1808,8 +1817,10 @@ export function AddProductModal({
                           : currentVal === opt.value;
 
                         return (
-                          <div
+                          <button
+                            type="button"
                             key={opt.value}
+                            aria-pressed={isSelected}
                             onClick={() => {
                               if (isMulti) {
                                 const arr = Array.isArray(currentVal) ? [...currentVal] : [];
@@ -1837,26 +1848,26 @@ export function AddProductModal({
                                 });
                               }
                             }}
-                            className={`rounded-xl border p-4 flex items-center justify-between transition cursor-pointer ${
+                            className={`w-full text-left rounded-xl border p-4 flex items-center justify-between transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                               isSelected
                                 ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 ring-1 ring-blue-600'
                                 : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
                             }`}
                           >
-                            <div>
-                              <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">
+                            <span className="block">
+                              <span className="block font-semibold text-xs text-slate-900 dark:text-slate-100">
                                 {opt.label}
                               </span>
                               {opt.description && (
-                                <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                                <span className="block text-[11px] text-slate-500 dark:text-slate-300 line-clamp-1 mt-0.5">
                                   {opt.description}
-                                </p>
+                                </span>
                               )}
-                            </div>
-                            <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+                            </span>
+                            <span className="font-mono tabular-nums text-xs font-bold text-slate-700 dark:text-slate-300">
                               {Number(opt.surcharge) > 0 ? `+₹${opt.surcharge}` : 'Included'}
                             </span>
-                          </div>
+                          </button>
                         );
                       })}
                     </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Edit3, Save, Trash2, Check, User, Info } from 'lucide-react';
 import Decimal from 'decimal.js';
+import { computeGstLine } from '@/lib/gst';
 import type { CartItem } from './billing-cart';
 
 interface CartItemEditModalProps {
@@ -108,21 +109,19 @@ export function CartItemEditModal({
   // Live line calculation using decimal.js
   const liveTotal = useMemo(() => {
     try {
-      const q = new Decimal(quantity > 0 ? quantity : 1);
-      const p = new Decimal(unitPrice || '0.00');
-      const d = new Decimal(discount || '0.00');
-      const tRate = new Decimal(item?.taxRate || '0.00');
-
-      const subtotal = p.times(q);
-      const taxable = subtotal.minus(d).clamp(0, Infinity);
-      const tax = taxable.times(tRate).dividedBy(100);
-      const lineTotal = taxable.plus(tax);
+      // Shared GST engine — identical rounding to the cart, checkout and receipts.
+      const line = computeGstLine({
+        unitPrice: unitPrice || '0.00',
+        quantity,
+        lineDiscount: discount || '0.00',
+        taxRate: item?.taxRate || '0.00',
+      });
 
       return {
-        subtotal: subtotal.toFixed(2),
-        taxable: taxable.toFixed(2),
-        tax: tax.toFixed(2),
-        total: lineTotal.toFixed(2),
+        subtotal: line.gross.toFixed(2),
+        taxable: line.taxable.toFixed(2),
+        tax: line.tax.toFixed(2),
+        total: line.total.toFixed(2),
       };
     } catch {
       return { subtotal: '0.00', taxable: '0.00', tax: '0.00', total: '0.00' };

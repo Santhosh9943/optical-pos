@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { normalizeGstRate, type GstRate } from '@/lib/gst';
 import { X, Edit3, Package, Tag, Layers, DollarSign, AlertCircle, Loader2, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -37,7 +38,7 @@ export function EditInventoryModal({
   const [mrp, setMrp] = useState('');
   const [stockQuantity, setStockQuantity] = useState(0);
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
-  const [taxRate, setTaxRate] = useState<'5.00' | '18.00'>('18.00');
+  const [taxRate, setTaxRate] = useState<GstRate>('18.00');
   const [hsnCode, setHsnCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -55,7 +56,7 @@ export function EditInventoryModal({
       setMrp(item.mrp || '');
       setStockQuantity(item.stockQuantity ?? 0);
       setLowStockThreshold(item.lowStockThreshold ?? 5);
-      setTaxRate((item.taxRate as any) || '18.00');
+      setTaxRate(normalizeGstRate(item.taxRate) ?? '18.00');
       setHsnCode(item.hsnCode || '');
     }
   }, [isOpen, item]);
@@ -163,12 +164,12 @@ export function EditInventoryModal({
           {/* Branch Location */}
           {branches.length > 0 && (
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <label htmlFor="edit-inventory-branch-id" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Building2 className="h-3.5 w-3.5 text-slate-400" />
                 <span>Store Location / Branch</span>
                 <span className="text-red-500">*</span>
               </label>
-              <select
+              <select id="edit-inventory-branch-id"
                 data-testid="select-edit-inventory-branch"
                 value={branchId}
                 onChange={(e) => setBranchId(e.target.value)}
@@ -186,12 +187,12 @@ export function EditInventoryModal({
           {/* Row 1: SKU & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <label htmlFor="edit-inventory-sku" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Tag className="h-3.5 w-3.5 text-slate-400" />
                 <span>SKU Code</span>
                 <span className="text-red-500">*</span>
               </label>
-              <input
+              <input id="edit-inventory-sku"
                 type="text"
                 required
                 data-testid="input-edit-inventory-sku"
@@ -203,12 +204,12 @@ export function EditInventoryModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <label htmlFor="edit-inventory-category" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Layers className="h-3.5 w-3.5 text-slate-400" />
                 <span>Category</span>
                 <span className="text-red-500">*</span>
               </label>
-              <select
+              <select id="edit-inventory-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value as any)}
                 className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
@@ -226,10 +227,10 @@ export function EditInventoryModal({
           {/* Row 2: Brand & Model */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-inventory-brand" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Brand
               </label>
-              <input
+              <input id="edit-inventory-brand"
                 type="text"
                 data-testid="input-edit-inventory-brand"
                 value={brand}
@@ -240,10 +241,10 @@ export function EditInventoryModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-inventory-model" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Model / Variant
               </label>
-              <input
+              <input id="edit-inventory-model"
                 type="text"
                 data-testid="input-edit-inventory-model"
                 value={model}
@@ -256,10 +257,10 @@ export function EditInventoryModal({
 
           {/* Row 3: Description */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label htmlFor="edit-inventory-description" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Description
             </label>
-            <textarea
+            <textarea id="edit-inventory-description"
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -271,12 +272,12 @@ export function EditInventoryModal({
           {/* Row 4: Pricing Grid (Cost Price, Selling Price, MRP) */}
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <label htmlFor="edit-inventory-selling-price" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <DollarSign className="h-3.5 w-3.5 text-slate-400" />
                 <span>Selling Price (₹)</span>
                 <span className="text-red-500">*</span>
               </label>
-              <input
+              <input id="edit-inventory-selling-price"
                 type="number"
                 step="0.01"
                 min="0"
@@ -290,10 +291,10 @@ export function EditInventoryModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-inventory-cost-price" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Cost Price (₹)
               </label>
-              <input
+              <input id="edit-inventory-cost-price"
                 type="number"
                 step="0.01"
                 min="0"
@@ -305,10 +306,10 @@ export function EditInventoryModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-inventory-mrp" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 MRP (₹)
               </label>
-              <input
+              <input id="edit-inventory-mrp"
                 type="number"
                 step="0.01"
                 min="0"
@@ -323,12 +324,12 @@ export function EditInventoryModal({
           {/* Row 5: Stock Quantities & Threshold */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <label htmlFor="edit-inventory-stock-quantity" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Package className="h-3.5 w-3.5 text-slate-400" />
                 <span>Current Stock Qty</span>
                 <span className="text-red-500">*</span>
               </label>
-              <input
+              <input id="edit-inventory-stock-quantity"
                 type="number"
                 min="0"
                 required
@@ -340,10 +341,10 @@ export function EditInventoryModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-inventory-low-stock-threshold" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Low Stock Threshold
               </label>
-              <input
+              <input id="edit-inventory-low-stock-threshold"
                 type="number"
                 min="0"
                 value={lowStockThreshold}
@@ -356,24 +357,26 @@ export function EditInventoryModal({
           {/* Row 6: Tax Rate, HSN & Barcode */}
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-inventory-tax-rate" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 GST Tax Rate
               </label>
-              <select
+              <select id="edit-inventory-tax-rate"
                 value={taxRate}
-                onChange={(e) => setTaxRate(e.target.value as any)}
+                onChange={(e) => setTaxRate(normalizeGstRate(e.target.value) ?? '18.00')}
                 className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               >
                 <option value="18.00">18% (Frames / Sunglasses)</option>
                 <option value="5.00">5% (Lenses)</option>
+                <option value="12.00">12%</option>
+                <option value="0.00">0% (GST Exempt)</option>
               </select>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-inventory-hsn-code" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 HSN Code
               </label>
-              <input
+              <input id="edit-inventory-hsn-code"
                 type="text"
                 value={hsnCode}
                 onChange={(e) => setHsnCode(e.target.value)}
@@ -383,10 +386,10 @@ export function EditInventoryModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-inventory-barcode" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Barcode
               </label>
-              <input
+              <input id="edit-inventory-barcode"
                 type="text"
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}

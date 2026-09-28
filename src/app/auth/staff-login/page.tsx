@@ -46,7 +46,7 @@ function StaffLoginFormContent() {
 
   // Forced Password Change Modal State
   const [showForceChangeModal, setShowForceChangeModal] = useState(false);
-  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const [pendingPasswordChange, setPendingPasswordChange] = useState(false);
   const [pendingOrgName, setPendingOrgName] = useState<string>('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -101,8 +101,8 @@ function StaffLoginFormContent() {
       }
 
       // 3. If administrator required first-login password change, open forced modal
-      if (preflight.mustChangePassword && preflight.userId) {
-        setPendingUserId(preflight.userId);
+      if (preflight.mustChangePassword) {
+        setPendingPasswordChange(true);
         setPendingOrgName(preflight.organizationName || 'your optical practice');
         setShowForceChangeModal(true);
         setLoading(false);
@@ -122,7 +122,7 @@ function StaffLoginFormContent() {
 
   const handleCompletePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pendingUserId) return;
+    if (!pendingPasswordChange) return;
 
     if (newPassword.length < 8) {
       toast.error('New password must be at least 8 characters long');
@@ -137,7 +137,6 @@ function StaffLoginFormContent() {
     setChangingPassword(true);
     try {
       const res = await completeStaffInitialPasswordChangeAction({
-        userId: pendingUserId,
         newPassword,
       });
 

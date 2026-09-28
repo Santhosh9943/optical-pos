@@ -15,8 +15,9 @@ import {
   notificationPreferences,
   type Notification,
 } from '@/db/schema';
-import { eq, and, or, isNull, desc, inArray, sql, gt } from 'drizzle-orm';
-import { getCurrentSession } from '@/lib/auth-utils';
+import { eq, and, or, isNull, desc, inArray, sql } from 'drizzle-orm';
+import { getCurrentSession, requireAuthSession, canAccessBranches } from '@/lib/auth-utils';
+import { dispatchNotificationInternal } from '@/lib/notifications-internal';
 import { invalidateCache, withCache } from '@/lib/cache';
 import type {
   NotificationEventType,
@@ -25,7 +26,6 @@ import type {
   NotificationFilter,
   NotificationSeverity,
 } from '@/lib/notifications/types';
-import { getEventDefinition } from '@/lib/notifications/event-registry';
 
 /**
  * Fetches notifications for the active user session and organization.
@@ -205,20 +205,21 @@ export async function markAllNotificationsReadAction(): Promise<{
       return { success: true, count: 0 };
     }
 
+    // Single batched upsert instead of an N+1 insert loop
     const now = new Date();
-    for (const item of unreadList) {
-      await db
-        .insert(notificationReads)
-        .values({
+    await db
+      .insert(notificationReads)
+      .values(
+        unreadList.map((item) => ({
           notificationId: item.id,
           userId,
           readAt: now,
-        })
-        .onConflictDoUpdate({
-          target: [notificationReads.notificationId, notificationReads.userId],
-          set: { readAt: now },
-        });
-    }
+        }))
+      )
+      .onConflictDoUpdate({
+        target: [notificationReads.notificationId, notificationReads.userId],
+        set: { readAt: now },
+      });
 
     await invalidateCache({
       orgId: session.organizationId,
@@ -273,8 +274,14 @@ export async function dismissNotificationAction(
 }
 
 /**
- * Type-safe notification dispatcher.
- * Formats title, body, action link from the EVENT_REGISTRY and checks deduplication window.
+ * @description Client-callable, type-safe notification dispatcher.
+ * Security: requires an authenticated session; the organization is ALWAYS the caller's session
+ * organization (any client-supplied `organizationId` must match it or the call is rejected), an
+ * optional `branchId` must belong to that organization, and action links are restricted to
+ * same-origin relative paths. Server code that already resolved a trusted org should call
+ * `dispatchNotificationInternal` from `@/lib/notifications-internal` instead.
+ * @param params - Event type, payload and targeting options
+ * @returns `{ success, id?, deduplicated? }`
  */
 export async function dispatchNotificationAction<T extends NotificationEventType>(params: {
   type: T;
@@ -287,72 +294,25 @@ export async function dispatchNotificationAction<T extends NotificationEventType
   dedupKey?: string;
 }): Promise<{ success: boolean; id?: string; deduplicated?: boolean }> {
   try {
-    let orgId = params.organizationId;
-    if (!orgId) {
-      const session = await getCurrentSession();
-      orgId = session.organizationId;
-    }
+    const session = await requireAuthSession();
 
-    if (!orgId) {
+    if (params.organizationId && params.organizationId !== session.organizationId) {
+      return { success: false };
+    }
+    if (params.branchId && !(await canAccessBranches(session, [params.branchId]))) {
       return { success: false };
     }
 
-    const eventDef = getEventDefinition(params.type);
-    const title = eventDef.formatTitle(params.payload);
-    const message = eventDef.formatMessage(params.payload);
-    const actionUrl = eventDef.formatActionUrl
-      ? eventDef.formatActionUrl(params.payload)
-      : null;
-    const actionLabel = eventDef.formatActionLabel
-      ? eventDef.formatActionLabel(params.payload)
-      : null;
-    const severity = params.severity || eventDef.defaultSeverity;
-
-    // Deduplication check: if dedupKey provided, check if sent in last 6 hours
-    if (params.dedupKey) {
-      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
-      const [existing] = await db
-        .select({ id: notifications.id })
-        .from(notifications)
-        .where(
-          and(
-            eq(notifications.organizationId, orgId),
-            eq(notifications.dedupKey, params.dedupKey),
-            gt(notifications.createdAt, sixHoursAgo)
-          )
-        )
-        .limit(1);
-
-      if (existing) {
-        return { success: true, id: existing.id, deduplicated: true };
-      }
-    }
-
-    const [created] = await db
-      .insert(notifications)
-      .values({
-        organizationId: orgId,
-        branchId: params.branchId || null,
-        recipientId: params.recipientId || null,
-        targetRole: params.targetRole || null,
-        category: eventDef.category,
-        type: params.type,
-        severity,
-        title,
-        message,
-        metadata: params.payload as Record<string, unknown>,
-        actionUrl,
-        actionLabel,
-        dedupKey: params.dedupKey || null,
-      })
-      .returning();
-
-    await invalidateCache({
-      orgId,
-      namespace: 'notifications',
+    return await dispatchNotificationInternal({
+      type: params.type,
+      payload: params.payload,
+      organizationId: session.organizationId,
+      branchId: params.branchId,
+      recipientId: params.recipientId,
+      targetRole: params.targetRole,
+      severity: params.severity,
+      dedupKey: params.dedupKey,
     });
-
-    return { success: true, id: created.id };
   } catch (error) {
     console.error('Error dispatching notification:', error);
     return { success: false };
@@ -381,7 +341,7 @@ export async function seedInitialNotificationsAction(): Promise<{ seeded: boolea
     }
 
     // 1. System update
-    await dispatchNotificationAction({
+    await dispatchNotificationInternal({
       type: 'system.announcement',
       organizationId: session.organizationId,
       severity: 'low',
@@ -395,7 +355,7 @@ export async function seedInitialNotificationsAction(): Promise<{ seeded: boolea
     });
 
     // 2. Warning / Alert
-    await dispatchNotificationAction({
+    await dispatchNotificationInternal({
       type: 'inventory.low_stock',
       organizationId: session.organizationId,
       branchId: session.branchId,
@@ -411,7 +371,7 @@ export async function seedInitialNotificationsAction(): Promise<{ seeded: boolea
     });
 
     // 3. Due-date reminder
-    await dispatchNotificationAction({
+    await dispatchNotificationInternal({
       type: 'lab_order.sla_overdue',
       organizationId: session.organizationId,
       branchId: session.branchId,

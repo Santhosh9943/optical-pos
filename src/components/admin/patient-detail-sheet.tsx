@@ -1037,7 +1037,7 @@ export function PatientDetailSheet({
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 text-center text-[10px] text-slate-400 dark:text-slate-500 italic">
+                                  <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 text-center text-[10px] text-slate-600 dark:text-slate-300 italic">
                                     No clinical refraction recorded yet
                                   </div>
                                 )}

@@ -297,3 +297,60 @@ export async function requireOwnerOrSuperAdmin(): Promise<
   }
   return sessionContext;
 }
+
+/**
+ * @description Returns the branch ids of the caller's organization that the caller may access.
+ * - Platform super admins, Organization Owners and Store Managers/Admins: every branch of `organizationId`.
+ * - Other staff: branches assigned in `staff_store_assignments`; if the user has no assignment rows at all,
+ *   falls back to every branch of the organization (mirrors getUserTenancyContext behaviour).
+ * Branches are ALWAYS restricted to `sessionContext.organizationId` (multi-tenant invariant).
+ * @param sessionContext - The authenticated session context
+ * @returns Array of authorized branch ids (empty when unauthenticated)
+ */
+export async function getAuthorizedBranchIds(sessionContext: CurrentSessionContext): Promise<string[]> {
+  const { user, organizationId } = sessionContext;
+  if (!user?.id || !organizationId) return [];
+
+  const orgBranches = await db
+    .select({ id: branches.id })
+    .from(branches)
+    .where(eq(branches.organizationId, organizationId));
+  const orgBranchIds = orgBranches.map((b) => b.id);
+
+  if (await isManagerOrAdmin(sessionContext)) {
+    return orgBranchIds;
+  }
+
+  const assigned = await db
+    .select({ branchId: staffStoreAssignments.branchId })
+    .from(staffStoreAssignments)
+    .where(
+      and(
+        eq(staffStoreAssignments.userId, user.id),
+        eq(staffStoreAssignments.organizationId, organizationId)
+      )
+    );
+
+  if (assigned.length === 0) {
+    return orgBranchIds;
+  }
+
+  const orgSet = new Set(orgBranchIds);
+  return assigned.map((a) => a.branchId).filter((id) => orgSet.has(id));
+}
+
+/**
+ * @description Verifies that every requested branch id belongs to the caller's organization and is
+ * accessible to the caller (see getAuthorizedBranchIds).
+ * @param sessionContext - The authenticated session context
+ * @param branchIds - Branch ids supplied by the client
+ * @returns true when all ids are authorized
+ */
+export async function canAccessBranches(
+  sessionContext: CurrentSessionContext,
+  branchIds: string[]
+): Promise<boolean> {
+  if (branchIds.length === 0) return true;
+  const allowed = new Set(await getAuthorizedBranchIds(sessionContext));
+  return branchIds.every((id) => allowed.has(id));
+}

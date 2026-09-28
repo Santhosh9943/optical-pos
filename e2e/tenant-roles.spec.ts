@@ -49,7 +49,20 @@ test.describe('Phase 12: Dedicated /super-admin/ & Role-Scoped Panels E2E', () =
   });
 
   test('Dedicated /super-admin/dashboard renders global platform telemetry and navigation', async ({ page }) => {
+    // 0a. Isolation: middleware deliberately excludes /super-admin from the E2E
+    //     auth bypass header, so an unauthenticated visit lands on the OTP gateway.
     await page.goto('/super-admin/dashboard');
+    await expect(page).toHaveURL(/\/super-admin\/login/);
+    await expect(page.getByRole('heading', { name: /OptixOS Root Gateway/i })).toBeVisible();
+
+    // 0b. Obtain a real root session via the non-production deterministic OTP
+    //     (same flow as e2e/super-admin-otp-auth.spec.ts).
+    await page.getByPlaceholder('superadmin@domain.com').fill('msanthosh9943@gmail.com');
+    await page.getByRole('button', { name: /Generate One-Time Passcode/i }).click();
+    await expect(page.getByText(/Enter 6-Digit Passcode/i)).toBeVisible();
+    await page.getByPlaceholder('••••••').fill('994321');
+    await page.getByRole('button', { name: /Verify & Access Root Console/i }).click();
+    await expect(page).toHaveURL(/\/super-admin\/dashboard/);
 
     // 1. Verify Page Title
     await expect(page.getByRole('heading', { name: /Platform Tenant & Store Governance/i })).toBeVisible();

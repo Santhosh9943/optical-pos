@@ -1,5 +1,6 @@
 // src/lib/validators/prescription.ts
 import { z } from 'zod';
+import { GST_RATES } from '@/lib/gst';
 
 /** Integer-scaling refinement to prevent IEEE-754 floating-point validation bugs */
 export const isQuarterStep = (val: number): boolean => {
@@ -159,7 +160,10 @@ export const invoiceItemSchema = z.object({
   quantity: z.number().int().min(1).max(99999),
   unitPrice: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid monetary format'),
   discountPerUnit: z.string().regex(/^\d+(\.\d{1,2})?$/).default('0.00'),
-  taxRate: z.enum(['5.00', '18.00']),
+  /** Exact whole-line discount. When present it supersedes `discountPerUnit × quantity` (avoids per-unit rounding drift). */
+  lineDiscount: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid monetary format').optional(),
+  /** Statutory GST slab; the server overrides it from the catalog for inventory-backed lines. */
+  taxRate: z.enum(GST_RATES),
   lensType: z
     .enum([
       'SINGLE_VISION',

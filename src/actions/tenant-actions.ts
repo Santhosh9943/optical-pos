@@ -13,16 +13,15 @@ import {
   approvalRequests as approvalRequestsTable,
   staffStoreAssignments,
   storeProfile,
-  account as accountTable,
 } from '@/db/schema';
 import { eq, sql, desc, and, inArray } from 'drizzle-orm';
 import { getCurrentSession, isOwnerOrSuperAdmin } from '@/lib/auth-utils';
 import { withCache, invalidateCache } from '@/lib/cache';
 import { auth } from '@/lib/auth';
-import { hashPassword } from 'better-auth/crypto';
 import { getSuperAdminSessionAction } from '@/actions/super-admin-auth-actions';
 import { seedDefaultProductTypesForOrganization } from '@/lib/default-product-types';
 import Decimal from 'decimal.js';
+import { z } from 'zod';
 
 export type RoleMode =
   | 'super_admin'
@@ -92,13 +91,90 @@ export interface SuperAdminPlatformMetrics {
 
 const suspendedOrganizations = new Set<string>();
 
+/** Result of resolving the caller's tenant scope for a tenant-actions operation. */
+type TenantScopeResult =
+  | {
+      ok: true;
+      /** Organization the operation is allowed to act on. */
+      organizationId: string;
+      /** Authenticated Better Auth user id (absent for OTP-only platform super admin sessions). */
+      userId: string | null;
+      userEmail: string;
+      userName: string;
+      /** True when the caller is a verified platform super admin / moderator. */
+      isPlatformAdmin: boolean;
+    }
+  | { ok: false; error: string };
+
 /**
- * Super Admin action: Toggle active/suspended status of a SaaS practice
+ * @description Resolves and authorizes the organization an action may operate on.
+ * - Verified platform super admins (via `verifySuperAdminAccessAction`) may target any organization
+ *   supplied by the client (falling back to their session org). Mutations require `canMutate`.
+ * - Everyone else is FORCED onto `session.organizationId`; a client-supplied organizationId is ignored.
+ * - When `requireOwner` is set, non-platform callers must be the Organization Owner.
+ * @param requestedOrgId - Organization id supplied by the client (only honoured for platform admins)
+ * @param opts - `requireOwner` (owner-only op), `mutating` (write op; platform viewers are rejected)
+ * @returns A discriminated TenantScopeResult
+ */
+async function resolveTenantScope(
+  requestedOrgId: string | undefined | null,
+  opts: { requireOwner: boolean; mutating: boolean }
+): Promise<TenantScopeResult> {
+  const session = await getCurrentSession();
+  const platform = await verifySuperAdminAccessAction();
+
+  if (platform.isSuperAdmin && (!opts.mutating || platform.canMutate)) {
+    const orgId = (requestedOrgId || '').trim() || session.organizationId;
+    if (!orgId) return { ok: false, error: 'Organization id is required' };
+    return {
+      ok: true,
+      organizationId: orgId,
+      userId: session.user?.id ?? null,
+      userEmail: session.user?.email || platform.email || '',
+      userName: session.user?.name || platform.name || 'Platform Admin',
+      isPlatformAdmin: true,
+    };
+  }
+
+  if (!session.user?.id || !session.organizationId) {
+    return { ok: false, error: 'Unauthorized: Please log in' };
+  }
+
+  if (opts.requireOwner && !(await isOwnerOrSuperAdmin(session))) {
+    return { ok: false, error: 'Forbidden: Only the Organization Owner can perform this action' };
+  }
+
+  return {
+    ok: true,
+    organizationId: session.organizationId,
+    userId: session.user.id,
+    userEmail: session.user.email || '',
+    userName: session.user.name || '',
+    isPlatformAdmin: false,
+  };
+}
+
+/**
+ * @description Asserts the caller is a verified platform super admin (optionally with mutate rights).
+ * @param mutating - When true, read-only platform viewers are rejected.
+ * @returns true when authorized
+ */
+async function isVerifiedPlatformAdmin(mutating: boolean): Promise<boolean> {
+  const access = await verifySuperAdminAccessAction();
+  return access.isSuperAdmin && (!mutating || access.canMutate);
+}
+
+/**
+ * Super Admin action: Toggle active/suspended status of a SaaS practice.
+ * Requires a verified platform super admin with mutate rights.
  */
 export async function toggleOrganizationStatusAction(
   organizationId: string,
   isActive: boolean
 ): Promise<{ success: boolean; isActive: boolean }> {
+  if (!(await isVerifiedPlatformAdmin(true))) {
+    return { success: false, isActive: !isActive };
+  }
   if (isActive) {
     suspendedOrganizations.delete(organizationId);
   } else {
@@ -291,6 +367,9 @@ export async function getUserTenancyContext(): Promise<TenancyContext> {
  * - Enforces customer privacy by omitting patient optical records & retail invoices
  */
 export async function getSuperAdminPlatformMetrics(): Promise<SuperAdminPlatformMetrics> {
+  if (!(await isVerifiedPlatformAdmin(false))) {
+    throw new Error('Unauthorized: Platform super admin access required');
+  }
   const allOrgs = await db.select().from(organizations).orderBy(desc(organizations.createdAt));
   const allBranches = await db.select().from(branches).orderBy(branches.name);
 
@@ -356,31 +435,46 @@ export async function getSuperAdminPlatformMetrics(): Promise<SuperAdminPlatform
   };
 }
 
+/** Zod schema for a branch display name. */
+const branchNameSchema = z
+  .string()
+  .transform((v) => v.trim())
+  .pipe(z.string().min(1, 'Branch name cannot be empty').max(120));
+
 /**
- * Super Admin action: Add a physical store branch to an organization
+ * Add a physical store branch to an organization.
+ * Organization Owners may only add to their own session organization; verified platform super
+ * admins may target any organization.
  */
 export async function createBranchAction(
   name: string,
   organizationId: string
 ): Promise<{ success: boolean; branch?: { id: string; name: string }; error?: string }> {
   try {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      return { success: false, error: 'Branch name cannot be empty' };
+    const parsed = branchNameSchema.safeParse(name);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Branch name cannot be empty' };
     }
+    const trimmed = parsed.data;
+
+    const scope = await resolveTenantScope(organizationId, { requireOwner: true, mutating: true });
+    if (!scope.ok) return { success: false, error: scope.error };
+    const targetOrgId = scope.organizationId;
 
     const [created] = await db
       .insert(branches)
       .values({
         name: trimmed,
-        organizationId,
+        organizationId: targetOrgId,
         isActive: true,
       })
       .returning();
 
+    await invalidateCache({ orgId: targetOrgId, namespace: 'branches' });
+
     // Automatically ensure default product types and workflows exist for this practice
     try {
-      await seedDefaultProductTypesForOrganization(organizationId);
+      await seedDefaultProductTypesForOrganization(targetOrgId);
     } catch (seedErr) {
       console.warn('[createBranchAction] Default product types seed note:', seedErr);
     }
@@ -402,10 +496,19 @@ export async function createOrganizationAction(
   name: string
 ): Promise<{ success: boolean; organization?: { id: string; name: string; orgCode?: string | null }; error?: string }> {
   try {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      return { success: false, error: 'Organization name cannot be empty' };
+    if (!(await isVerifiedPlatformAdmin(true))) {
+      return { success: false, error: 'Unauthorized: Platform super admin access required' };
     }
+
+    const parsed = z
+      .string()
+      .transform((v) => v.trim())
+      .pipe(z.string().min(1, 'Organization name cannot be empty').max(160))
+      .safeParse(name);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Organization name cannot be empty' };
+    }
+    const trimmed = parsed.data;
 
     const prefix = (process.env.ORG_CODE_PREFIX || 'OPT').trim().toUpperCase();
     const [maxRow] = await db
@@ -469,6 +572,9 @@ export async function createOrganizationAction(
  */
 export async function getOrganizationBranchesAction(organizationId: string) {
   try {
+    const scope = await resolveTenantScope(organizationId, { requireOwner: false, mutating: false });
+    if (!scope.ok) return { success: false, branches: [], error: scope.error };
+
     const list = await db
       .select({
         id: branches.id,
@@ -477,7 +583,7 @@ export async function getOrganizationBranchesAction(organizationId: string) {
         isActive: branches.isActive,
       })
       .from(branches)
-      .where(eq(branches.organizationId, organizationId))
+      .where(eq(branches.organizationId, scope.organizationId))
       .orderBy(branches.name);
 
     return { success: true, branches: list };
@@ -492,12 +598,30 @@ export async function getOrganizationBranchesAction(organizationId: string) {
  */
 export async function toggleBranchStatusAction(branchId: string, isActive: boolean) {
   try {
+    const parsed = z.object({ branchId: z.string().min(1), isActive: z.boolean() }).safeParse({ branchId, isActive });
+    if (!parsed.success) return { success: false, error: 'Invalid branch status payload' };
+
+    const platformAdmin = await isVerifiedPlatformAdmin(true);
+    let whereClause = eq(branches.id, branchId);
+    let scopedOrgId: string | null = null;
+    if (!platformAdmin) {
+      const scope = await resolveTenantScope(null, { requireOwner: true, mutating: true });
+      if (!scope.ok) return { success: false, error: scope.error };
+      scopedOrgId = scope.organizationId;
+      whereClause = and(eq(branches.id, branchId), eq(branches.organizationId, scope.organizationId)) ?? whereClause;
+    }
+
     const [updated] = await db
       .update(branches)
       .set({ isActive })
-      .where(eq(branches.id, branchId))
+      .where(whereClause)
       .returning();
 
+    if (!updated) {
+      return { success: false, error: 'Store branch not found in this organization' };
+    }
+
+    await invalidateCache({ orgId: scopedOrgId || updated.organizationId, namespace: 'branches' });
     return { success: true, branch: updated };
   } catch (err: unknown) {
     console.error('[toggleBranchStatusAction] Failed:', err);
@@ -515,18 +639,14 @@ export async function toggleBranchStatusAction(branchId: string, isActive: boole
  */
 export async function deleteBranchAction(
   branchId: string,
-  organizationId: string
+  requestedOrganizationId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await getCurrentSession();
-    if (!session.user?.id) {
-      return { success: false, error: 'Unauthorized: Session missing' };
+    const scope = await resolveTenantScope(requestedOrganizationId, { requireOwner: true, mutating: true });
+    if (!scope.ok) {
+      return { success: false, error: scope.error };
     }
-
-    const isOwner = await isOwnerOrSuperAdmin(session);
-    if (!isOwner) {
-      return { success: false, error: 'Forbidden: Only the Organization Owner can delete store branches' };
-    }
+    const organizationId = scope.organizationId;
 
     // 1. Confirm branch belongs to this organization
     const [targetBranch] = await db
@@ -589,7 +709,7 @@ export async function requestOrganizationDeletionAction(data: {
 }): Promise<{ success: boolean; requestId?: string; error?: string }> {
   try {
     const session = await getCurrentSession();
-    if (!session.user?.id) {
+    if (!session.user?.id || !session.organizationId) {
       return { success: false, error: 'Unauthorized: Session missing' };
     }
 
@@ -598,10 +718,17 @@ export async function requestOrganizationDeletionAction(data: {
       return { success: false, error: 'Forbidden: Only the Organization Owner can request organization deletion' };
     }
 
+    // Owners may only request deletion of their own session organization (client org id is ignored)
+    const targetOrgId = session.organizationId;
+    const reason = z.string().max(2000).safeParse(data?.reason ?? '');
+    if (!reason.success) {
+      return { success: false, error: 'Reason is too long' };
+    }
+
     const [org] = await db
       .select({ name: organizations.name, orgCode: organizations.orgCode })
       .from(organizations)
-      .where(eq(organizations.id, data.organizationId))
+      .where(eq(organizations.id, targetOrgId))
       .limit(1);
 
     if (!org) {
@@ -612,14 +739,14 @@ export async function requestOrganizationDeletionAction(data: {
       .insert(approvalRequestsTable)
       .values({
         type: 'delete_organization',
-        targetId: data.organizationId,
+        targetId: targetOrgId,
         targetName: `Delete Practice: ${org.name} (${org.orgCode || 'NO-CODE'})`,
         requesterId: session.user.id,
         requesterEmail: session.user.email || '',
         requesterName: session.user.name || 'Organization Owner',
-        reason: data.reason.trim() || 'Organization owner requested deletion of practice',
+        reason: reason.data.trim() || 'Organization owner requested deletion of practice',
         status: 'pending',
-        organizationId: data.organizationId,
+        organizationId: targetOrgId,
       })
       .returning();
 
@@ -662,10 +789,14 @@ export interface StaffMember {
  * Fetch staff members for an organization and optional branch filter (single, multiple, or all)
  */
 export async function getStaffMembersAction(
-  organizationId: string,
+  requestedOrganizationId: string,
   branchFilter?: string | string[]
 ): Promise<{ success: boolean; staff: StaffMember[]; error?: string }> {
   try {
+    const scope = await resolveTenantScope(requestedOrganizationId, { requireOwner: false, mutating: false });
+    if (!scope.ok) return { success: false, staff: [], error: scope.error };
+    const organizationId = scope.organizationId;
+
     const branchKey = Array.isArray(branchFilter)
       ? branchFilter.slice().sort().join(',')
       : (branchFilter || 'all');
@@ -681,14 +812,13 @@ export async function getStaffMembersAction(
         const isValidUuid = (val: string) =>
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
+        // Strict tenant scoping: never fall back to listing every organization's branches
         const allBranches = isValidUuid(organizationId)
           ? await db
               .select({ id: branches.id, name: branches.name })
               .from(branches)
               .where(eq(branches.organizationId, organizationId))
-          : await db
-              .select({ id: branches.id, name: branches.name })
-              .from(branches);
+          : [];
 
         const branchNameMap = new Map(allBranches.map((b) => [b.id, b.name]));
 
@@ -823,8 +953,29 @@ export async function getStaffMembersAction(
   }
 }
 
+/** Zod schema for createStaffMemberAction input (mirrors the legacy param shape). */
+const createStaffMemberSchema = z.object({
+  name: z.string().trim().min(1, 'Name and email are required').max(120),
+  email: z.string().trim().toLowerCase().email('A valid email address is required').max(254),
+  password: z.string().max(128).optional(),
+  mustChangePassword: z.boolean().optional(),
+  roles: z.array(z.enum(['admin', 'optometrist', 'staff'])).optional(),
+  role: z.string().max(40).optional(),
+  organizationId: z.string().optional(),
+  branchId: z.string().optional(),
+  branchIds: z.array(z.string()).optional(),
+  primaryBranchId: z.string().optional(),
+});
+
 /**
- * Add / Invite a new staff member to an organization and branch(es) with password and governance
+ * Add / Invite a new staff member to an organization and branch(es) with password and governance.
+ *
+ * Security invariants:
+ * - Organization is ALWAYS the caller's session organization (verified platform super admins may target any org).
+ * - Only the Organization Owner / platform super admin may call this.
+ * - Branch assignments must belong to the target organization.
+ * - An existing user's password is NEVER reset by this action, and a user that already belongs to
+ *   a different organization is rejected.
  */
 export async function createStaffMemberAction(data: {
   name: string;
@@ -839,31 +990,29 @@ export async function createStaffMemberAction(data: {
   primaryBranchId?: string;
 }): Promise<{ success: boolean; staff?: StaffMember; error?: string }> {
   try {
-    const session = await getCurrentSession();
-    if (!session.user?.id) {
-      return { success: false, error: 'Unauthorized: Please log in' };
+    const scope = await resolveTenantScope(data?.organizationId, { requireOwner: true, mutating: true });
+    if (!scope.ok) {
+      return { success: false, error: scope.error };
     }
 
-    const isOwner = await isOwnerOrSuperAdmin(session);
-    if (!isOwner) {
-      return {
-        success: false,
-        error: 'Forbidden: Only the Organization Owner can add new staff members',
-      };
+    const parsedInput = createStaffMemberSchema.safeParse(data);
+    if (!parsedInput.success) {
+      return { success: false, error: parsedInput.error.issues[0]?.message || 'Invalid staff member details' };
     }
+    const input = parsedInput.data;
 
-    const trimmedName = data.name.trim();
-    const trimmedEmail = data.email.trim().toLowerCase();
+    const trimmedName = input.name;
+    const trimmedEmail = input.email;
 
-    if (!trimmedName || !trimmedEmail) {
-      return { success: false, error: 'Name and email are required' };
-    }
-
-    // Resolve assigned roles (defaults to ['staff'])
-    const effectiveRoles: OperationalRole[] = (data.roles && data.roles.length > 0)
-      ? data.roles
-      : data.role
-      ? [data.role as OperationalRole]
+    // Resolve assigned roles (defaults to ['staff']); only known operational roles are accepted
+    const allowedRoles: OperationalRole[] = ['admin', 'optometrist', 'staff'];
+    const legacyRole = input.role && (allowedRoles as string[]).includes(input.role)
+      ? (input.role as OperationalRole)
+      : null;
+    const effectiveRoles: OperationalRole[] = (input.roles && input.roles.length > 0)
+      ? Array.from(new Set(input.roles))
+      : legacyRole
+      ? [legacyRole]
       : ['staff'];
 
     const roleString = effectiveRoles.join(',');
@@ -871,32 +1020,35 @@ export async function createStaffMemberAction(data: {
     const isValidUuid = (val: string) =>
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
-    const targetOrgId = data.organizationId || '00000000-0000-0000-0000-000000000001';
+    const targetOrgId = scope.organizationId;
 
-    // Fetch branches for this org
-    let orgBranches: { id: string; name: string }[] = [];
-    if (isValidUuid(targetOrgId)) {
-      orgBranches = await db
-        .select({ id: branches.id, name: branches.name })
-        .from(branches)
-        .where(eq(branches.organizationId, targetOrgId));
-    }
+    // Fetch branches for this org (strictly scoped; no cross-tenant fallback)
+    const orgBranches: { id: string; name: string }[] = isValidUuid(targetOrgId)
+      ? await db
+          .select({ id: branches.id, name: branches.name })
+          .from(branches)
+          .where(eq(branches.organizationId, targetOrgId))
+      : [];
 
     if (orgBranches.length === 0) {
-      orgBranches = await db
-        .select({ id: branches.id, name: branches.name })
-        .from(branches)
-        .limit(1);
+      return { success: false, error: 'Organization has no store branches to assign staff to' };
     }
+    const orgBranchIds = new Set(orgBranches.map((b) => b.id));
 
     // Resolve chosen branches
-    const effectiveBranchIds: string[] = (data.branchIds && data.branchIds.length > 0)
-      ? data.branchIds
-      : data.branchId
-      ? [data.branchId]
-      : [orgBranches[0]?.id || '00000000-0000-0000-0000-000000000002'];
+    const effectiveBranchIds: string[] = (input.branchIds && input.branchIds.length > 0)
+      ? input.branchIds
+      : input.branchId
+      ? [input.branchId]
+      : [orgBranches[0].id];
 
-    const primaryBranchId = data.primaryBranchId || effectiveBranchIds[0];
+    if (effectiveBranchIds.some((bId) => !orgBranchIds.has(bId))) {
+      return { success: false, error: 'Forbidden: One or more selected branches do not belong to this organization' };
+    }
+
+    const primaryBranchId = input.primaryBranchId && orgBranchIds.has(input.primaryBranchId)
+      ? input.primaryBranchId
+      : effectiveBranchIds[0];
     const primaryBranchObj = orgBranches.find((b) => b.id === primaryBranchId) || orgBranches[0];
 
     // Persist into user table, Better Auth, and member table for strict tenant isolation
@@ -939,8 +1091,23 @@ export async function createStaffMemberAction(data: {
         .limit(1);
 
       let userId = existingUser?.id;
-      const initialPassword = data.password?.trim() || 'OptixPass@123';
-      const requirePasswordChange = data.mustChangePassword !== undefined ? data.mustChangePassword : true;
+      const isExistingUser = Boolean(existingUser?.id);
+      const initialPassword = input.password?.trim() || 'OptixPass@123';
+      const requirePasswordChange = input.mustChangePassword !== undefined ? input.mustChangePassword : true;
+
+      if (existingUser?.id) {
+        // SECURITY: Reject users that already belong to a different organization
+        const otherMemberships = await db
+          .select({ organizationId: memberTable.organizationId })
+          .from(memberTable)
+          .where(eq(memberTable.userId, existingUser.id));
+        if (otherMemberships.some((m) => m.organizationId !== targetOrgId)) {
+          return {
+            success: false,
+            error: 'This email is already registered with another practice and cannot be added here',
+          };
+        }
+      }
 
       if (!userId) {
         try {
@@ -965,43 +1132,11 @@ export async function createStaffMemberAction(data: {
             updatedAt: new Date(),
           });
         }
-      } else if (data.password?.trim()) {
-        try {
-          const hashedPassword = await hashPassword(data.password.trim());
-          const [existingAccount] = await db
-            .select({ id: accountTable.id })
-            .from(accountTable)
-            .where(
-              and(
-                eq(accountTable.userId, userId),
-                eq(accountTable.providerId, 'credential')
-              )
-            )
-            .limit(1);
-
-          if (existingAccount) {
-            await db
-              .update(accountTable)
-              .set({ password: hashedPassword, updatedAt: new Date() })
-              .where(eq(accountTable.id, existingAccount.id));
-          } else {
-            await db.insert(accountTable).values({
-              id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-              accountId: userId,
-              providerId: 'credential',
-              userId,
-              password: hashedPassword,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            });
-          }
-        } catch (pwdErr) {
-          console.warn('[createStaffMemberAction] password hash note:', pwdErr);
-        }
       }
+      // SECURITY: an existing user's password is never overwritten here (account takeover vector).
 
-      // Set mustChangePassword flag
-      if (userId) {
+      // Set mustChangePassword flag (only for accounts freshly provisioned by this action)
+      if (userId && !isExistingUser) {
         await db
           .update(userTable)
           .set({ mustChangePassword: requirePasswordChange })
@@ -1060,7 +1195,7 @@ export async function createStaffMemberAction(data: {
         branchId: primaryBranchId,
         branchName: primaryBranchObj?.name || 'Main Branch',
         storeCount: effectiveBranchIds.length,
-        mustChangePassword: requirePasswordChange,
+        mustChangePassword: isExistingUser ? undefined : requirePasswordChange,
         isActive: true,
         createdAt: new Date().toISOString(),
       };
@@ -1077,8 +1212,16 @@ export async function createStaffMemberAction(data: {
   }
 }
 
+/** Zod schema for updateStaffMemberRolesAction input. */
+const updateStaffRolesSchema = z.object({
+  userId: z.string().min(1),
+  organizationId: z.string().optional(),
+  roles: z.array(z.enum(['admin', 'optometrist', 'staff'])).min(1, 'Staff member must have at least one role assigned'),
+});
+
 /**
- * Update assigned roles for an existing staff member (supporting single or multi-roles)
+ * Update assigned roles for an existing staff member (supporting single or multi-roles).
+ * The organization is forced to the caller's session org unless the caller is a verified platform super admin.
  */
 export async function updateStaffMemberRolesAction(data: {
   userId: string;
@@ -1086,56 +1229,55 @@ export async function updateStaffMemberRolesAction(data: {
   roles: OperationalRole[];
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await getCurrentSession();
-    if (!session.user?.id) {
-      return { success: false, error: 'Unauthorized: Please log in' };
-    }
-
     // Security Guard 1: Only the Organization Owner or Super Admin can edit staff roles
-    const isOwner = await isOwnerOrSuperAdmin(session);
-    if (!isOwner) {
-      return {
-        success: false,
-        error: 'Forbidden: Only the Organization Owner can modify staff roles',
-      };
+    const scope = await resolveTenantScope(data?.organizationId, { requireOwner: true, mutating: true });
+    if (!scope.ok) {
+      return { success: false, error: scope.error };
     }
+    const organizationId = scope.organizationId;
+
+    const parsed = updateStaffRolesSchema.safeParse(data);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Invalid staff role payload' };
+    }
+    const input = parsed.data;
 
     // Security Guard 2: No user can edit their own roles to prevent privilege self-elevation
-    if (session.user.id === data.userId) {
+    if (scope.userId && scope.userId === input.userId) {
       return {
         success: false,
         error: 'Forbidden: You cannot modify your own roles',
       };
     }
 
-    if (!data.roles || data.roles.length === 0) {
-      return { success: false, error: 'Staff member must have at least one role assigned' };
-    }
-
-    // Verify target user is NOT the organization owner
+    // Verify target user is a member of this organization and NOT the organization owner
     const [targetMember] = await db
       .select({ role: memberTable.role })
       .from(memberTable)
       .where(
         and(
-          eq(memberTable.organizationId, data.organizationId),
-          eq(memberTable.userId, data.userId)
+          eq(memberTable.organizationId, organizationId),
+          eq(memberTable.userId, input.userId)
         )
       )
       .limit(1);
 
-    if (targetMember?.role?.toLowerCase() === 'owner') {
+    if (!targetMember) {
+      return { success: false, error: 'Staff member not found in this organization' };
+    }
+
+    if (targetMember.role?.toLowerCase().includes('owner')) {
       return { success: false, error: 'Forbidden: Organization Owner privileges cannot be altered via staff management' };
     }
 
-    const roleString = data.roles.join(',');
+    const roleString = Array.from(new Set(input.roles)).join(',');
     await db
       .update(memberTable)
       .set({ role: roleString })
       .where(
         and(
-          eq(memberTable.organizationId, data.organizationId),
-          eq(memberTable.userId, data.userId)
+          eq(memberTable.organizationId, organizationId),
+          eq(memberTable.userId, input.userId)
         )
       );
 
@@ -1145,12 +1287,12 @@ export async function updateStaffMemberRolesAction(data: {
       .set({ role: roleString })
       .where(
         and(
-          eq(staffStoreAssignments.organizationId, data.organizationId),
-          eq(staffStoreAssignments.userId, data.userId)
+          eq(staffStoreAssignments.organizationId, organizationId),
+          eq(staffStoreAssignments.userId, input.userId)
         )
       );
 
-    await invalidateCache({ orgId: data.organizationId, namespace: 'staff' });
+    await invalidateCache({ orgId: organizationId, namespace: 'staff' });
     return { success: true };
   } catch (err: unknown) {
     console.error('[updateStaffMemberRolesAction] Failed:', err);
@@ -1166,26 +1308,52 @@ export async function deleteStaffMemberAction(data: {
   organizationId: string;
 }): Promise<{ success: boolean; requiresApproval?: boolean; error?: string; message?: string }> {
   try {
-    const session = await getCurrentSession();
-    if (!session.user?.id) {
-      return { success: false, error: 'Unauthorized: Session missing' };
+    const scope = await resolveTenantScope(data?.organizationId, { requireOwner: false, mutating: true });
+    if (!scope.ok) {
+      return { success: false, error: scope.error };
+    }
+    const organizationId = scope.organizationId;
+    const parsedIds = z.object({ userId: z.string().min(1) }).safeParse(data);
+    if (!parsedIds.success) {
+      return { success: false, error: 'Invalid staff member id' };
+    }
+    const targetUserId = parsedIds.data.userId;
+
+    // Check caller role in this organization (must be a member unless verified platform admin)
+    let callerRole = '';
+    if (!scope.isPlatformAdmin) {
+      const [callerMember] = await db
+        .select({ role: memberTable.role })
+        .from(memberTable)
+        .where(
+          and(
+            eq(memberTable.organizationId, organizationId),
+            eq(memberTable.userId, scope.userId ?? '')
+          )
+        )
+        .limit(1);
+
+      if (!callerMember) {
+        return { success: false, error: 'Forbidden: You are not a member of this organization' };
+      }
+      callerRole = (callerMember.role || '').toLowerCase();
+      const callerRoles = callerRole.split(',').map((r) => r.trim());
+      const canManageStaff =
+        callerRole.includes('owner') ||
+        callerRoles.includes('admin') ||
+        callerRoles.includes('manager') ||
+        callerRole.includes('manager');
+      if (!canManageStaff) {
+        return { success: false, error: 'Forbidden: Only store managers or the Organization Owner can remove staff' };
+      }
     }
 
-    // Check caller role in this organization
-    const [callerMember] = await db
-      .select({ role: memberTable.role })
-      .from(memberTable)
-      .where(
-        and(
-          eq(memberTable.organizationId, data.organizationId),
-          eq(memberTable.userId, session.user.id)
-        )
-      )
-      .limit(1);
+    if (scope.userId && scope.userId === targetUserId) {
+      return { success: false, error: 'Forbidden: You cannot remove yourself' };
+    }
 
-    const callerRole = (callerMember?.role || '').toLowerCase();
     const isOwnerOrPlatformAdmin =
-      session.user.role === 'super_admin' ||
+      scope.isPlatformAdmin ||
       callerRole.includes('owner') ||
       (callerRole.includes('admin') && !callerRole.includes('store'));
 
@@ -1193,7 +1361,7 @@ export async function deleteStaffMemberAction(data: {
     const [targetUser] = await db
       .select({ name: userTable.name, email: userTable.email })
       .from(userTable)
-      .where(eq(userTable.id, data.userId))
+      .where(eq(userTable.id, targetUserId))
       .limit(1);
 
     const targetName = targetUser?.name || targetUser?.email || 'Staff Member';
@@ -1204,13 +1372,17 @@ export async function deleteStaffMemberAction(data: {
       .from(memberTable)
       .where(
         and(
-          eq(memberTable.organizationId, data.organizationId),
-          eq(memberTable.userId, data.userId)
+          eq(memberTable.organizationId, organizationId),
+          eq(memberTable.userId, targetUserId)
         )
       )
       .limit(1);
 
-    if (targetMember?.role?.toLowerCase() === 'owner') {
+    if (!targetMember) {
+      return { success: false, error: 'Staff member not found in this organization' };
+    }
+
+    if (targetMember.role?.toLowerCase().includes('owner')) {
       return { success: false, error: 'Forbidden: Organization Owner cannot be deleted' };
     }
 
@@ -1218,14 +1390,14 @@ export async function deleteStaffMemberAction(data: {
     if (!isOwnerOrPlatformAdmin) {
       await db.insert(approvalRequestsTable).values({
         type: 'delete_staff',
-        targetId: data.userId,
+        targetId: targetUserId,
         targetName: `Remove staff: ${targetName}`,
-        requesterId: session.user.id,
-        requesterEmail: session.user.email || '',
-        requesterName: session.user.name || 'Store Manager',
+        requesterId: scope.userId ?? '',
+        requesterEmail: scope.userEmail,
+        requesterName: scope.userName || 'Store Manager',
         reason: `Store manager requested removal of staff member ${targetName}`,
         status: 'pending',
-        organizationId: data.organizationId,
+        organizationId: organizationId,
       });
 
       return {
@@ -1240,8 +1412,8 @@ export async function deleteStaffMemberAction(data: {
       .delete(staffStoreAssignments)
       .where(
         and(
-          eq(staffStoreAssignments.organizationId, data.organizationId),
-          eq(staffStoreAssignments.userId, data.userId)
+          eq(staffStoreAssignments.organizationId, organizationId),
+          eq(staffStoreAssignments.userId, targetUserId)
         )
       );
 
@@ -1249,18 +1421,26 @@ export async function deleteStaffMemberAction(data: {
       .delete(memberTable)
       .where(
         and(
-          eq(memberTable.organizationId, data.organizationId),
-          eq(memberTable.userId, data.userId)
+          eq(memberTable.organizationId, organizationId),
+          eq(memberTable.userId, targetUserId)
         )
       );
 
-    await invalidateCache({ orgId: data.organizationId, namespace: 'staff' });
+    await invalidateCache({ orgId: organizationId, namespace: 'staff' });
     return { success: true, message: `Staff member "${targetName}" removed successfully.` };
   } catch (err: unknown) {
     console.error('[deleteStaffMemberAction] Failed:', err);
     return { success: false, error: err instanceof Error ? err.message : 'Failed to remove staff member' };
   }
 }
+
+/** Zod schema for practice onboarding input. `userEmail` is accepted for caller compatibility but ignored. */
+const setupPracticeOnboardingSchema = z.object({
+  practiceName: z.string().trim().min(1, 'Practice name is required').max(160),
+  branchName: z.string().max(120).optional(),
+  city: z.string().max(120).optional(),
+  userEmail: z.string().optional(),
+});
 
 /**
  * First-time onboarding for authenticated Google/Email user:
@@ -1275,33 +1455,32 @@ export async function setupPracticeOnboardingAction(data: {
   userEmail?: string;
 }): Promise<{ success: boolean; organizationId?: string; branchId?: string; orgCode?: string; error?: string }> {
   try {
+    // SECURITY: an authenticated session is mandatory. The legacy anonymous `userEmail`
+    // fallback (which let anyone attach a new practice to an arbitrary account) is removed.
     const session = await getCurrentSession();
-    let userId = session.user?.id;
-
-    // Resilient fallback: If session headers haven't propagated in immediate chained action call,
-    // match recent user by email
-    if (!userId && data.userEmail) {
-      const [u] = await db
-        .select({ id: userTable.id })
-        .from(userTable)
-        .where(eq(userTable.email, data.userEmail.trim().toLowerCase()))
-        .limit(1);
-
-      if (u) {
-        userId = u.id;
-      }
-    }
+    const userId = session.user?.id;
 
     if (!userId) {
       return { success: false, error: 'Unauthorized: Please sign in first' };
     }
 
-    const trimmedPractice = data.practiceName.trim();
-    if (!trimmedPractice) {
-      return { success: false, error: 'Practice name is required' };
+    // Prevent a user who already belongs to a practice from spawning additional owner orgs
+    const [existingMembership] = await db
+      .select({ organizationId: memberTable.organizationId })
+      .from(memberTable)
+      .where(eq(memberTable.userId, userId))
+      .limit(1);
+    if (existingMembership) {
+      return { success: false, error: 'Your account is already linked to an optical practice' };
     }
 
-    const branchName = (data.branchName || '').trim() || 'Main Branch';
+    const parsed = setupPracticeOnboardingSchema.safeParse(data);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Practice name is required' };
+    }
+    const trimmedPractice = parsed.data.practiceName;
+    const branchName = (parsed.data.branchName || '').trim() || 'Main Branch';
+    const city = parsed.data.city?.trim() || '';
 
     // 1. Calculate next sequential orgNumber and formatted orgCode using ORG_CODE_PREFIX from env
     const prefix = (process.env.ORG_CODE_PREFIX || 'OPT').trim().toUpperCase();
@@ -1398,10 +1577,11 @@ export async function setupPracticeOnboardingAction(data: {
         await db
           .insert(storeProfile)
           .values({
+            organizationId: newOrg.id,
             branchId: newBranch.id,
             storeName: trimmedPractice,
             phone: '+91 98765 43210',
-            address: data.city ? `${trimmedPractice}, ${data.city}` : 'Main Street',
+            address: city ? `${trimmedPractice}, ${city}` : 'Main Street',
             defaultTaxRate: '12.00',
             enableGst: true,
           })

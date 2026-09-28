@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Glasses, LogOut, User } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { authClient } from '@/lib/auth-client';
+import { clearClientStorageCaches } from '@/hooks/use-cached-resource';
 import { toast } from 'sonner';
 
 export default function CustomerPortalLayout({
@@ -17,6 +18,7 @@ export default function CustomerPortalLayout({
 
   const handleSignOut = async () => {
     try {
+      clearClientStorageCaches();
       await authClient.signOut();
       toast.success('Signed out successfully');
       router.push('/auth/login');

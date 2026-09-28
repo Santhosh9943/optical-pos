@@ -367,7 +367,7 @@ export default function OwnerManageStaffPage() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {roles.map((r) => {
-                            let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
+                            let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
                             let label = 'Staff';
                             if (r === 'admin') {
                               badgeStyle = 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800';

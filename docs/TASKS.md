@@ -379,7 +379,14 @@ This document serves as the master task ledger and release roadmap for **OptixOS
 ### Active Security Debt & Hardening Backlog (from `SECURITY_LOG.md`)
 - [x] **[SEC-002] Redact & Encrypt `smtpPass`**: Redacted `smtpPass` from `getStoreProfile()` client responses and implemented AES-256-GCM envelope encryption at rest (`src/actions/settings-actions.ts`). (Resolved in Phase 34 / BUG-032)
 - [x] **[SEC-003] Enforce Upstash Redis Rate-Limiting**: Added Upstash Redis sliding window guards on checkout mutations and account changes (`src/lib/ratelimit.ts`). (Resolved in Phase 34 / BUG-032)
-- [ ] **[SEC-004] Scope `storeProfile` to `organizationId`**: Add `organizationId` foreign key to `storeProfile` table for complete multi-tenant tenant isolation.
+- [x] **[SEC-004] Scope `storeProfile` to `organizationId`** — resolved in Phase 39 (BUG-034).
+- [x] **[SEC-005..SEC-020] Phase 39 full-estate audit** — auth/tenancy, checkout price integrity, refunds, payments, notifications, subscriptions (see SECURITY_LOG).
+- [ ] **Customer portal verified link**: add a verified email/phone link between `user` and `customers` so the portal can show a patient's own orders again (portal currently intentionally empty — SEC-016).
+- [ ] **Per-organization, financial-year invoice series**: replace global `invoice_number_seq` with a per-org counter row (GST requires a consecutive series per GSTIN; FY resets in April).
+- [ ] **IGST / place-of-supply**: detect inter-state supply and book IGST instead of CGST+SGST.
+- [ ] **Migration history re-baseline**: `drizzle/` snapshots stop at 0003; generate a baseline from the current schema and stop using `db:push` outside dev. Hand-written SQL lives in `scripts/migrations/` (run with `npx tsx scripts/run-sql-migration.ts <file>`).
+- [ ] **NOT NULL `organization_id`** on customers / inventory_items / invoices / payments (0 NULL rows verified 2026-09-28).
+- [ ] **Discount caps per role** (policy decision): clerks can currently discount up to 100% of a line.
 
 ---
 

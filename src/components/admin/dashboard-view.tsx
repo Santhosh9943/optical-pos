@@ -24,12 +24,64 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useTenantStore } from '@/store/tenant-store';
+import { Skeleton } from '@/components/ui/skeleton';
+import { formatINR } from '@/lib/format';
 import { useCachedResource } from '@/hooks/use-cached-resource';
 import {
   getDashboardOperationalMetricsAction,
   type DashboardOperationalMetrics,
 } from '@/actions/dashboard-actions';
 
+/**
+ * @description Placeholder KPI card rendered while dashboard metrics are loading, so zeros are
+ * never shown as if they were real figures.
+ * @returns A skeleton KPI card matching the live card footprint.
+ */
+function KpiCardSkeleton(): React.JSX.Element {
+  return (
+    <div className="rounded-xl border border-border bg-card p-3.5 shadow-2xs flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-3.5 w-24" />
+        <Skeleton className="h-7 w-7 rounded-lg" />
+      </div>
+      <div className="mt-2 space-y-2">
+        <Skeleton className="h-7 w-28" />
+        <Skeleton className="h-3 w-32" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * @description Skeleton rows used inside dashboard list widgets while metrics are loading.
+ * @param props.rows - Number of placeholder rows to render.
+ * @returns A stack of skeleton list rows.
+ */
+function WidgetRowsSkeleton({ rows }: { rows: number }): React.JSX.Element {
+  return (
+    <div className="divide-y divide-border">
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="p-3 px-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+            <div className="space-y-1.5 flex-1">
+              <Skeleton className="h-3 w-1/2" />
+              <Skeleton className="h-2.5 w-1/3" />
+            </div>
+          </div>
+          <Skeleton className="h-4 w-16" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * @description Operational cockpit for store staff: live KPIs, recent orders, lab order status,
+ * tender split and low-stock alerts. Shows skeletons until the first payload arrives and an
+ * inline retryable error card if the metrics request fails.
+ * @returns The dashboard view.
+ */
 export function DashboardView() {
   const router = useRouter();
   const [mounted, setMounted] = React.useState(false);
@@ -39,36 +91,22 @@ export function DashboardView() {
     setMounted(true);
   }, []);
 
-  const effectiveBranchId =
-    selectedBranchId ||
-    branches[0]?.id ||
-    '00000000-0000-0000-0000-000000000002';
+  // When no branch is selected yet, the server action falls back to the session's branch.
+  const effectiveBranchId: string | undefined = selectedBranchId || branches[0]?.id || undefined;
 
   const fetcher = useCallback(async () => {
     return await getDashboardOperationalMetricsAction(effectiveBranchId);
   }, [effectiveBranchId]);
 
-  const { data, isRevalidating, refresh } = useCachedResource<DashboardOperationalMetrics>({
-    cacheKey: `dashboard_metrics:${effectiveBranchId}`,
+  const { data, error, isRevalidating, refresh } = useCachedResource<DashboardOperationalMetrics>({
+    cacheKey: `dashboard_metrics:${effectiveBranchId ?? 'session-branch'}`,
     fetcher,
     refreshInterval: 15000, // 15 seconds auto-refresh
     revalidateOnFocus: true,
-    fallbackData: {
-      kpis: {
-        todayRevenue: '0.00',
-        revenueChangePct: 0,
-        orderCount: 0,
-        balanceDue: '0.00',
-        activeLabOrders: 0,
-        lowStockCount: 0,
-      },
-      recentOrders: [],
-      labOrderSummary: [],
-      paymentModeSplit: [],
-      lowStockItems: [],
-      activeBranchName: 'Store Location',
-    },
   });
+
+  /** True until the first real metrics payload (cached or fresh) is available. */
+  const isPending = !data && !error;
 
   const kpis = data?.kpis || {
     todayRevenue: '0.00',
@@ -87,7 +125,7 @@ export function DashboardView() {
   const displayBranchName = mounted ? activeBranchName : 'Store Location';
 
   return (
-    <div className="flex flex-col h-full w-full p-4 md:p-6 gap-5 overflow-auto bg-slate-50/50 dark:bg-slate-950/50" data-testid="operational-dashboard">
+    <div className="flex flex-col h-full w-full p-4 md:p-6 gap-6" data-testid="operational-dashboard">
       {/* ── TOP OPERATIONAL HEADER BAR ── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl shadow-2xs">
         <div className="flex items-center gap-3">
@@ -113,7 +151,7 @@ export function DashboardView() {
               <button
                 type="button"
                 onClick={() => refresh()}
-                className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition"
+                className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 title="Refresh metrics immediately"
               >
                 <RefreshCw className={`h-3 w-3 ${isRevalidating ? 'animate-spin text-blue-500' : ''}`} />
@@ -165,8 +203,50 @@ export function DashboardView() {
         </div>
       </div>
 
+      {/* ── METRICS LOAD FAILURE (inline, retryable) ── */}
+      {error && (
+        <div
+          role="alert"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3.5"
+        >
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-red-600 dark:text-red-400" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {data ? 'Live metrics could not be refreshed' : 'Dashboard metrics failed to load'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {data
+                  ? 'Showing the last synced figures. Check your connection and retry.'
+                  : 'Figures are unavailable right now. Check your connection and retry.'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => refresh()}
+            disabled={isRevalidating}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition disabled:opacity-60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isRevalidating ? 'animate-spin' : ''}`} />
+            <span>Retry</span>
+          </button>
+        </div>
+      )}
+
       {/* ── TOP KPI METRIC CARDS STRIP ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {!data ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-busy={isPending}>
+          <span className="sr-only" role="status">
+            {isPending ? 'Loading dashboard metrics…' : 'Dashboard metrics unavailable'}
+          </span>
+          <KpiCardSkeleton />
+          <KpiCardSkeleton />
+          <KpiCardSkeleton />
+          <KpiCardSkeleton />
+        </div>
+      ) : (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Today's Revenue */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -176,8 +256,8 @@ export function DashboardView() {
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
-              ₹{kpis.todayRevenue}
+            <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-foreground">
+              {formatINR(kpis.todayRevenue)}
             </div>
             <div className="flex items-center gap-1 mt-1 text-[11px]">
               {kpis.revenueChangePct >= 0 ? (
@@ -205,7 +285,7 @@ export function DashboardView() {
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+            <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-foreground">
               {kpis.orderCount}
             </div>
             <div className="text-[11px] text-muted-foreground mt-1">
@@ -223,8 +303,8 @@ export function DashboardView() {
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-amber-600 dark:text-amber-400">
-              ₹{kpis.balanceDue}
+            <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-amber-700 dark:text-amber-400">
+              {formatINR(kpis.balanceDue)}
             </div>
             <div className="text-[11px] text-muted-foreground mt-1">
               Pending collection at delivery
@@ -241,7 +321,7 @@ export function DashboardView() {
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+            <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-foreground">
               {kpis.activeLabOrders}
             </div>
             <div className="text-[11px] text-muted-foreground mt-1 flex items-center justify-between">
@@ -253,6 +333,7 @@ export function DashboardView() {
           </div>
         </div>
       </div>
+      )}
 
       {/* ── MAIN COCKPIT SECTION: DUAL COLUMN FLUID LAYOUT ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -274,6 +355,9 @@ export function DashboardView() {
               </Link>
             </div>
 
+            {isPending ? (
+              <WidgetRowsSkeleton rows={4} />
+            ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
               {recentOrders.length > 0 ? (
                 recentOrders.map((order) => (
@@ -297,8 +381,8 @@ export function DashboardView() {
 
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
-                        <div className="text-xs font-bold font-mono text-foreground">
-                          ₹{order.total}
+                        <div className="text-xs font-bold font-mono tabular-nums text-foreground">
+                          {formatINR(order.total)}
                         </div>
                         <span
                           className={`text-[9px] font-semibold px-1.5 py-0.2 rounded ${
@@ -333,6 +417,7 @@ export function DashboardView() {
                 </div>
               )}
             </div>
+            )}
           </div>
 
           {/* Widget 2: Workshop Lab Orders Snapshot */}
@@ -351,6 +436,9 @@ export function DashboardView() {
               </Link>
             </div>
 
+            {isPending ? (
+              <WidgetRowsSkeleton rows={3} />
+            ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
               {labOrders.length > 0 ? (
                 labOrders.map((lo) => (
@@ -388,6 +476,7 @@ export function DashboardView() {
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
 
@@ -401,6 +490,16 @@ export function DashboardView() {
             </h2>
 
             <div className="space-y-3">
+              {isPending &&
+                Array.from({ length: 3 }, (_, i) => (
+                  <div key={i} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                    <Skeleton className="h-1.5 w-full rounded-full" />
+                  </div>
+                ))}
               {paymentSplit.map((item) => (
                 <div key={item.mode} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
@@ -413,8 +512,8 @@ export function DashboardView() {
                         ? 'Cash Counter'
                         : 'Store Credit'}
                     </span>
-                    <span className="font-mono font-bold text-foreground">
-                      ₹{item.total} ({item.percentage}%)
+                    <span className="font-mono font-bold tabular-nums text-foreground">
+                      {formatINR(item.total)} ({item.percentage}%)
                     </span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
@@ -449,7 +548,12 @@ export function DashboardView() {
             </div>
 
             <div className="space-y-2.5">
-              {lowStock.length > 0 ? (
+              {isPending ? (
+                <>
+                  <Skeleton className="h-11 w-full rounded-lg" />
+                  <Skeleton className="h-11 w-full rounded-lg" />
+                </>
+              ) : lowStock.length > 0 ? (
                 lowStock.map((item) => (
                   <div
                     key={item.id}

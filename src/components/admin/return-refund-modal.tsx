@@ -332,7 +332,7 @@ export function ReturnRefundModal({
                 >
                   <Wallet className="h-4 w-4 mb-1 text-amber-600 dark:text-amber-400" />
                   <span className="text-[11px]">Store Credit</span>
-                  <span className="text-[9px] opacity-75 font-normal">Customer Wallet</span>
+                  <span className="text-[9px] font-normal">Customer Wallet</span>
                 </button>
 
                 <button
@@ -346,7 +346,7 @@ export function ReturnRefundModal({
                 >
                   <Banknote className="h-4 w-4 mb-1 text-emerald-600 dark:text-emerald-400" />
                   <span className="text-[11px]">Cash Out</span>
-                  <span className="text-[9px] opacity-75 font-normal">Register Till</span>
+                  <span className="text-[9px] font-normal">Register Till</span>
                 </button>
 
                 <button
@@ -360,7 +360,7 @@ export function ReturnRefundModal({
                 >
                   <QrCode className="h-4 w-4 mb-1 text-blue-600 dark:text-blue-400" />
                   <span className="text-[11px]">UPI Refund</span>
-                  <span className="text-[9px] opacity-75 font-normal">Instant VPA</span>
+                  <span className="text-[9px] font-normal">Instant VPA</span>
                 </button>
 
                 <button
@@ -374,7 +374,7 @@ export function ReturnRefundModal({
                 >
                   <CreditCard className="h-4 w-4 mb-1 text-indigo-600 dark:text-indigo-400" />
                   <span className="text-[11px]">Card Reversal</span>
-                  <span className="text-[9px] opacity-75 font-normal">POS Terminal</span>
+                  <span className="text-[9px] font-normal">POS Terminal</span>
                 </button>
               </div>
             </div>

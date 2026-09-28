@@ -545,6 +545,7 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
 
       if (res.success) {
         toast.success('Account successfully deleted');
+        clearClientStorageCaches();
         await authClient.signOut();
         window.location.href = '/';
       } else {
@@ -1904,7 +1905,7 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
 
                     <div className="flex flex-col sm:flex-row items-center gap-6">
                       {totpQrDataUrl && (
-                        <div className="rounded-xl bg-white p-2 shadow-sm border border-slate-200 shrink-0">
+                        <div className="rounded-xl bg-white p-2 shadow-sm border border-slate-200 dark:border-slate-700 shrink-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={totpQrDataUrl} alt="2FA QR Code" className="h-44 w-44" />
                         </div>

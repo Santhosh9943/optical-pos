@@ -155,12 +155,12 @@ export function EditPatientModal({
           {/* Full Name & Phone Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <label htmlFor="edit-patient-full-name" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <User className="h-3.5 w-3.5 text-slate-400" />
                 <span>Full Name</span>
                 <span className="text-red-500">*</span>
               </label>
-              <input
+              <input id="edit-patient-full-name"
                 type="text"
                 required
                 data-testid="input-edit-patient-fullname"
@@ -173,12 +173,12 @@ export function EditPatientModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <label htmlFor="edit-patient-phone" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Phone className="h-3.5 w-3.5 text-slate-400" />
                 <span>Phone Number</span>
                 <span className="text-red-500">*</span>
               </label>
-              <input
+              <input id="edit-patient-phone"
                 type="tel"
                 required
                 data-testid="input-edit-patient-phone"
@@ -193,10 +193,10 @@ export function EditPatientModal({
           {/* Age, Gender & Relation Grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-patient-age" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Age
               </label>
-              <input
+              <input id="edit-patient-age"
                 type="number"
                 min="0"
                 max="130"
@@ -209,10 +209,10 @@ export function EditPatientModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-patient-gender" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Gender
               </label>
-              <select
+              <select id="edit-patient-gender"
                 value={gender}
                 onChange={(e) =>
                   setGender(e.target.value as 'MALE' | 'FEMALE' | 'OTHER' | '')
@@ -227,10 +227,10 @@ export function EditPatientModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-patient-relation-type" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Relation
               </label>
-              <select
+              <select id="edit-patient-relation-type"
                 value={relationType}
                 onChange={(e) => setRelationType(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition"
@@ -246,11 +246,11 @@ export function EditPatientModal({
 
           {/* Address */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+            <label htmlFor="edit-patient-address-line1" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
               <Home className="h-3.5 w-3.5 text-slate-400" />
               <span>Address</span>
             </label>
-            <input
+            <input id="edit-patient-address-line1"
               type="text"
               placeholder="Door No, Street name, Locality"
               value={addressLine1}
@@ -262,11 +262,11 @@ export function EditPatientModal({
           {/* City, State & Pincode Grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <label htmlFor="edit-patient-city" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5 text-slate-400" />
                 <span>City</span>
               </label>
-              <input
+              <input id="edit-patient-city"
                 type="text"
                 placeholder="City"
                 value={city}
@@ -276,10 +276,10 @@ export function EditPatientModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-patient-state" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 State
               </label>
-              <input
+              <input id="edit-patient-state"
                 type="text"
                 placeholder="State"
                 value={state}
@@ -289,10 +289,10 @@ export function EditPatientModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label htmlFor="edit-patient-pincode" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Pincode
               </label>
-              <input
+              <input id="edit-patient-pincode"
                 type="text"
                 placeholder="Pincode"
                 value={pincode}

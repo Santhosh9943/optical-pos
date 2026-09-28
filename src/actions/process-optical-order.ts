@@ -9,7 +9,7 @@ import {
   invoiceItems,
   inventoryItems,
   payments,
-  storeProfile,
+  branches,
 } from '@/db/schema';
 import { eq, sql, and, inArray } from 'drizzle-orm';
 import {
@@ -18,10 +18,14 @@ import {
 } from '@/lib/validators/prescription';
 import {
   InsufficientStockError,
+  InsufficientStoreCreditError,
   NegativeBalanceError,
 } from '@/lib/errors';
 import Decimal from 'decimal.js';
-import { getCurrentSession, requireAuthSession } from '@/lib/auth-utils';
+import { requireAuthSession, isManagerOrAdmin } from '@/lib/auth-utils';
+import { findOrgStoreProfile } from '@/lib/store-profile';
+import { computeGstLine, roundPaise, normalizeGstRate } from '@/lib/gst';
+import { invalidateCache } from '@/lib/cache';
 import { checkRateLimit } from '@/lib/ratelimit';
 import { generateReceiptToken } from '@/lib/crypto-utils';
 
@@ -45,6 +49,9 @@ export type ProcessOrderResult =
         | 'CUSTOMER_NOT_FOUND'
         | 'INSUFFICIENT_STOCK'
         | 'INVENTORY_ITEM_NOT_FOUND'
+        | 'PRICE_OVERRIDE_NOT_ALLOWED'
+        | 'INSUFFICIENT_STORE_CREDIT'
+        | 'UNAUTHORIZED'
         | 'INVOICE_NUMBER_GENERATION_FAILED'
         | 'DATABASE_ERROR';
       message: string;
@@ -87,7 +94,13 @@ export async function processOpticalOrder(
   }
 
   const input: CreateOrderInput = parsed.data;
-  const session = await requireAuthSession();
+  let session: Awaited<ReturnType<typeof requireAuthSession>>;
+  try {
+    session = await requireAuthSession();
+  } catch {
+    return { success: false, error: 'UNAUTHORIZED', message: 'Please sign in to complete checkout.' };
+  }
+  const orgId = session.organizationId;
   const rateLimitResult = await checkRateLimit(`checkout:${session.organizationId || session.user.id}`, 30, 60);
   if (!rateLimitResult.success) {
     return {
@@ -131,9 +144,20 @@ export async function processOpticalOrder(
     .map((i) => i.inventoryItemId)
     .filter((id): id is string => id !== null);
 
+  // Catalog values are authoritative for inventory-backed lines (price floor, tax class, HSN).
+  const catalogById = new Map<
+    string,
+    { sellingPrice: string; taxRate: string; hsnCode: string | null; isGstExempt: boolean }
+  >();
   if (inventoryItemIds.length > 0) {
     const existingItems = await db
-      .select({ id: inventoryItems.id })
+      .select({
+        id: inventoryItems.id,
+        sellingPrice: inventoryItems.sellingPrice,
+        taxRate: inventoryItems.taxRate,
+        hsnCode: inventoryItems.hsnCode,
+        isGstExempt: inventoryItems.isGstExempt,
+      })
       .from(inventoryItems)
       .where(
         and(
@@ -142,6 +166,7 @@ export async function processOpticalOrder(
         )
       );
 
+    for (const row of existingItems) catalogById.set(row.id, row);
     const existingIds = new Set(existingItems.map((i) => i.id));
     const missingIds = inventoryItemIds.filter((id) => !existingIds.has(id));
 
@@ -155,24 +180,73 @@ export async function processOpticalOrder(
     }
   }
 
+  // 2c. Price integrity: tax class & HSN always come from the catalog; selling below the
+  // catalog price is a manager-only override. Service / custom lens lines (no inventory id)
+  // are priced at the counter by design.
+  const canOverridePrice = await isManagerOrAdmin(session);
+  for (const item of input.items) {
+    if (!item.inventoryItemId) continue;
+    const catalog = catalogById.get(item.inventoryItemId);
+    if (!catalog) continue;
+    // Catalog slab is authoritative (GST-exempt items bill at 0%); unknown slabs keep the validated client slab.
+    item.taxRate = catalog.isGstExempt ? '0.00' : normalizeGstRate(catalog.taxRate) ?? item.taxRate;
+    item.hsnCode = catalog.hsnCode ?? item.hsnCode ?? null;
+    if (!canOverridePrice && new Decimal(item.unitPrice).lessThan(catalog.sellingPrice)) {
+      return {
+        success: false,
+        error: 'PRICE_OVERRIDE_NOT_ALLOWED',
+        message: `"${item.description}" is priced below its catalog price (₹${new Decimal(catalog.sellingPrice).toFixed(2)}). Only a manager can override catalog prices.`,
+      };
+    }
+  }
+
+  // 2d. Branch must belong to the caller's organization.
+  let effectiveBranchId: string | null = session.branchId || null;
+  if (input.branchId && input.branchId !== session.branchId) {
+    const [ownBranch] = await db
+      .select({ id: branches.id })
+      .from(branches)
+      .where(and(eq(branches.id, input.branchId), eq(branches.organizationId, orgId)))
+      .limit(1);
+    if (!ownBranch) {
+      return {
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'Selected branch does not belong to your practice.',
+      };
+    }
+    effectiveBranchId = ownBranch.id;
+  }
+
+  // 2e. Client-referenced prescriptions must belong to this organization's patients.
+  const referencedRxIds = Array.from(
+    new Set(input.items.map((i) => i.prescriptionId).filter((id): id is string => !!id))
+  );
+  if (referencedRxIds.length > 0) {
+    const ownedRx = await db
+      .select({ id: opticalPrescriptions.id })
+      .from(opticalPrescriptions)
+      .innerJoin(customers, eq(opticalPrescriptions.customerId, customers.id))
+      .where(
+        and(inArray(opticalPrescriptions.id, referencedRxIds), eq(customers.organizationId, orgId))
+      );
+    const ownedRxIds = new Set(ownedRx.map((r) => r.id));
+    for (const item of input.items) {
+      if (item.prescriptionId && !ownedRxIds.has(item.prescriptionId)) item.prescriptionId = null;
+    }
+  }
+
+  // 2f. Tenant-scoped stock policy, read BEFORE the transaction: a failed read inside `tx`
+  // would put Postgres into an aborted state (25P02) and fail every later statement.
+  const orgProfile = await findOrgStoreProfile(orgId).catch(() => null);
+  const allowNegativeStock = orgProfile?.allowNegativeStock === true;
+
   // ── Step 3: Atomic database transaction ──
   try {
     const result = await db.transaction(async (tx) => {
       // ── 3a. Check inventory levels and decrement atomically ──
-      // Invariant #5: Strict atomic decrement requiring stockQuantity >= quantity unless allowNegativeStock is explicitly enabled in storeProfile.
-      let allowNegativeStock = false;
-      try {
-        const [profile] = await tx
-          .select({ allowNegativeStock: storeProfile.allowNegativeStock })
-          .from(storeProfile)
-          .limit(1);
-
-        if (profile && profile.allowNegativeStock === true) {
-          allowNegativeStock = true;
-        }
-      } catch {
-        allowNegativeStock = false;
-      }
+      // Invariant #5: Strict atomic decrement requiring stockQuantity >= quantity unless the
+      // organization's own store profile explicitly enables allowNegativeStock.
 
       for (const item of input.items) {
         if (!item.inventoryItemId) continue; // service line, no stock
@@ -242,7 +316,7 @@ export async function processOpticalOrder(
             const [existing] = await tx
               .select({ id: customers.id })
               .from(customers)
-              .where(eq(customers.id, p.id))
+              .where(and(eq(customers.id, p.id), eq(customers.organizationId, orgId)))
               .limit(1);
 
             if (existing) {
@@ -258,7 +332,7 @@ export async function processOpticalOrder(
             const [checkPrimary] = await tx
               .select({ id: customers.id })
               .from(customers)
-              .where(eq(customers.id, mappedPrimary))
+              .where(and(eq(customers.id, mappedPrimary), eq(customers.organizationId, orgId)))
               .limit(1);
             if (checkPrimary) {
               validPrimaryId = checkPrimary.id;
@@ -301,12 +375,13 @@ export async function processOpticalOrder(
             customerId: targetPatientId,
             odSphere: rxData.odSphere != null ? rxData.odSphere.toFixed(2) : null,
             odCylinder: rxData.odCylinder != null ? rxData.odCylinder.toFixed(2) : null,
-            odAxis: rxData.odAxis,
+            // Axis invariant: AXIS is null whenever CYL is 0 / absent.
+            odAxis: rxData.odCylinder ? rxData.odAxis : null,
             odAdd: rxData.odAdd != null ? rxData.odAdd.toFixed(2) : null,
             odPd: rxData.odPd != null ? rxData.odPd.toFixed(1) : null,
             osSphere: rxData.osSphere != null ? rxData.osSphere.toFixed(2) : null,
             osCylinder: rxData.osCylinder != null ? rxData.osCylinder.toFixed(2) : null,
-            osAxis: rxData.osAxis,
+            osAxis: rxData.osCylinder ? rxData.osAxis : null,
             osAdd: rxData.osAdd != null ? rxData.osAdd.toFixed(2) : null,
             osPd: rxData.osPd != null ? rxData.osPd.toFixed(1) : null,
             binocularPd:
@@ -369,26 +444,30 @@ export async function processOpticalOrder(
       // ── 3d. Generate invoice number ──
       const invoiceNumber = await generateInvoiceNumber(tx);
 
-      // ── 3e. Compute financial totals using Decimal (string-safe) ──
+      // ── 3e. Compute financial totals via the shared GST engine (per-line paise rounding) ──
       let subtotal = new Decimal(0);
       let totalDiscount = new Decimal(0);
       let totalTax = new Decimal(0);
       let taxableValue = new Decimal(0);
+      let cgst = new Decimal(0);
+      let sgst = new Decimal(0);
 
       const computedItems = input.items.map((item) => {
-        const unitPrice = new Decimal(item.unitPrice);
-        const discountPerUnit = new Decimal(item.discountPerUnit || '0.00');
-        const lineSubtotal = unitPrice.times(item.quantity);
-        const lineDiscount = discountPerUnit.times(item.quantity);
-        const diff = lineSubtotal.minus(lineDiscount);
-        const lineTaxable = diff.isNegative() ? new Decimal(0) : diff;
-        const taxRate = new Decimal(item.taxRate);
-        const lineTax = lineTaxable.times(taxRate).dividedBy(100);
+        const line = computeGstLine({
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
+          // Prefer the exact whole-line discount; fall back to legacy per-unit × qty.
+          lineDiscount:
+            item.lineDiscount ?? new Decimal(item.discountPerUnit || '0.00').times(item.quantity),
+          taxRate: item.taxRate,
+        });
 
-        subtotal = subtotal.plus(lineSubtotal);
-        totalDiscount = totalDiscount.plus(lineDiscount);
-        taxableValue = taxableValue.plus(lineTaxable);
-        totalTax = totalTax.plus(lineTax);
+        subtotal = subtotal.plus(line.gross);
+        totalDiscount = totalDiscount.plus(line.discount);
+        taxableValue = taxableValue.plus(line.taxable);
+        totalTax = totalTax.plus(line.tax);
+        cgst = cgst.plus(line.cgst);
+        sgst = sgst.plus(line.sgst);
 
         const realPatientId = item.patientId
           ? patientIdMap.get(item.patientId) || item.patientId
@@ -402,18 +481,18 @@ export async function processOpticalOrder(
 
         return {
           ...item,
+          // Display value only — the exact line discount is preserved via lineTotal/taxAmount.
+          discountPerUnit: roundPaise(line.discount.dividedBy(item.quantity)).toFixed(2),
           patientId: realPatientId,
           prescriptionId: realRxId,
-          lineTotal: lineTaxable.plus(lineTax).toFixed(2),
-          taxAmount: lineTax.toFixed(2),
+          lineTotal: line.total.toFixed(2),
+          taxAmount: line.tax.toFixed(2),
         };
       });
 
+      // Sum of paise-rounded lines, so header totals always equal Σ line totals.
+      // CGST/SGST split per line (intra-state); IGST inter-state detection is not yet modelled.
       const grandTotal = taxableValue.plus(totalTax);
-
-      // CGST/SGST split (intra-state). For inter-state, use IGST.
-      const cgst = totalTax.dividedBy(2);
-      const sgst = totalTax.dividedBy(2);
 
       // Advance payment handling
       let advancePaid = new Decimal(0);
@@ -464,7 +543,7 @@ export async function processOpticalOrder(
               ? `Billed to: ${input.billingDetails.billingName}`
               : null),
           organizationId: session.organizationId,
-          branchId: input.branchId || session.branchId,
+          branchId: effectiveBranchId,
         })
         .returning({
           id: invoices.id,
@@ -497,25 +576,36 @@ export async function processOpticalOrder(
 
       // ── 3h. Insert advance payment if collected ──
       if (input.advancePayment && advancePaid.greaterThan(0)) {
+        // Store Credit / Wallet: debit atomically, and ONLY if the balance covers it.
+        if (input.advancePayment.mode === 'CREDIT') {
+          const debited = await tx
+            .update(customers)
+            .set({
+              advanceBalance: sql`${customers.advanceBalance} - ${advancePaid.toFixed(2)}::numeric`,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(customers.id, finalInvoiceCustomerId),
+                eq(customers.organizationId, orgId),
+                sql`${customers.advanceBalance} >= ${advancePaid.toFixed(2)}::numeric`
+              )
+            )
+            .returning({ id: customers.id });
+
+          if (debited.length === 0) {
+            throw new InsufficientStoreCreditError(advancePaid.toFixed(2));
+          }
+        }
+
         await tx.insert(payments).values({
           invoiceId: invoice.id,
           amount: advancePaid.toFixed(2),
           paymentMode: input.advancePayment.mode,
           transactionReference: input.advancePayment.reference ?? null,
-          organizationId: session.organizationId,
-          branchId: input.branchId || session.branchId,
+          organizationId: orgId,
+          branchId: effectiveBranchId,
         });
-
-        // If payment mode is CREDIT (Store Credit / Wallet), atomically debit customer's advance balance
-        if (input.advancePayment.mode === 'CREDIT') {
-          await tx
-            .update(customers)
-            .set({
-              advanceBalance: sql`GREATEST(0, CAST(${customers.advanceBalance} AS NUMERIC) - CAST(${advancePaid.toFixed(2)} AS NUMERIC))`,
-              updatedAt: new Date(),
-            })
-            .where(eq(customers.id, finalInvoiceCustomerId));
-        }
       }
 
       return {
@@ -527,8 +617,24 @@ export async function processOpticalOrder(
       };
     });
 
+    // Stock, patients and ledgers changed: drop stale tenant caches (best-effort, post-commit).
+    await Promise.allSettled([
+      invalidateCache({ orgId, namespace: 'inventory' }),
+      invalidateCache({ orgId, namespace: 'patients' }),
+      invalidateCache({ orgId, namespace: 'invoices' }),
+      invalidateCache({ orgId, namespace: 'dashboard' }),
+    ]);
+
     return { success: true, ...result };
   } catch (err) {
+    if (err instanceof InsufficientStoreCreditError) {
+      return {
+        success: false,
+        error: 'INSUFFICIENT_STORE_CREDIT',
+        message: `The customer's store credit does not cover ₹${err.amount}. Reduce the credit amount or choose another payment mode.`,
+      };
+    }
+
     // ── Rollback already occurred automatically by db.transaction ──
     if (err instanceof InsufficientStockError) {
       return {

@@ -3,8 +3,9 @@
 import { getCurrentSession, requireOwnerOrSuperAdmin, requireManagerOrAdmin } from '@/lib/auth-utils';
 import { db } from '@/db';
 import { organizations, subscriptions, type Subscription } from '@/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 import { PRICING_PLANS, type PricingPlan } from '@/lib/plans';
 import {
   createRazorpayOrder,
@@ -37,6 +38,36 @@ export interface VerifyPaymentResult {
   requiresOnboarding?: boolean;
   error?: string;
 }
+
+/**
+ * @description Subscription order states from which a cryptographically verified payment may
+ * activate the plan. 'failed' is included because Razorpay Checkout keeps the modal open after a
+ * declined attempt and the customer can retry (and pay) on the SAME order; the valid payment
+ * signature / webhook HMAC is the proof of payment, not the prior status.
+ */
+const ACTIVATABLE_SUBSCRIPTION_STATUSES: string[] = ['created', 'failed'];
+
+/**
+ * @description Validates the client payload of verifyRazorpayPaymentAction.
+ * `planId` / `billingCycle` are accepted for backwards compatibility but ignored: the plan and
+ * cycle are always taken from the stored subscription record.
+ */
+const verifyPaymentPayloadSchema = z.object({
+  orderId: z.string().trim().min(1).max(100),
+  paymentId: z.string().trim().min(1).max(100),
+  signature: z.string().trim().min(1).max(255),
+  planId: z.string().max(50).optional(),
+  billingCycle: z.enum(['monthly', 'annual']).optional(),
+});
+
+/**
+ * @description Validates the client payload of handlePaymentFailureAction.
+ */
+const paymentFailurePayloadSchema = z.object({
+  orderId: z.string().trim().min(1).max(100),
+  errorCode: z.string().optional().nullable(),
+  errorDescription: z.string().optional().nullable(),
+});
 
 /**
  * Creates a Razorpay Order for a SaaS plan subscription.
@@ -140,8 +171,38 @@ export async function createRazorpaySubscriptionOrderAction(
 }
 
 /**
- * Cryptographically verifies Razorpay payment completion, activates the customer's plan in DB,
- * and updates the financial subscriptions ledger.
+ * @description Builds the idempotent success result for an order that is already 'paid'
+ * (e.g. activated earlier by this action or by the Razorpay webhook). Never re-activates.
+ * @param organizationId - Trusted tenant id from the server-side session.
+ * @param planId - Plan id stored on the subscription record.
+ * @returns A successful VerifyPaymentResult reporting the stored plan.
+ */
+async function buildAlreadyPaidResult(
+  organizationId: string,
+  planId: string
+): Promise<VerifyPaymentResult> {
+  const paidPlan = PRICING_PLANS.find((p) => p.id === planId);
+  const [org] = await db
+    .select({ hasCompletedOnboarding: organizations.hasCompletedOnboarding })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+  return {
+    success: true,
+    planId,
+    planName: paidPlan?.name || planId,
+    requiresOnboarding: !org?.hasCompletedOnboarding,
+  };
+}
+
+/**
+ * @description Cryptographically verifies Razorpay payment completion, activates the customer's
+ * plan in DB, and updates the financial subscriptions ledger.
+ * Activation is allowed from 'created' OR 'failed' (a declined attempt followed by a successful
+ * retry on the same Razorpay order); 'paid' is an idempotent no-op success. Plan and billing cycle
+ * always come from the stored subscription record, never from the client payload.
+ * @param payload - Razorpay checkout callback (order id, payment id, signature); plan fields are ignored.
+ * @returns VerifyPaymentResult with the activated plan, or an error.
  */
 export async function verifyRazorpayPaymentAction(payload: {
   orderId: string;
@@ -153,13 +214,19 @@ export async function verifyRazorpayPaymentAction(payload: {
   try {
     const session = await requireOwnerOrSuperAdmin();
 
+    const parsed = verifyPaymentPayloadSchema.safeParse(payload);
+    if (!parsed.success) {
+      return { success: false, error: 'Invalid payment verification payload.' };
+    }
+    const { orderId, paymentId, signature } = parsed.data;
+
     // Verify order exists and belongs to this organization
     const [subRecord] = await db
       .select()
       .from(subscriptions)
       .where(
         and(
-          eq(subscriptions.razorpayOrderId, payload.orderId),
+          eq(subscriptions.razorpayOrderId, orderId),
           eq(subscriptions.organizationId, session.organizationId)
         )
       )
@@ -169,15 +236,24 @@ export async function verifyRazorpayPaymentAction(payload: {
       return { success: false, error: 'Subscription order not found or access denied' };
     }
 
+    // Idempotency: a previously verified order is a no-op that reports the stored plan
+    if (subRecord.status === 'paid') {
+      return await buildAlreadyPaidResult(session.organizationId, subRecord.planId);
+    }
+
+    if (!ACTIVATABLE_SUBSCRIPTION_STATUSES.includes(subRecord.status)) {
+      return { success: false, error: `Subscription order is ${subRecord.status}; it cannot be activated.` };
+    }
+
     // 1. Verify HMAC SHA-256 signature
     const isValid = verifyRazorpayPaymentSignature({
-      orderId: payload.orderId,
-      paymentId: payload.paymentId,
-      signature: payload.signature,
+      orderId,
+      paymentId,
+      signature,
     });
 
     if (!isValid) {
-      // Mark as failed in DB
+      // Mark as failed in DB (only from the pending 'created' state; never overwrites 'paid')
       await db
         .update(subscriptions)
         .set({
@@ -187,8 +263,9 @@ export async function verifyRazorpayPaymentAction(payload: {
         })
         .where(
           and(
-            eq(subscriptions.razorpayOrderId, payload.orderId),
-            eq(subscriptions.organizationId, session.organizationId)
+            eq(subscriptions.id, subRecord.id),
+            eq(subscriptions.organizationId, session.organizationId),
+            eq(subscriptions.status, 'created')
           )
         );
 
@@ -198,39 +275,83 @@ export async function verifyRazorpayPaymentAction(payload: {
       };
     }
 
+    // SECURITY: plan & billing cycle come from the server-side order record, never from the client payload
+    const planId = subRecord.planId;
+    const billingCycle: 'monthly' | 'annual' = subRecord.billingCycle === 'annual' ? 'annual' : 'monthly';
+
     // 2. Calculate subscription duration
     const endsAt = new Date();
-    if (payload.billingCycle === 'annual') {
+    if (billingCycle === 'annual') {
       endsAt.setFullYear(endsAt.getFullYear() + 1);
     } else {
       endsAt.setDate(endsAt.getDate() + 30);
     }
 
-    // 3. Update organization's active plan in database
-    const [updatedOrg] = await db
-      .update(organizations)
-      .set({
-        planId: payload.planId,
-        subscriptionStatus: 'active',
-        subscriptionPeriod: payload.billingCycle,
-        subscriptionEndsAt: endsAt,
-        updatedAt: new Date(),
-      })
-      .where(eq(organizations.id, session.organizationId))
-      .returning();
+    const result = await db.transaction(async (tx) => {
+      // 3. Atomically transition the audit record (created | failed) -> paid.
+      //    A second concurrent call (or the webhook) finds 'paid' and gets 0 rows.
+      const transitioned = await tx
+        .update(subscriptions)
+        .set({
+          status: 'paid',
+          razorpayPaymentId: paymentId,
+          razorpaySignature: signature,
+          failureReason: null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(subscriptions.id, subRecord.id),
+            eq(subscriptions.organizationId, session.organizationId),
+            inArray(subscriptions.status, ACTIVATABLE_SUBSCRIPTION_STATUSES)
+          )
+        )
+        .returning({ id: subscriptions.id });
 
-    // 4. Update subscriptions audit record to 'paid'
-    await db
-      .update(subscriptions)
-      .set({
-        status: 'paid',
-        razorpayPaymentId: payload.paymentId,
-        razorpaySignature: payload.signature,
-        updatedAt: new Date(),
-      })
-      .where(eq(subscriptions.razorpayOrderId, payload.orderId));
+      if (transitioned.length === 0) {
+        return { activated: false as const, org: null };
+      }
 
-    const matchedPlan = PRICING_PLANS.find((p) => p.id === payload.planId);
+      // 4. Update organization's active plan in database
+      const [updatedOrg] = await tx
+        .update(organizations)
+        .set({
+          planId,
+          subscriptionStatus: 'active',
+          subscriptionPeriod: billingCycle,
+          subscriptionEndsAt: endsAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(organizations.id, session.organizationId))
+        .returning();
+
+      return { activated: true as const, org: updatedOrg ?? null };
+    });
+
+    const matchedPlan = PRICING_PLANS.find((p) => p.id === planId);
+
+    if (!result.activated) {
+      // Lost the race: re-read the record. If it was activated concurrently (e.g. by the webhook)
+      // this is an idempotent success without re-activation; any other state is a real failure.
+      const [latest] = await db
+        .select({ status: subscriptions.status })
+        .from(subscriptions)
+        .where(
+          and(
+            eq(subscriptions.id, subRecord.id),
+            eq(subscriptions.organizationId, session.organizationId)
+          )
+        )
+        .limit(1);
+
+      if (latest?.status === 'paid') {
+        return await buildAlreadyPaidResult(session.organizationId, planId);
+      }
+      return {
+        success: false,
+        error: `Subscription order is ${latest?.status ?? 'unavailable'}; it cannot be activated.`,
+      };
+    }
 
     revalidatePath('/');
     revalidatePath('/pricing');
@@ -239,9 +360,9 @@ export async function verifyRazorpayPaymentAction(payload: {
 
     return {
       success: true,
-      planId: payload.planId,
-      planName: matchedPlan?.name || payload.planId,
-      requiresOnboarding: !updatedOrg?.hasCompletedOnboarding,
+      planId,
+      planName: matchedPlan?.name || planId,
+      requiresOnboarding: !result.org?.hasCompletedOnboarding,
     };
   } catch (err: unknown) {
     console.error('[verifyRazorpayPaymentAction] Error:', err);
@@ -253,26 +374,44 @@ export async function verifyRazorpayPaymentAction(payload: {
 }
 
 /**
- * Handles explicit payment failures or cancellations reported by Razorpay Checkout.
+ * @description Handles explicit payment failures or cancellations reported by Razorpay Checkout.
+ * Requires Organization Owner / Super Admin; only the caller's own pending ('created') order
+ * can transition to 'failed' — a 'paid' (or already 'failed') order is never overwritten.
+ * A 'failed' order can still be activated by a later successful retry on the same Razorpay order
+ * (see verifyRazorpayPaymentAction).
+ * @param payload - Razorpay order id plus optional error code / description from Checkout.
+ * @returns `{ success: true }` when a pending order was marked failed, otherwise `{ success: false }`.
  */
 export async function handlePaymentFailureAction(payload: {
   orderId: string;
   errorCode?: string;
   errorDescription?: string;
-}) {
+}): Promise<{ success: boolean }> {
   try {
-    if (!payload.orderId) return { success: false };
+    const session = await requireOwnerOrSuperAdmin();
+    const parsed = paymentFailurePayloadSchema.safeParse(payload);
+    if (!parsed.success) return { success: false };
 
-    await db
+    const errorCode = (parsed.data.errorCode || 'PAYMENT_FAILED').slice(0, 100);
+    const errorDescription = (parsed.data.errorDescription || 'Payment declined or cancelled by user').slice(0, 500);
+
+    const updated = await db
       .update(subscriptions)
       .set({
         status: 'failed',
-        failureReason: `${payload.errorCode || 'PAYMENT_FAILED'}: ${payload.errorDescription || 'Payment declined or cancelled by user'}`,
+        failureReason: `${errorCode}: ${errorDescription}`,
         updatedAt: new Date(),
       })
-      .where(eq(subscriptions.razorpayOrderId, payload.orderId));
+      .where(
+        and(
+          eq(subscriptions.razorpayOrderId, parsed.data.orderId),
+          eq(subscriptions.organizationId, session.organizationId),
+          eq(subscriptions.status, 'created')
+        )
+      )
+      .returning({ id: subscriptions.id });
 
-    return { success: true };
+    return { success: updated.length > 0 };
   } catch (err) {
     console.error('[handlePaymentFailureAction] Error:', err);
     return { success: false };

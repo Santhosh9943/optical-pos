@@ -18,3 +18,11 @@ export class NegativeBalanceError extends Error {
     this.name = 'NegativeBalanceError';
   }
 }
+
+/** Thrown inside checkout when a STORE CREDIT payment exceeds the customer's wallet balance. */
+export class InsufficientStoreCreditError extends Error {
+  constructor(public amount: string) {
+    super(`Insufficient store credit for ${amount}`);
+    this.name = 'InsufficientStoreCreditError';
+  }
+}

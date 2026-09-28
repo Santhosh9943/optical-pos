@@ -14,7 +14,6 @@ import {
   invoices,
   opticalPrescriptions,
   branches,
-  organizations,
 } from '@/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { getCurrentSession } from '@/lib/auth-utils';
@@ -56,6 +55,23 @@ export interface CustomerPortalData {
   practiceName: string;
 }
 
+/**
+ * @description Resolves the patient (customers row) that is reliably linked to the signed-in user.
+ * The `customers` table currently stores no verified email/user id and `user` stores no verified
+ * phone, so there is no trustworthy link yet and this returns null (the portal shows an empty shell).
+ * When a verified link (e.g. customers.userId or a verified email/phone) is added, resolve it here,
+ * scoped by organizationId. NEVER fall back to matching by display name.
+ * @returns The linked customer row, or null when no verified link exists
+ */
+async function resolveVerifiedCustomerRecord(): Promise<typeof customers.$inferSelect | null> {
+  return null;
+}
+
+/**
+ * @description Returns the signed-in patient's orders & prescriptions for the customer portal.
+ * Only data for a verified patient link is returned; otherwise an empty shell.
+ * @returns CustomerPortalData or null when unauthenticated
+ */
 export async function getCustomerPortalDataAction(): Promise<CustomerPortalData | null> {
   try {
     const session = await getCurrentSession();
@@ -63,23 +79,9 @@ export async function getCustomerPortalDataAction(): Promise<CustomerPortalData 
       return null;
     }
 
-    // Locate customer record strictly matching the logged-in user's name
-    let customerRecord = null;
-    if (session.user.name) {
-      const [matched] = await db
-        .select()
-        .from(customers)
-        .where(
-          and(
-            eq(customers.organizationId, session.organizationId),
-            eq(customers.fullName, session.user.name)
-          )
-        )
-        .limit(1);
-      if (matched) {
-        customerRecord = matched;
-      }
-    }
+    // SECURITY: the patient record is resolved only through a verified identity link.
+    // Name matching (previous behaviour) let any user named like a patient read their records.
+    const customerRecord = await resolveVerifiedCustomerRecord();
 
     if (!customerRecord) {
       return {
@@ -126,13 +128,19 @@ export async function getCustomerPortalDataAction(): Promise<CustomerPortalData 
 
     // Fetch customer prescriptions
     const rawRx = await db
-      .select()
+      .select({ rx: opticalPrescriptions })
       .from(opticalPrescriptions)
-      .where(eq(opticalPrescriptions.customerId, customerRecord.id))
+      .innerJoin(customers, eq(opticalPrescriptions.customerId, customers.id))
+      .where(
+        and(
+          eq(opticalPrescriptions.customerId, customerRecord.id),
+          eq(customers.organizationId, session.organizationId)
+        )
+      )
       .orderBy(desc(opticalPrescriptions.prescribedAt))
       .limit(5);
 
-    const prescriptions: CustomerPrescriptionSummary[] = rawRx.map((rx) => ({
+    const prescriptions: CustomerPrescriptionSummary[] = rawRx.map(({ rx }) => ({
       id: rx.id,
       prescribedAt: rx.prescribedAt.toISOString(),
       odSphere: rx.odSphere,

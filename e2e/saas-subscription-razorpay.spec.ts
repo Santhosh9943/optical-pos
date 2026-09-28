@@ -25,25 +25,28 @@ test.describe('Phase 25: Razorpay SaaS Subscriptions & Feature Gating', () => {
     await expect(page.locator('text=Save 20%')).toBeVisible();
   });
 
-  test('2. Lab Orders Workshop is protected by PlanUpgradeGate on Starter tier', async ({
+  test('2. Lab Orders Workshop is gated by plan: upgrade prompt on Starter, Kanban on Growth Plus+', async ({
     page,
   }) => {
-    // Navigate to lab-orders with default mock starter organization
+    // e2e/global-setup.ts pins the bypass org to the lowest plan unlocking the Kanban, but the test
+    // accepts either state so it stays valid if the org is downgraded to Starter.
     await page.goto('/admin/lab-orders');
 
-    // Expect either the lab orders view (if already upgraded) or the PlanUpgradeGate prompt
-    const upgradeButton = page.locator('button', { hasText: /Upgrade to Growth Plus|Unlock with Growth Plus/i });
-    const isGated = await upgradeButton.isVisible({ timeout: 3000 }).catch(() => false);
+    const upgradeButton = page.getByRole('button', { name: /^(Upgrade to|Unlock with) Growth Plus/i });
+    const kanbanHeading = page.getByRole('heading', { level: 1, name: 'Lab Order & Workshop Management' });
 
-    if (isGated) {
-      await expect(upgradeButton).toBeVisible();
-      // Click upgrade button to test opening the upgrade modal
+    // Wait for whichever of the two mutually exclusive states renders (isVisible() does not wait).
+    await expect(upgradeButton.or(kanbanHeading)).toBeVisible();
+
+    if (await upgradeButton.isVisible()) {
+      // Starter tier: the gate opens the upgrade modal for the locked feature
       await upgradeButton.click();
       await expect(page.locator('h2', { hasText: /Optical Lab Workshop Pipeline/i })).toBeVisible();
       await expect(page.locator('button', { hasText: /Upgrade with Razorpay/i })).toBeVisible();
     } else {
-      // If active plan is already plus/enterprise
-      await expect(page.locator('h1, h2', { hasText: /Lab Orders|Workshop/i })).toBeVisible();
+      // Growth Plus / Enterprise: the Kanban renders and no upgrade prompt is shown
+      await expect(kanbanHeading).toBeVisible();
+      await expect(upgradeButton).toHaveCount(0);
     }
   });
 

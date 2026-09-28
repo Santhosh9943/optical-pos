@@ -110,7 +110,8 @@ test.describe('Platform Super Admin Isolated OTP Authentication & Zero-Store Tel
     // Table check - either zero-state or registered tenant practices with Practice ID
     const emptyState = page.getByText(/Zero Practice Organizations Registered/i);
     const tenantList = page.getByText(/Practice ID/i);
-    await expect(emptyState.or(tenantList)).toBeVisible();
+    // .first(): with N registered orgs there is one "Practice ID" chip per org (strict-mode safe)
+    await expect(emptyState.or(tenantList).first()).toBeVisible();
 
     // Check isolation: super admin layout must NOT have backlink to POS
     const backToPosLink = page.getByTestId('link-back-to-pos');

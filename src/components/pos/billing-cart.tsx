@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import Decimal from 'decimal.js';
+import { computeGstLine } from '@/lib/gst';
 import {
   ShoppingBag,
   Trash2,
@@ -21,6 +22,7 @@ import {
   X,
   Users,
 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { InventoryItem } from './inventory-search';
 import type { PrescriptionValues } from './prescription-grid';
 
@@ -119,24 +121,21 @@ export function calculateCartMetrics(items: CartItem[]): {
   let itemCount = 0;
 
   const lines: CalculatedCartLine[] = items.map((item) => {
-    const qty = new Decimal(item.quantity > 0 ? item.quantity : 1);
     const unitPriceDec = new Decimal(item.unitPrice || '0.00');
-    // Discount on the line
-    const discountRaw = item.discount ?? item.discountPerUnit ?? '0.00';
-    const discountDec = new Decimal(discountRaw || '0.00');
-    const taxRateDec = new Decimal(item.taxRate || '0.00');
-
-    // 1. Line Subtotal = Unit Price × Qty
-    const subtotalDec = unitPriceDec.times(qty);
-    // 2. Line Taxable Value = Line Subtotal - Discount (clamped to 0)
-    const diff = subtotalDec.minus(discountDec);
-    const taxableValueDec = diff.isNegative() ? new Decimal(0) : diff;
-
-    // 3. Line Tax = Line Taxable Value × (Tax Rate / 100)
-    const taxDec = taxableValueDec.times(taxRateDec).dividedBy(100);
-    const cgstDec = taxDec.dividedBy(2);
-    const sgstDec = taxDec.dividedBy(2);
-    const lineTotalDec = taxableValueDec.plus(taxDec);
+    // Shared GST engine — identical per-line paise rounding to the server checkout.
+    const line = computeGstLine({
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+      lineDiscount: item.discount ?? item.discountPerUnit ?? '0.00',
+      taxRate: item.taxRate || '0.00',
+    });
+    const subtotalDec = line.gross;
+    const discountDec = line.discount;
+    const taxableValueDec = line.taxable;
+    const taxDec = line.tax;
+    const cgstDec = line.cgst;
+    const sgstDec = line.sgst;
+    const lineTotalDec = line.total;
 
     subtotal = subtotal.plus(subtotalDec);
     totalDiscount = totalDiscount.plus(discountDec);
@@ -341,6 +340,7 @@ export function BillingCart({
   isCompact = false,
 }: BillingCartProps) {
   const [inspectingRxItem, setInspectingRxItem] = useState<CartItem | null>(null);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
 
   const candidateFrames = useMemo(() => {
     return items.filter(
@@ -604,7 +604,7 @@ export function BillingCart({
                                             + Use Customer&apos;s Own Frame
                                           </button>
                                           {candidateFrames.length > 0 && (
-                                            <span className="text-[10px] text-slate-500">
+                                            <span className="text-[10px] text-slate-500 dark:text-slate-300">
                                               (All frames in cart already paired 1:1)
                                             </span>
                                           )}
@@ -617,6 +617,7 @@ export function BillingCart({
                                 {item.isCustomerOwnFrame && (
                                   <input
                                     type="text"
+                                    aria-label="Customer's own frame details"
                                     placeholder="Enter frame details (e.g. Ray-Ban Matte Black, Half Rim)"
                                     value={item.fittingNote || ''}
                                     onChange={(e) =>
@@ -669,7 +670,7 @@ export function BillingCart({
                       </td>
 
                       {/* Unit Price */}
-                      <td className="py-2 px-1 text-right font-mono font-medium text-slate-800 dark:text-slate-200 align-top">
+                      <td className="py-2 px-1 text-right font-mono tabular-nums font-medium text-slate-800 dark:text-slate-200 align-top">
                         ₹{unitPriceDec.toFixed(2)}
                       </td>
 
@@ -697,7 +698,7 @@ export function BillingCart({
                       </td>
 
                       {/* Line Total */}
-                      <td className="py-2 px-1 text-right font-mono font-bold text-slate-900 dark:text-slate-100 align-top">
+                      <td className="py-2 px-1 text-right font-mono tabular-nums font-bold text-slate-900 dark:text-slate-100 align-top">
                         ₹{lineTotalDec.toFixed(2)}
                       </td>
 
@@ -743,8 +744,8 @@ export function BillingCart({
             </span>
             <button
               type="button"
-              onClick={onClearCart}
-              className="text-[11px] text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium transition"
+              onClick={() => setIsClearConfirmOpen(true)}
+              className="rounded text-[11px] text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500"
             >
               Clear Cart
             </button>
@@ -753,7 +754,7 @@ export function BillingCart({
           <div className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300">
             <div className="flex justify-between">
               <span>Subtotal ({totals.itemCount} items)</span>
-              <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
+              <span className="font-mono tabular-nums font-medium text-slate-800 dark:text-slate-200">
                 ₹{totals.subtotal.toFixed(2)}
               </span>
             </div>
@@ -761,7 +762,7 @@ export function BillingCart({
             {totals.totalDiscount.greaterThan(0) && (
               <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
                 <span>Total Discount</span>
-                <span className="font-mono font-medium">
+                <span className="font-mono tabular-nums font-medium">
                   −₹{totals.totalDiscount.toFixed(2)}
                 </span>
               </div>
@@ -769,7 +770,7 @@ export function BillingCart({
 
             <div className="flex justify-between text-slate-700 dark:text-slate-300">
               <span>Taxable Value</span>
-              <span className="font-mono font-medium">
+              <span className="font-mono tabular-nums font-medium">
                 ₹{totals.taxableValue.toFixed(2)}
               </span>
             </div>
@@ -777,16 +778,16 @@ export function BillingCart({
             {/* Split GST breakdown */}
             <div className="flex justify-between text-slate-600 dark:text-slate-300 text-[11px]">
               <span>CGST (Output Tax)</span>
-              <span className="font-mono">₹{totals.cgst.toFixed(2)}</span>
+              <span className="font-mono tabular-nums">₹{totals.cgst.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-slate-600 dark:text-slate-300 text-[11px]">
               <span>SGST (Output Tax)</span>
-              <span className="font-mono">₹{totals.sgst.toFixed(2)}</span>
+              <span className="font-mono tabular-nums">₹{totals.sgst.toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between text-slate-700 dark:text-slate-300 border-t border-slate-200 dark:border-slate-800 pt-1">
               <span className="font-medium">Total GST Amount</span>
-              <span className="font-mono font-medium">
+              <span className="font-mono tabular-nums font-medium">
                 ₹{totals.totalTax.toFixed(2)}
               </span>
             </div>
@@ -794,14 +795,14 @@ export function BillingCart({
             {/* Grand Total */}
             <div className="flex justify-between border-t border-slate-300 dark:border-slate-700 pt-1.5 text-sm font-bold text-slate-900 dark:text-slate-100">
               <span>Grand Total</span>
-              <span className="font-mono text-base text-blue-700 dark:text-blue-400">
+              <span className="font-mono tabular-nums text-base text-blue-700 dark:text-blue-400">
                 ₹{totals.grandTotal.toFixed(2)}
               </span>
             </div>
 
             <div className="flex justify-between text-xs font-semibold text-amber-800 dark:text-amber-400 pt-0.5">
               <span>Balance Payable</span>
-              <span className="font-mono">₹{totals.grandTotal.toFixed(2)}</span>
+              <span className="font-mono tabular-nums">₹{totals.grandTotal.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -842,6 +843,18 @@ export function BillingCart({
             }
             setInspectingRxItem(null);
           }}
+        />
+      )}
+
+      {onClearCart && (
+        <ConfirmDialog
+          isOpen={isClearConfirmOpen}
+          onClose={() => setIsClearConfirmOpen(false)}
+          onConfirm={onClearCart}
+          title="Clear the entire bill?"
+          description={`This removes all ${items.length} ${items.length === 1 ? 'item' : 'items'} from the cart. This cannot be undone.`}
+          confirmLabel="Clear bill"
+          cancelLabel="Keep items"
         />
       )}
     </div>
@@ -1001,9 +1014,11 @@ function CartRxInspectorModal({
                       customerRx.osCylinder !== null);
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={customer.id}
                       data-testid={`customer-power-card-${customer.id}`}
+                      aria-pressed={isAssigned}
                       onClick={() => {
                         if (customerRx) {
                           setActiveRx(customerRx);
@@ -1012,7 +1027,7 @@ function CartRxInspectorModal({
                         setAssignedPatientId(customer.id);
                         setIsEditingCustom(false);
                       }}
-                      className={`p-2.5 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between gap-2 ${
+                      className={`w-full p-2.5 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between gap-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
                         isAssigned
                           ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 ring-1 ring-blue-500'
                           : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
@@ -1051,18 +1066,18 @@ function CartRxInspectorModal({
                             </div>
                           </div>
                         ) : (
-                          <div className="text-[10px] text-slate-400 dark:text-slate-500 italic bg-slate-50 dark:bg-slate-900/40 p-1.5 rounded">
+                          <div className="text-[10px] text-slate-600 dark:text-slate-300 italic bg-slate-50 dark:bg-slate-900/40 p-1.5 rounded">
                             No refraction entered yet (Plano)
                           </div>
                         )}
                       </div>
 
                       <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
-                        <span className="text-[10px] font-medium text-slate-500">
+                        <span className="text-[10px] font-medium text-slate-500 dark:text-slate-300">
                           {isAssigned ? 'Assigned to item' : 'Click to select'}
                         </span>
-                        <button
-                          type="button"
+                        <span
+                          aria-hidden="true"
                           className={`rounded px-2 py-0.5 text-[10px] font-bold transition ${
                             isAssigned
                               ? 'bg-blue-600 text-white'
@@ -1070,9 +1085,9 @@ function CartRxInspectorModal({
                           }`}
                         >
                           {isAssigned ? 'Selected' : 'Use Power'}
-                        </button>
+                        </span>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -1118,6 +1133,7 @@ function CartRxInspectorModal({
                         <input
                           type="number"
                           step="0.25"
+                          aria-label="Right eye (OD) sphere"
                           value={activeRx.odSphere ?? ''}
                           onChange={(e) => setActiveRx({ ...activeRx, odSphere: e.target.value ? parseFloat(e.target.value) : null })}
                           className="w-16 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
@@ -1131,6 +1147,7 @@ function CartRxInspectorModal({
                         <input
                           type="number"
                           step="0.25"
+                          aria-label="Right eye (OD) cylinder"
                           value={activeRx.odCylinder ?? ''}
                           onChange={(e) => setActiveRx({ ...activeRx, odCylinder: e.target.value ? parseFloat(e.target.value) : null })}
                           className="w-16 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
@@ -1145,6 +1162,7 @@ function CartRxInspectorModal({
                           type="number"
                           min="1"
                           max="180"
+                          aria-label="Right eye (OD) axis"
                           value={activeRx.odAxis ?? ''}
                           onChange={(e) => setActiveRx({ ...activeRx, odAxis: e.target.value ? parseInt(e.target.value, 10) : null })}
                           className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
@@ -1158,6 +1176,7 @@ function CartRxInspectorModal({
                         <input
                           type="number"
                           step="0.25"
+                          aria-label="Right eye (OD) addition"
                           value={activeRx.odAdd ?? ''}
                           onChange={(e) => setActiveRx({ ...activeRx, odAdd: e.target.value ? parseFloat(e.target.value) : null })}
                           className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
@@ -1170,6 +1189,7 @@ function CartRxInspectorModal({
                       {isEditingCustom ? (
                         <input
                           type="number"
+                          aria-label="Right eye (OD) pupillary distance"
                           value={activeRx.odPd ?? ''}
                           onChange={(e) => setActiveRx({ ...activeRx, odPd: e.target.value ? parseFloat(e.target.value) : null })}
                           className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
@@ -1190,6 +1210,7 @@ function CartRxInspectorModal({
                         <input
                           type="number"
                           step="0.25"
+                          aria-label="Left eye (OS) sphere"
                           value={activeRx.osSphere ?? ''}
                           onChange={(e) => setActiveRx({ ...activeRx, osSphere: e.target.value ? parseFloat(e.target.value) : null })}
                           className="w-16 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
@@ -1203,6 +1224,7 @@ function CartRxInspectorModal({
                         <input
                           type="number"
                           step="0.25"
+                          aria-label="Left eye (OS) cylinder"
                           value={activeRx.osCylinder ?? ''}
                           onChange={(e) => setActiveRx({ ...activeRx, osCylinder: e.target.value ? parseFloat(e.target.value) : null })}
                           className="w-16 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
@@ -1217,6 +1239,7 @@ function CartRxInspectorModal({
                           type="number"
                           min="1"
                           max="180"
+                          aria-label="Left eye (OS) axis"
                           value={activeRx.osAxis ?? ''}
                           onChange={(e) => setActiveRx({ ...activeRx, osAxis: e.target.value ? parseInt(e.target.value, 10) : null })}
                           className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
@@ -1230,6 +1253,7 @@ function CartRxInspectorModal({
                         <input
                           type="number"
                           step="0.25"
+                          aria-label="Left eye (OS) addition"
                           value={activeRx.osAdd ?? ''}
                           onChange={(e) => setActiveRx({ ...activeRx, osAdd: e.target.value ? parseFloat(e.target.value) : null })}
                           className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
@@ -1242,6 +1266,7 @@ function CartRxInspectorModal({
                       {isEditingCustom ? (
                         <input
                           type="number"
+                          aria-label="Left eye (OS) pupillary distance"
                           value={activeRx.osPd ?? ''}
                           onChange={(e) => setActiveRx({ ...activeRx, osPd: e.target.value ? parseFloat(e.target.value) : null })}
                           className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
@@ -1264,9 +1289,11 @@ function CartRxInspectorModal({
 
             {/* Session Current Rx */}
             {sessionRx && (
-              <div
+              <button
+                type="button"
                 onClick={() => handleApplyPreset(sessionRx, 'Current Session Rx')}
-                className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:border-blue-500 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 cursor-pointer transition"
+                aria-pressed={selectedTitle === 'Current Session Rx'}
+                className="w-full text-left flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:border-blue-500 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 cursor-pointer transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <div>
                   <div className="flex items-center gap-2">
@@ -1277,13 +1304,13 @@ function CartRxInspectorModal({
                     OD: {formatEyePower(sessionRx.odSphere, sessionRx.odCylinder, sessionRx.odAxis, sessionRx.odAdd)}
                   </p>
                 </div>
-                <button
-                  type="button"
+                <span
+                  aria-hidden="true"
                   className="rounded bg-blue-600 text-white px-2 py-1 text-[11px] font-semibold hover:bg-blue-700 transition"
                 >
                   Choose
-                </button>
-              </div>
+                </span>
+              </button>
             )}
 
             {/* Past Prescription Records */}
@@ -1307,35 +1334,37 @@ function CartRxInspectorModal({
                   };
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={rec.id || idx}
                       onClick={() => handleApplyPreset(converted, title)}
-                      className="flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/20 cursor-pointer transition"
+                      aria-pressed={selectedTitle === title}
+                      className="w-full text-left flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/20 cursor-pointer transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
                     >
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-slate-800 dark:text-slate-200">{title}</span>
                           {rec.prescribedByName && (
-                            <span className="text-[10px] text-slate-500">Dr. {rec.prescribedByName}</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-300">Dr. {rec.prescribedByName}</span>
                           )}
                         </div>
                         <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
                           OD: {formatEyePower(converted.odSphere, converted.odCylinder, converted.odAxis, converted.odAdd)}
                         </p>
                       </div>
-                      <button
-                        type="button"
+                      <span
+                        aria-hidden="true"
                         className="rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-700 transition"
                       >
                         Choose
-                      </button>
-                    </div>
+                      </span>
+                    </button>
                   );
                 })}
               </div>
             ) : (
               !sessionRx && (
-                <div className="rounded border border-dashed border-slate-200 dark:border-slate-800 p-3 text-center text-slate-500 text-xs">
+                <div className="rounded border border-dashed border-slate-200 dark:border-slate-800 p-3 text-center text-slate-500 dark:text-slate-300 text-xs">
                   No prior prescriptions on file. You can enter diopters directly above.
                 </div>
               )

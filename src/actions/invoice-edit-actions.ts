@@ -6,6 +6,7 @@ import { getCurrentSession, requireAuthSession, requireManagerOrAdmin } from '@/
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import Decimal from 'decimal.js';
+import { computeGstLine } from '@/lib/gst';
 import { z } from 'zod';
 
 const updateInvoiceSchema = z.object({
@@ -101,10 +102,16 @@ export async function updateInvoiceDetailsAction(input: UpdateInvoiceInput) {
             eq(invoices.organizationId, session.organizationId)
           )
         )
+        .for('update')
         .limit(1);
 
       if (!inv) {
         throw new Error('Invoice not found or permission denied');
+      }
+
+      // Immutable invoices: closed / cancelled orders can only be corrected via a credit note.
+      if (inv.orderStatus === 'DELIVERED_AND_CLOSED' || inv.orderStatus === 'CANCELLED_REFUNDED') {
+        throw new Error('This invoice is closed and can no longer be edited. Issue a credit note / return instead.');
       }
 
       const items = await tx
@@ -122,44 +129,34 @@ export async function updateInvoiceDetailsAction(input: UpdateInvoiceInput) {
       let recalculatedGrandTotal = new Decimal(0);
 
       for (const item of items) {
-        const qty = new Decimal(item.quantity > 0 ? item.quantity : 1);
-        const unitPrice = new Decimal(item.unitPrice || '0.00');
-        const discountPerUnit = new Decimal(item.discountPerUnit || '0.00');
-        const lineDiscount = discountPerUnit.times(qty);
+        // Exact persisted line discount = gross − taxable (taxable = lineTotal − taxAmount);
+        // avoids re-deriving it from the display-rounded discountPerUnit.
+        const gross = new Decimal(item.unitPrice || '0.00').times(item.quantity > 0 ? item.quantity : 1);
+        const storedTaxable = new Decimal(item.lineTotal || '0.00').minus(item.taxAmount || '0.00');
+        const line = computeGstLine({
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
+          lineDiscount: Decimal.max(0, gross.minus(storedTaxable)),
+          // Apply GST only when includeGst is true, else 0%
+          taxRate: validated.includeGst ? item.taxRate || '0.00' : '0',
+        });
 
-        const lineSubtotal = unitPrice.times(qty);
-        const lineTaxable = lineSubtotal.minus(lineDiscount);
-        const taxableVal = lineTaxable.isNegative() ? new Decimal(0) : lineTaxable;
-
-        // Apply GST if includeGst is true, else 0%
-        let lineTax = new Decimal(0);
-        let taxRate = new Decimal(0);
-
-        if (validated.includeGst) {
-          taxRate = new Decimal(item.taxRate || '0.00');
-          lineTax = taxableVal.times(taxRate).dividedBy(100);
-        }
-
-        const lineTotal = taxableVal.plus(lineTax);
-
-        // Update item line totals if tax status changed
         await tx
           .update(invoiceItems)
           .set({
-            taxAmount: lineTax.toFixed(2),
-            lineTotal: lineTotal.toFixed(2),
+            taxAmount: line.tax.toFixed(2),
+            lineTotal: line.total.toFixed(2),
           })
-          .where(eq(invoiceItems.id, item.id));
+          .where(and(eq(invoiceItems.id, item.id), eq(invoiceItems.invoiceId, inv.id)));
 
-        recalculatedSubtotal = recalculatedSubtotal.plus(lineSubtotal);
-        recalculatedDiscount = recalculatedDiscount.plus(lineDiscount);
-        recalculatedTaxable = recalculatedTaxable.plus(taxableVal);
-        recalculatedTotalTax = recalculatedTotalTax.plus(lineTax);
-        recalculatedGrandTotal = recalculatedGrandTotal.plus(lineTotal);
+        recalculatedSubtotal = recalculatedSubtotal.plus(line.gross);
+        recalculatedDiscount = recalculatedDiscount.plus(line.discount);
+        recalculatedTaxable = recalculatedTaxable.plus(line.taxable);
+        recalculatedTotalTax = recalculatedTotalTax.plus(line.tax);
+        recalculatedCgst = recalculatedCgst.plus(line.cgst);
+        recalculatedSgst = recalculatedSgst.plus(line.sgst);
+        recalculatedGrandTotal = recalculatedGrandTotal.plus(line.total);
       }
-
-      recalculatedCgst = recalculatedTotalTax.dividedBy(2);
-      recalculatedSgst = recalculatedTotalTax.dividedBy(2);
 
       const advancePaid = new Decimal(inv.advancePaid || '0.00');
       const balanceDue = recalculatedGrandTotal.minus(advancePaid);

@@ -99,10 +99,11 @@ test.describe('Stage 8: Balance Settlement & Order Delivery E2E Suite', () => {
     });
     await expect(orderCard).toBeVisible({ timeout: 10000 });
 
-    // Assert that the action button says "Collect Balance"
+    // Assert the compact Kanban card action reads "Collect" (the full "Collect Balance" label is the
+    // Table List view variant of the same btn-collect-balance action)
     const collectBtn = orderCard.getByTestId('btn-collect-balance');
     await expect(collectBtn).toBeVisible();
-    await expect(collectBtn).toContainText('Collect Balance');
+    await expect(collectBtn).toHaveText('Collect');
     await collectBtn.click();
 
     // ── 4. Settle Balance Modal Interaction: Select "UPI" & Confirm ──

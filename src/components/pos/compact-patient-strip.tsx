@@ -48,11 +48,11 @@ export function CompactPatientStrip({
         data-testid="compact-patient-strip-empty"
         className="flex items-center justify-between rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 px-4 py-2.5 shadow-2xs backdrop-blur-xs transition"
       >
-        <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-300">
           <User className="h-4 w-4 text-slate-400 dark:text-slate-500" />
           <span className="font-medium">No patient selected</span>
           <span className="hidden sm:inline text-slate-400 dark:text-slate-600">•</span>
-          <span className="hidden sm:inline text-[11px] text-slate-400 dark:text-slate-500">
+          <span className="hidden sm:inline text-[11px] text-slate-600 dark:text-slate-300">
             Search customer above or type mobile number to begin order
           </span>
         </div>
@@ -112,7 +112,7 @@ export function CompactPatientStrip({
                 {selectedPatient.fullName}
               </span>
               {selectedPatient.gender && (
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                <span className="text-[10px] text-slate-600 dark:text-slate-300 font-medium">
                   ({selectedPatient.gender.charAt(0)}
                   {selectedPatient.age ? `, ${selectedPatient.age}` : ''})
                 </span>

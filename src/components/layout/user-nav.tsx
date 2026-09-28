@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authClient } from '@/lib/auth-client';
+import { clearClientStorageCaches } from '@/hooks/use-cached-resource';
 import { useTenantStore } from '@/store/tenant-store';
 import { getUserTenancyContext } from '@/actions/tenant-actions';
 import {
@@ -91,6 +92,8 @@ export function UserNav() {
 
   const handleSignOut = async () => {
     setLoggingOut(true);
+    // Purge tenant-scoped client caches (localStorage + memory) so data never survives logout
+    clearClientStorageCaches();
     try {
       await authClient.signOut({
         fetchOptions: {

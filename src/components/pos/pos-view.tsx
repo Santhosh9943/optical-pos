@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Decimal from 'decimal.js';
+import { computeGstLine, normalizeGstRate } from '@/lib/gst';
 import { toast } from 'sonner';
 import { PatientSearch, type Patient } from '@/components/pos/patient-search';
 import {
@@ -48,6 +49,7 @@ import { CartItemEditModal } from '@/components/pos/cart-item-edit-modal';
 import { InvoiceDetailsModal } from '@/components/pos/invoice-details-modal';
 import { QuickAddPatientModal } from '@/components/pos/quick-add-patient-modal';
 import { CompactPatientStrip } from '@/components/pos/compact-patient-strip';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EditInvoiceModal } from '@/components/admin/edit-invoice-modal';
 import { getStoreProfile } from '@/actions/settings-actions';
 import { getDynamicRelationship } from '@/lib/patient-relationship';
@@ -190,6 +192,31 @@ export function PosView() {
   const [activeLeftTab, setActiveLeftTab] = useState<'rx' | 'orders'>('rx');
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isPosSendingEmail, setIsPosSendingEmail] = useState(false);
+  const [isClearCartConfirmOpen, setIsClearCartConfirmOpen] = useState(false);
+
+  /**
+   * Removes a cart line and offers a one-click Undo toast that re-inserts the exact line
+   * at its original position (no-op if it was already restored or re-added).
+   */
+  const handleRemoveCartItem = (id: string): void => {
+    const index = cartItems.findIndex((item) => item.id === id);
+    const removed = index >= 0 ? cartItems[index] : undefined;
+    removeItem(id);
+    if (!removed) return;
+    toast('Item removed from bill', {
+      description: removed.description,
+      action: {
+        label: 'Undo',
+        onClick: () =>
+          setCartItems((prev) => {
+            if (prev.some((item) => item.id === removed.id)) return prev;
+            const next = [...prev];
+            next.splice(Math.min(index, next.length), 0, removed);
+            return next;
+          }),
+      },
+    });
+  };
 
   const handlePosEmailReceipt = async () => {
     if (!completedOrder) return;
@@ -248,21 +275,20 @@ export function PosView() {
     let totalItems = 0;
 
     for (const item of cartItems) {
-      const qty = new Decimal(item.quantity > 0 ? item.quantity : 1);
-      const unitPrice = new Decimal(item.unitPrice || '0.00');
-      const discount = new Decimal(item.discount || item.discountPerUnit || '0.00');
-      const taxRate = new Decimal(item.taxRate || '0.00');
-
-      // Line Subtotal = Unit Price × Qty
-      const lineSubtotal = unitPrice.times(qty);
-      // Line Taxable Value = Line Subtotal - Discount (clamped to 0)
-      const diff = lineSubtotal.minus(discount);
-      const lineTaxableValue = diff.isNegative() ? new Decimal(0) : diff;
-      // Line Tax = Line Taxable Value × (Tax Rate / 100)
-      const lineTax = lineTaxableValue.times(taxRate).dividedBy(100);
-      const lineCgst = lineTax.dividedBy(2);
-      const lineSgst = lineTax.dividedBy(2);
-      const lineTotal = lineTaxableValue.plus(lineTax);
+      // Shared GST engine — identical rounding to the server checkout and printed receipts.
+      const line = computeGstLine({
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        lineDiscount: item.discount || item.discountPerUnit || '0.00',
+        taxRate: item.taxRate || '0.00',
+      });
+      const lineSubtotal = line.gross;
+      const discount = line.discount;
+      const lineTaxableValue = line.taxable;
+      const lineTax = line.tax;
+      const lineCgst = line.cgst;
+      const lineSgst = line.sgst;
+      const lineTotal = line.total;
 
       subtotal = subtotal.plus(lineSubtotal);
       totalDiscount = totalDiscount.plus(discount);
@@ -418,7 +444,10 @@ export function PosView() {
           quantity: item.quantity,
           unitPrice: new Decimal(item.unitPrice || '0.00').toFixed(2),
           discountPerUnit,
-          taxRate: (item.taxRate === '5.00' ? '5.00' : '18.00') as '5.00' | '18.00',
+          // Exact line discount: server uses this to avoid per-unit rounding drift (qty 3, ₹10 → 3.33×3 = 9.99)
+          lineDiscount: lineDiscountDec.toFixed(2),
+          // Real statutory slab (0/5/12/18/28); the server re-derives it from the catalog anyway.
+          taxRate: normalizeGstRate(item.taxRate) ?? '18.00',
           lensType: (item.lensType as any) ?? null,
           coating: (item.coating as any) ?? null,
           lensMaterial: (item.lensMaterial as any) ?? null,
@@ -1281,7 +1310,7 @@ export function PosView() {
                 </div>
 
                 {isLoadingOrders ? (
-                  <div className="flex flex-col items-center justify-center py-12 space-y-2 text-slate-400">
+                  <div className="flex flex-col items-center justify-center py-12 space-y-2 text-slate-600 dark:text-slate-300">
                     <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
                     <span className="text-xs">Loading order invoices...</span>
                   </div>
@@ -1363,13 +1392,13 @@ export function PosView() {
 
                           {/* Order Financials */}
                           <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
-                            <span className="text-slate-500">
+                            <span className="text-slate-500 dark:text-slate-300">
                               Grand Total:{' '}
                               <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
                                 ₹{order.grandTotal}
                               </span>
                             </span>
-                            <span className="text-slate-500">
+                            <span className="text-slate-500 dark:text-slate-300">
                               Balance Due:{' '}
                               <span
                                 className={`font-mono font-bold ${
@@ -1492,7 +1521,7 @@ export function PosView() {
                     )}
                   </div>
                   {invoiceBillingDetails.notes && (
-                    <span className="text-[10px] text-slate-500 italic mt-0.5 truncate max-w-[280px]">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-300 italic mt-0.5 truncate max-w-[280px]">
                       Note: {invoiceBillingDetails.notes}
                     </span>
                   )}
@@ -1630,8 +1659,8 @@ export function PosView() {
                   {cartItems.length > 0 && (
                     <button
                       type="button"
-                      onClick={clearCart}
-                      className="text-[11px] font-medium text-slate-400 hover:text-red-600 transition cursor-pointer"
+                      onClick={() => setIsClearCartConfirmOpen(true)}
+                      className="rounded text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       Clear
                     </button>
@@ -1668,7 +1697,7 @@ export function PosView() {
                   }}
                   onUpdateOwnFrame={updateCartItemOwnFrame}
                   onEditItem={(item) => setEditingCartItem(item)}
-                  onRemoveItem={removeItem}
+                  onRemoveItem={handleRemoveCartItem}
                   onClearCart={clearCart}
                   showSummary={false}
                   isCompact={isCompactCart}
@@ -1690,7 +1719,7 @@ export function PosView() {
                   Payment & Settlement
                 </h2>
               </div>
-              <span className="text-[11px] font-mono text-slate-500 font-semibold">
+              <span className="text-[11px] font-mono text-slate-500 dark:text-slate-300 font-semibold">
                 Balance: ₹{totals.grandTotal.minus(new Decimal(advancePaid || '0')).toFixed(2)}
               </span>
             </div>
@@ -1723,7 +1752,7 @@ export function PosView() {
 
               <div className="mt-3 space-y-2 max-h-[350px] overflow-y-auto pr-1">
                 {cartItems.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
+                  <div className="py-8 text-center text-xs text-slate-600 dark:text-slate-300">
                     No items in cart
                   </div>
                 ) : (
@@ -1993,6 +2022,21 @@ export function PosView() {
         selectedPatient={selectedPatient}
         currentPrescriptions={prescriptions}
         onConfirm={handleConfigureSpectaclePair}
+      />
+
+      {/* ── Destructive Confirm: Clear entire bill ── */}
+      <ConfirmDialog
+        isOpen={isClearCartConfirmOpen}
+        onClose={() => setIsClearCartConfirmOpen(false)}
+        onConfirm={() => {
+          clearCart();
+          toast.success('Bill cleared');
+        }}
+        title="Clear the entire bill?"
+        description={`This removes all ${cartItems.length} ${cartItems.length === 1 ? 'item' : 'items'} and any advance payment entered. This cannot be undone.`}
+        confirmLabel="Clear bill"
+        cancelLabel="Keep items"
+        confirmTestId="confirm-clear-cart-btn"
       />
 
       {/* ── Guided Add Product Category Dispatcher Modal ── */}

@@ -16,10 +16,18 @@ import {
   inventoryItems,
   payments,
 } from '@/db/schema';
-import { eq, and, desc, sql, gte, lt, inArray } from 'drizzle-orm';
+import { eq, and, desc, sql, gte, lt, inArray, notInArray } from 'drizzle-orm';
 import Decimal from 'decimal.js';
-import { getCurrentSession } from '@/lib/auth-utils';
+import { z } from 'zod';
+import { requireAuthSession, getAuthorizedBranchIds } from '@/lib/auth-utils';
 import { withCache } from '@/lib/cache';
+
+/**
+ * @description Client-supplied branch id for the dashboard. Deliberately permissive (seeded ids such
+ * as DEFAULT_BRANCH_ID are not RFC-versioned UUIDs); the value is only ever used as a membership
+ * lookup against the caller's authorized branch ids, never passed to a query unchecked.
+ */
+const dashboardBranchIdSchema = z.string().trim().min(1).max(64).optional();
 
 export interface DashboardOperationalMetrics {
   kpis: {
@@ -61,12 +69,43 @@ export interface DashboardOperationalMetrics {
   activeBranchName: string;
 }
 
+/** Order statuses that never count toward revenue / receivables (unbilled drafts and cancelled/refunded orders). */
+const NON_REVENUE_ORDER_STATUSES: Array<'DRAFT' | 'CANCELLED_REFUNDED'> = ['DRAFT', 'CANCELLED_REFUNDED'];
+
+/**
+ * @description Live operational dashboard metrics for one branch of the caller's organization.
+ * Revenue & balance KPIs exclude DRAFT and CANCELLED_REFUNDED invoices; payment-mode totals net
+ * refunds (recorded as negative payments).
+ * Branch resolution: the requested branch is used only when the caller is authorized for it;
+ * otherwise (e.g. the client tenant store still holds DEFAULT_BRANCH_ID before syncing) it falls
+ * back to the session branch (if authorized) or the caller's first authorized branch. Data for an
+ * unauthorized branch is never returned; throws only when the caller has no authorized branch.
+ * @param branchId - Optional requested branch id of the caller's organization
+ * @returns DashboardOperationalMetrics for the resolved, authorized branch
+ */
 export async function getDashboardOperationalMetricsAction(
   branchId?: string
 ): Promise<DashboardOperationalMetrics> {
-  const session = await getCurrentSession();
-  const effectiveBranchId = branchId || session.branchId;
+  const session = await requireAuthSession();
   const orgId = session.organizationId;
+
+  const parsedBranchId = dashboardBranchIdSchema.safeParse(branchId);
+  const requestedBranchId = parsedBranchId.success ? parsedBranchId.data : undefined;
+
+  // Branch isolation: getAuthorizedBranchIds is always scoped to the caller's organization
+  const authorizedBranchIds = await getAuthorizedBranchIds(session);
+  const authorized = new Set(authorizedBranchIds);
+
+  const effectiveBranchId: string | undefined =
+    requestedBranchId && authorized.has(requestedBranchId)
+      ? requestedBranchId
+      : session.branchId && authorized.has(session.branchId)
+        ? session.branchId
+        : authorizedBranchIds[0];
+
+  if (!effectiveBranchId) {
+    throw new Error('Forbidden: No accessible branch');
+  }
 
   return await withCache(
     {
@@ -86,7 +125,7 @@ export async function getDashboardOperationalMetricsAction(
       const [branchRecord] = await db
         .select({ name: branches.name })
         .from(branches)
-        .where(eq(branches.id, effectiveBranchId))
+        .where(and(eq(branches.id, effectiveBranchId), eq(branches.organizationId, orgId)))
         .limit(1);
 
       const activeBranchName = branchRecord?.name || 'Main Branch';
@@ -116,10 +155,12 @@ export async function getDashboardOperationalMetricsAction(
         )
         .orderBy(desc(invoices.createdAt));
 
-      // Calculate Today's Revenue and Balance with decimal.js
+      // Calculate Today's Revenue and Balance with decimal.js (drafts & cancelled/refunded excluded)
+      const nonRevenue = new Set<string>(NON_REVENUE_ORDER_STATUSES);
+      const todayBillableInvoices = todayInvoices.filter((inv) => !nonRevenue.has(inv.orderStatus));
       let todayRevenueDec = new Decimal(0);
       let balanceDueDec = new Decimal(0);
-      for (const inv of todayInvoices) {
+      for (const inv of todayBillableInvoices) {
         todayRevenueDec = todayRevenueDec.plus(new Decimal(inv.grandTotal || 0));
         balanceDueDec = balanceDueDec.plus(new Decimal(inv.balanceDue || 0));
       }
@@ -132,6 +173,7 @@ export async function getDashboardOperationalMetricsAction(
           and(
             eq(invoices.organizationId, orgId),
             eq(invoices.branchId, effectiveBranchId),
+            notInArray(invoices.orderStatus, NON_REVENUE_ORDER_STATUSES),
             gte(invoices.createdAt, yesterdayStart),
             lt(invoices.createdAt, todayStart)
           )
@@ -308,7 +350,7 @@ export async function getDashboardOperationalMetricsAction(
         kpis: {
           todayRevenue: todayRevenueDec.toFixed(2),
           revenueChangePct,
-          orderCount: todayInvoices.length,
+          orderCount: todayBillableInvoices.length,
           balanceDue: balanceDueDec.toFixed(2),
           activeLabOrders: rawLabOrders.length,
           lowStockCount: rawLowStock.length,

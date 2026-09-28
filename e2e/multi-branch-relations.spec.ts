@@ -54,12 +54,19 @@ test.describe('Single-Store Operation & Consolidated Multi-Store Reporting E2E',
     await expect(addProductBtn).toBeVisible();
     await addProductBtn.click();
 
-    const branchSelect = page.getByTestId('select-inventory-branch');
+    // The "Store Branch" select now lives in the collapsed "More Options" section of AddInventoryForm
+    // (the old data-testid="select-inventory-branch" no longer exists).
+    await page.getByRole('button', { name: /More Options/ }).click();
+    const branchSelect = page.getByLabel('Store Branch');
     await expect(branchSelect).toBeVisible();
 
     // Verify option exists in dropdown
     const options = branchSelect.locator('option');
     expect(await options.count()).toBeGreaterThan(0);
+
+    // Location is pre-selected to the active store shown in the scope badge ("Store: <name>")
+    const activeStoreName = ((await scopeBadge.textContent()) ?? '').replace(/^\s*Store:\s*/, '').trim();
+    await expect(branchSelect.locator('option:checked')).toHaveText(activeStoreName);
 
     // Close modal
     await page.getByTestId('btn-cancel-add-inventory').click();

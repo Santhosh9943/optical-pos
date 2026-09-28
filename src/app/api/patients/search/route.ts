@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { customers } from '@/db/schema';
-import { and, eq, ilike, isNull, like, or, desc } from 'drizzle-orm';
+import { and, eq, ilike, inArray, isNull, like, or, desc } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { withCache } from '@/lib/cache';
 import { getCurrentSession } from '@/lib/auth-utils';
@@ -116,8 +116,9 @@ export async function GET(request: Request) {
             .from(customers)
             .where(
               and(
+                eq(customers.organizationId, session.organizationId),
                 isNull(customers.deletedAt),
-                or(...primaryIds.map((pid) => eq(customers.primaryCustomerId, pid)))
+                inArray(customers.primaryCustomerId, primaryIds)
               )
             );
 

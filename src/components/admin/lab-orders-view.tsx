@@ -24,6 +24,7 @@ import {
   Layers,
   Share2,
   AlertTriangle,
+  RefreshCw,
   ArrowUpDown,
   Filter,
   CreditCard,
@@ -53,6 +54,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
   const [selectedOrderForSlip, setSelectedOrderForSlip] = useState<LabOrderSummary | null>(null);
   const [selectedOrderForSettlement, setSelectedOrderForSettlement] = useState<SettleInvoiceData | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   // Ergonomic Sorting & Filtering States
   const [filterChip, setFilterChip] = useState<'ALL' | 'OVERDUE' | 'BALANCE_PENDING'>('ALL');
@@ -90,15 +93,19 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
         const data = await getActiveLabOrders(selectedBranchId ? [selectedBranchId] : undefined);
         if (isMounted) {
           setOrders(data);
+          setLoadError(null);
         }
       } catch (err) {
         console.error('Failed to load lab orders for branch:', err);
+        if (isMounted) {
+          setLoadError('Check your connection and retry.');
+        }
       }
     });
     return () => {
       isMounted = false;
     };
-  }, [selectedBranchId]);
+  }, [selectedBranchId, reloadToken]);
 
   const activeBranchLabel = useMemo(() => {
     const match = branches.find((b) => b.id === selectedBranchId);
@@ -503,6 +510,34 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
           </div>
         </div>
       </div>
+
+      {/* ── Load Failure Banner (columns below may be stale or empty) ── */}
+      {loadError && (
+        <div
+          role="alert"
+          data-testid="lab-orders-load-error"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3.5 shrink-0"
+        >
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-red-600 dark:text-red-400" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">Lab orders failed to load</p>
+              <p className="text-xs text-muted-foreground">
+                The board below may be empty or out of date — this does not mean there are no orders. {loadError}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReloadToken((t) => t + 1)}
+            disabled={isPending}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition disabled:opacity-60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isPending ? 'animate-spin' : ''}`} />
+            <span>Retry</span>
+          </button>
+        </div>
+      )}
 
       {/* ── Searchbar Line with Common Controls Inline (No Congested Extra Box) ── */}
       {viewMode === 'kanban' ? (

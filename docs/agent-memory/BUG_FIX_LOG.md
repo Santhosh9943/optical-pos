@@ -558,3 +558,52 @@
 
 
 
+
+---
+
+### [BUG-034] Global `store_profile` Row Shared Across All Tenants (SEC-004)
+- **Component**: Settings / Checkout / Email — `src/lib/store-profile.ts`
+- **Symptom**: Every organization read and wrote the same profile row (store name, GSTIN, SMTP credentials, `allowNegativeStock`); cache hits returned `smtpPass` unredacted.
+- **Root Cause**: `store_profile` had no `organization_id`; readers used `select().limit(1)` and a global cache key.
+- **The Fix**: `organization_id` + unique index; `findOrgStoreProfile` / `ensureOrgStoreProfile` / `redactStoreProfile`; tenant cache key; per-tenant SMTP (system mail uses platform env SMTP only).
+- **Permanent Invariant**: Never query `store_profile` directly — always via `src/lib/store-profile.ts` with the session org.
+
+---
+
+### [BUG-035] Cart / Invoice / Receipt GST Totals Disagree by Paise
+- **Component**: GST arithmetic — `src/lib/gst.ts`
+- **Symptom**: Qty-3 line with ₹10 discount → client sent 3.33/unit, server billed 9.99 discount; receipt printed taxable 290.00 next to grand total 342.21. CGST+SGST ≠ total tax on odd paise.
+- **Root Cause**: Five independent GST calculators with different discount semantics (per-unit vs per-line) and unrounded line tax.
+- **The Fix**: Single engine `computeGstLine` / `computeGstInvoice` (per-line paise ROUND_HALF_UP, CGST = round(tax/2), SGST = tax − CGST). Checkout accepts exact `lineDiscount`; print data passes the exact stored discount (gross − (lineTotal − taxAmount)). Lab reprints no longer hardcode 18%.
+- **Permanent Invariant**: All GST math (server, cart, modals, prints) must call `src/lib/gst.ts`. Never re-derive discounts from display-rounded `discountPerUnit`.
+
+---
+
+### [BUG-036] Receipt Email Link Always "Unauthorized"
+- **Component**: `src/lib/email.ts` `sendInvoiceReceiptEmail`
+- **Symptom**: Customers clicking "View Full Digital Tax Receipt" saw the invalid-token page.
+- **Root Cause**: Link omitted the HMAC `?token=` required by `getPublicReceiptAction`.
+- **The Fix**: Append `generateReceiptToken(id, createdAt)`; HTML-escape item text in email bodies.
+- **Permanent Invariant**: Every public receipt URL must carry a receipt token.
+
+---
+
+### [BUG-037] Tailwind v4 Class Names on Tailwind v3 (No Shadows / Double Focus Rings / No Animations)
+- **Component**: `tailwind.config.ts`
+- **Symptom**: Cards had no elevation, focus showed browser outline + ring, dialogs never animated.
+- **Root Cause**: ~600 uses of v4-only utilities (`shadow-xs`, `shadow-2xs`, `outline-hidden`, `backdrop-blur-xs`, `animate-in`) with Tailwind 3.4 and no `tailwindcss-animate`.
+- **The Fix**: Config shims for the v4 names + `tailwindcss-animate` plugin.
+- **Permanent Invariant**: Tailwind is v3 — verify a utility exists in v3 (or is shimmed in `tailwind.config.ts`) before using it.
+
+---
+
+### [BUG-038] Post-Review Regressions Caught Before Ship (Phase 39 adversarial review)
+- **Component**: Subscriptions, Inventory, Checkout, Payments, Email, Dashboard
+- **Symptoms & Fixes**:
+  1. Razorpay retry on the same order after a failed card attempt charged the customer but never activated the plan (order stuck in `failed`) → verify + webhook activate from `created` OR `failed`; `paid` is an idempotent no-op; failure handlers only move `created → failed`.
+  2. Inventory edits rejected for 0%/12% GST items and for the seeded `DEFAULT_BRANCH_ID` (Zod 4 strict `.uuid()`) → shared `GST_RATES` enum (0/5/12/18/28) in `src/lib/gst.ts`; lenient UUID regex.
+  3. Checkout coerced every non-5% catalog rate to 18% (GST-exempt billed at 18%) → catalog slab via `normalizeGstRate`, `isGstExempt` → 0%.
+  4. `collectBalance` accepted `CREDIT` without debiting the wallet → atomic `advance_balance >= amt` debit.
+  5. Tenant SMTP settings page exposed the platform mailbox → tenant-only fields; platform fallback described generically.
+  6. Dashboard threw on a not-yet-synced branch id → falls back to an authorized branch.
+- **Permanent Invariants**: Never use Zod `.uuid()` for ids that include seeded all-zero UUIDs; use the shared regex. All tax-rate enums come from `GST_RATES`.

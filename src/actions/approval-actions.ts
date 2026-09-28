@@ -19,8 +19,9 @@ import {
   type ApprovalRequest,
 } from '@/db/schema';
 import { eq, and, desc, inArray, sql, gt } from 'drizzle-orm';
-import { getCurrentSession, isManagerOrAdmin, isOwnerOrSuperAdmin } from '@/lib/auth-utils';
-import { dispatchNotificationAction } from '@/actions/notification-actions';
+import { getCurrentSession, requireAuthSession, isManagerOrAdmin, isOwnerOrSuperAdmin } from '@/lib/auth-utils';
+import { z } from 'zod';
+import { dispatchNotificationInternal } from '@/lib/notifications-internal';
 import { revalidatePath } from 'next/cache';
 import { invalidateCache } from '@/lib/cache';
 
@@ -38,17 +39,28 @@ export interface CreateStoreApprovalInput {
   reason: string;
 }
 
+/** Zod schema for createStoreApprovalRequestAction input. */
+const createStoreApprovalSchema = z.object({
+  type: z.enum(['delete_customer', 'disable_customer', 'delete_inventory', 'disable_inventory', 'delete_staff']),
+  targetId: z.string().min(1).max(128),
+  targetName: z.string().max(300),
+  reason: z.string().max(2000),
+});
+
 /**
- * Creates a pending approval request and notifies practice administrators.
+ * Creates a pending approval request (authenticated org member) and notifies practice administrators.
  */
 export async function createStoreApprovalRequestAction(
   input: CreateStoreApprovalInput
 ): Promise<{ success: boolean; requestId?: string; error?: string }> {
   try {
-    const session = await getCurrentSession();
-    if (!session?.organizationId) {
-      return { success: false, error: 'Unauthorized: Session required' };
+    const session = await requireAuthSession();
+
+    const parsed = createStoreApprovalSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Invalid approval request' };
     }
+    input = parsed.data;
 
     const [created] = await db
       .insert(approvalRequests)
@@ -56,9 +68,9 @@ export async function createStoreApprovalRequestAction(
         type: input.type,
         targetId: input.targetId,
         targetName: input.targetName,
-        requesterId: session.user?.id || 'synthetic-session-user',
-        requesterEmail: session.user?.email || 'clerk@store.local',
-        requesterName: session.user?.name || 'Staff Member',
+        requesterId: session.user.id,
+        requesterEmail: session.user.email || '',
+        requesterName: session.user.name || 'Staff Member',
         reason: input.reason.trim() || 'Staff requested deletion/disabling',
         status: 'pending',
         organizationId: session.organizationId,
@@ -66,7 +78,7 @@ export async function createStoreApprovalRequestAction(
       .returning();
 
     // Notify practice administrators
-    await dispatchNotificationAction({
+    await dispatchNotificationInternal({
       type: 'approval.requested',
       organizationId: session.organizationId,
       targetRole: 'admin',
@@ -285,7 +297,7 @@ export async function resolveStoreApprovalRequestAction(
 
     // Dispatch notification to the requester
     if (request.requesterId) {
-      await dispatchNotificationAction({
+      await dispatchNotificationInternal({
         type: 'system.announcement',
         organizationId: session.organizationId,
         recipientId: request.requesterId,

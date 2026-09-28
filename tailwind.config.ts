@@ -1,4 +1,19 @@
 import type { Config } from 'tailwindcss';
+import plugin from 'tailwindcss/plugin';
+import tailwindcssAnimate from 'tailwindcss-animate';
+
+/**
+ * Tailwind v3 compatibility shim for Tailwind v4 utility names used across the codebase.
+ * `outline-hidden` (v4) === `outline-none` (v3): transparent outline preserved for forced-colors mode.
+ */
+const tailwindV4CompatPlugin = plugin(({ addUtilities }) => {
+  addUtilities({
+    '.outline-hidden': {
+      outline: '2px solid transparent',
+      'outline-offset': '2px',
+    },
+  });
+});
 
 const config: Config = {
   darkMode: ['class'],
@@ -9,6 +24,19 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          'var(--font-sans)',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif',
+        ],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -26,6 +54,14 @@ const config: Config = {
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
         },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
@@ -49,9 +85,20 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      // Tailwind v4 scale names (shadow-2xs / shadow-xs, blur-xs) mapped onto v3.
+      boxShadow: {
+        '2xs': '0 1px rgb(0 0 0 / 0.05)',
+        xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+      },
+      blur: {
+        xs: '4px',
+      },
+      backdropBlur: {
+        xs: '4px',
+      },
     },
   },
-  plugins: [],
+  plugins: [tailwindcssAnimate, tailwindV4CompatPlugin],
 };
 
 export default config;

@@ -103,13 +103,16 @@ export async function requestSuperAdminOtpAction(
       expiresAt,
     });
 
-    // Console broadcast for immediate local developer verification
-    console.log('\n============================================================');
-    console.log('🔑 [OPTIXOS PLATFORM SUPER ADMIN OTP GATEWAY]');
-    console.log(`👤 Target Email:    ${normalizedEmail}`);
-    console.log(`🔢 One-Time Code:   ${otp}`);
-    console.log(`⏱️  Lifetime:       ${expirySeconds} seconds (Expires: ${expiresAt.toLocaleTimeString()})`);
-    console.log('============================================================\n');
+    // Console broadcast for immediate local developer verification.
+    // SECURITY: never write live OTP codes to logs in production (log aggregation = credential leak).
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('\n============================================================');
+      console.log('🔑 [OPTIXOS PLATFORM SUPER ADMIN OTP GATEWAY]');
+      console.log(`👤 Target Email:    ${normalizedEmail}`);
+      console.log(`🔢 One-Time Code:   ${otp}`);
+      console.log(`⏱️  Lifetime:       ${expirySeconds} seconds (Expires: ${expiresAt.toLocaleTimeString()})`);
+      console.log('============================================================\n');
+    }
 
     // Dispatch transactional email asynchronously
     dispatchAsyncEmail(() =>

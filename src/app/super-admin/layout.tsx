@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { authClient } from '@/lib/auth-client';
+import { clearClientStorageCaches } from '@/hooks/use-cached-resource';
 import { toast } from 'sonner';
 import {
   verifySuperAdminAccessAction,
@@ -86,6 +87,7 @@ export default function SuperAdminLayout({
   const handleSignOut = async () => {
     try {
       await superAdminSignOutAction();
+      clearClientStorageCaches();
       await authClient.signOut().catch(() => {});
       toast.success('Signed out of root console');
       router.push('/super-admin/login');

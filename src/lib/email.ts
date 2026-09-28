@@ -1,8 +1,18 @@
 import nodemailer from 'nodemailer';
-import { db } from '@/db';
-import { storeProfile } from '@/db/schema';
+import type { StoreProfile } from '@/db/schema';
+import { findOrgStoreProfile } from '@/lib/store-profile';
 import { getPublicReceiptAction } from '@/actions/receipt-actions';
-import { decryptSecret } from '@/lib/crypto-utils';
+import { decryptSecret, generateReceiptToken } from '@/lib/crypto-utils';
+
+/** Escapes user-controlled text before interpolating it into email HTML. */
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 export interface SmtpConfig {
   host: string;
@@ -15,15 +25,23 @@ export interface SmtpConfig {
 }
 
 /**
- * Resolves active SMTP configuration from database storeProfile or process.env fallback.
+ * @description Resolves the SMTP configuration for a send.
+ * - With an `organizationId`, the tenant's own SMTP settings are used when fully configured
+ *   (user + password); otherwise the platform SMTP from environment variables is used.
+ * - Without an `organizationId` (system mail: password resets, OTPs, alerts) only the
+ *   platform SMTP from environment variables is used — never another tenant's credentials.
+ * @param organizationId - Trusted tenant id from the server-side session, if any.
+ * @returns The resolved SMTP configuration (password decrypted).
  */
-export async function getSmtpConfig(): Promise<SmtpConfig> {
-  let dbProfile: typeof storeProfile.$inferSelect | undefined;
-  try {
-    const [found] = await db.select().from(storeProfile).limit(1);
-    dbProfile = found;
-  } catch (err) {
-    console.warn('[getSmtpConfig] Could not query storeProfile from DB:', err);
+export async function getSmtpConfig(organizationId?: string | null): Promise<SmtpConfig> {
+  let dbProfile: StoreProfile | null = null;
+  if (organizationId) {
+    try {
+      const found = await findOrgStoreProfile(organizationId);
+      dbProfile = found?.smtpUser && found?.smtpPass ? found : null;
+    } catch (err) {
+      console.warn('[getSmtpConfig] Could not load tenant SMTP settings, using platform SMTP:', err);
+    }
   }
 
   const host = dbProfile?.smtpHost || process.env.SMTP_HOST || 'smtp.gmail.com';
@@ -32,11 +50,11 @@ export async function getSmtpConfig(): Promise<SmtpConfig> {
     ? dbProfile.smtpSecure
     : process.env.SMTP_SECURE === 'true' || port === 465;
 
-  const user = dbProfile?.smtpUser || process.env.SMTP_USER || 'msanthosh9943@gmail.com';
+  const user = dbProfile?.smtpUser || process.env.SMTP_USER || '';
   const rawPass = dbProfile?.smtpPass || process.env.SMTP_PASS || '';
   const pass = rawPass.startsWith('enc:') ? decryptSecret(rawPass) : rawPass;
-  const fromEmail = dbProfile?.smtpFromEmail || process.env.SMTP_FROM_EMAIL || user || 'msanthosh9943@gmail.com';
-  const fromName = dbProfile?.smtpFromName || process.env.SMTP_FROM_NAME || dbProfile?.storeName || 'OptixOS Eyecare';
+  const fromEmail = dbProfile?.smtpFromEmail || process.env.SMTP_FROM_EMAIL || user;
+  const fromName = dbProfile?.smtpFromName || dbProfile?.storeName || process.env.SMTP_FROM_NAME || 'OptixOS Eyecare';
 
   return {
     host,
@@ -52,8 +70,11 @@ export async function getSmtpConfig(): Promise<SmtpConfig> {
 /**
  * Creates a Nodemailer transporter instance using current SMTP configuration.
  */
-export async function createEmailTransporter(overrideConfig?: Partial<SmtpConfig>) {
-  const config = { ...(await getSmtpConfig()), ...(overrideConfig || {}) };
+export async function createEmailTransporter(
+  overrideConfig?: Partial<SmtpConfig>,
+  organizationId?: string | null
+) {
+  const config = { ...(await getSmtpConfig(organizationId)), ...(overrideConfig || {}) };
 
   return nodemailer.createTransport({
     host: config.host,
@@ -73,12 +94,15 @@ export async function createEmailTransporter(overrideConfig?: Partial<SmtpConfig
 /**
  * Verifies live connectivity with Gmail SMTP server.
  */
-export async function verifySmtpConnection(overrideConfig?: Partial<SmtpConfig>): Promise<{
+export async function verifySmtpConnection(
+  overrideConfig?: Partial<SmtpConfig>,
+  organizationId?: string | null
+): Promise<{
   success: boolean;
   message: string;
   config: Omit<SmtpConfig, 'pass'> & { hasPass: boolean };
 }> {
-  const config = { ...(await getSmtpConfig()), ...(overrideConfig || {}) };
+  const config = { ...(await getSmtpConfig(organizationId)), ...(overrideConfig || {}) };
 
   const safeConfig = {
     host: config.host,
@@ -127,15 +151,18 @@ export async function sendEmail({
   html,
   text,
   overrideConfig,
+  organizationId,
 }: {
   to: string;
   subject: string;
   html: string;
   text?: string;
   overrideConfig?: Partial<SmtpConfig>;
+  /** Tenant whose SMTP settings should be used; omit for platform/system mail. */
+  organizationId?: string | null;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const config = { ...(await getSmtpConfig()), ...(overrideConfig || {}) };
+    const config = { ...(await getSmtpConfig(organizationId)), ...(overrideConfig || {}) };
 
     if (!config.pass || config.pass.trim().length === 0) {
       return {
@@ -171,9 +198,10 @@ export async function sendEmail({
  */
 export async function sendTestEmail(
   targetEmail: string,
-  overrideConfig?: Partial<SmtpConfig>
+  overrideConfig?: Partial<SmtpConfig>,
+  organizationId?: string | null
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  const config = { ...(await getSmtpConfig()), ...(overrideConfig || {}) };
+  const config = { ...(await getSmtpConfig(organizationId)), ...(overrideConfig || {}) };
 
   const html = `
     <!DOCTYPE html>
@@ -243,6 +271,7 @@ export async function sendTestEmail(
     subject: `OptixOS SMTP Test Delivery — ${new Date().toLocaleTimeString()}`,
     html,
     overrideConfig: config,
+    organizationId,
   });
 }
 
@@ -252,7 +281,8 @@ export async function sendTestEmail(
 export async function sendInvoiceReceiptEmail(
   invoiceId: string,
   recipientEmail: string,
-  originBaseUrl?: string
+  originBaseUrl?: string,
+  organizationId?: string | null
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const res = await getPublicReceiptAction(invoiceId);
@@ -262,15 +292,17 @@ export async function sendInvoiceReceiptEmail(
 
     const data = res.data;
     const baseUrl = originBaseUrl || process.env.BETTER_AUTH_URL || 'http://localhost:3000';
-    const digitalReceiptUrl = `${baseUrl}/receipt/${data.id}`;
+    // The public receipt page requires an HMAC access token — without it the customer's link fails.
+    const receiptToken = generateReceiptToken(data.id, new Date(data.createdAt));
+    const digitalReceiptUrl = `${baseUrl}/receipt/${data.id}?token=${encodeURIComponent(receiptToken)}`;
 
     const itemsHtml = data.items
       .map(
         (it) => `
           <tr>
             <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">
-              <strong>${it.description}</strong>
-              ${it.lensType ? `<br><span style="font-size: 11px; color: #64748b;">${it.lensType} · ${it.coating || 'Standard'}</span>` : ''}
+              <strong>${escapeHtml(it.description)}</strong>
+              ${it.lensType ? `<br><span style="font-size: 11px; color: #64748b;">${escapeHtml(it.lensType)} · ${escapeHtml(it.coating || 'Standard')}</span>` : ''}
             </td>
             <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; text-align: center;">${it.quantity}</td>
             <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; text-align: right;">₹${it.lineTotal}</td>
@@ -403,6 +435,7 @@ export async function sendInvoiceReceiptEmail(
       to: recipientEmail,
       subject: `Your Optical Eyewear Receipt — ${data.invoiceNumber} (${data.organization.name})`,
       html,
+      organizationId,
     });
   } catch (err: any) {
     console.error('[sendInvoiceReceiptEmail] Error:', err);

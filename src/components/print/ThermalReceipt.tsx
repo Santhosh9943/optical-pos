@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import Decimal from 'decimal.js';
+import { computeGstLine } from '@/lib/gst';
 import type { PrintOrderData } from '@/components/pos/print-layouts';
 
 interface ThermalReceiptProps {
@@ -39,15 +40,21 @@ export function ThermalReceipt({ order }: ThermalReceiptProps) {
     let tax = new Decimal(0);
 
     const items = (order.items || []).map((it) => {
-      const price = new Decimal(it.unitPrice || 0);
-      const disc = new Decimal(it.discountPerUnit || it.discount || 0);
       const qty = it.quantity || 1;
-      const rate = new Decimal(it.taxRate || 18);
-
-      const netUnitPrice = price.minus(disc);
-      const netTaxable = netUnitPrice.times(qty);
-      const lineTax = netTaxable.times(rate).dividedBy(100);
-      const lineTotal = netTaxable.plus(lineTax);
+      // Shared GST engine. `discount` (whole-line) is preferred; legacy per-unit discount × qty otherwise.
+      const line = computeGstLine({
+        unitPrice: it.unitPrice || 0,
+        quantity: qty,
+        lineDiscount:
+          it.discount != null && it.discount !== ''
+            ? it.discount
+            : new Decimal(it.discountPerUnit || 0).times(qty),
+        taxRate: it.taxRate || 18,
+      });
+      const netTaxable = line.taxable;
+      const lineTax = line.tax;
+      const lineTotal = line.total;
+      const netUnitPrice = netTaxable.dividedBy(qty);
 
       sub = sub.plus(netTaxable);
       tax = tax.plus(lineTax);

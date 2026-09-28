@@ -4,8 +4,33 @@ const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // 96 bits recommended for GCM
 const AUTH_TAG_LENGTH = 16; // 128 bits
 
+const DEV_FALLBACK_ENCRYPTION_SECRET = 'optixos-master-encryption-key-32b!';
+let warnedAboutDevFallback = false;
+
+/**
+ * @description Derives the 32-byte AES-256-GCM master key from ENCRYPTION_KEY (or BETTER_AUTH_SECRET).
+ * In production a missing secret is a fatal misconfiguration and throws; the hardcoded fallback is
+ * only used in development/test (with a console warning).
+ * @returns 32-byte key buffer
+ */
 function getMasterKey(): Buffer {
-  const secret = process.env.ENCRYPTION_KEY || process.env.BETTER_AUTH_SECRET || 'optixos-master-encryption-key-32b!';
+  const configured = process.env.ENCRYPTION_KEY || process.env.BETTER_AUTH_SECRET;
+  let secret: string;
+  if (configured) {
+    secret = configured;
+  } else if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      '[crypto-utils] ENCRYPTION_KEY (or BETTER_AUTH_SECRET) must be set in production; refusing to use the insecure fallback key.'
+    );
+  } else {
+    if (!warnedAboutDevFallback) {
+      console.warn(
+        '[crypto-utils] ENCRYPTION_KEY / BETTER_AUTH_SECRET not set - using insecure development fallback key. Do NOT use in production.'
+      );
+      warnedAboutDevFallback = true;
+    }
+    secret = DEV_FALLBACK_ENCRYPTION_SECRET;
+  }
   // Derive 32-byte key via SHA-256
   return crypto.createHash('sha256').update(secret).digest();
 }

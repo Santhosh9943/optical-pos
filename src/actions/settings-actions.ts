@@ -2,16 +2,22 @@
 
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
-import { storeProfile, branches, type StoreProfile, type ReceiptType } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { storeProfile, type StoreProfile, type ReceiptType } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import Decimal from 'decimal.js';
 import { cacheGet, cacheSet, cacheDel } from '@/lib/redis';
-import { getCurrentSession, requireManagerOrAdmin, isManagerOrAdmin } from '@/lib/auth-utils';
+import { buildCacheKey } from '@/lib/cache';
+import { ensureOrgStoreProfile, redactStoreProfile } from '@/lib/store-profile';
+import { getCurrentSession, requireAuthSession, requireManagerOrAdmin, isManagerOrAdmin } from '@/lib/auth-utils';
 import { encryptSecret } from '@/lib/crypto-utils';
 
-const STORE_PROFILE_CACHE_KEY = 'store_profile';
 const STORE_PROFILE_CACHE_TTL = 86400; // 24 hours
+
+/** Tenant-scoped cache key for the store profile (SEC-004: never share across organizations). */
+function storeProfileCacheKey(organizationId: string): string {
+  return buildCacheKey({ orgId: organizationId, namespace: 'settings', key: 'store_profile' });
+}
 
 const storeProfileSchema = z.object({
   storeName: z.string().min(1, 'Store Name is required'),
@@ -44,113 +50,81 @@ export interface StoreProfileResult {
 }
 
 /**
- * Fetch the singleton store profile row.
- * Checks Upstash Redis cache first (TTL: 24h); falls back to database on cache miss or Redis bypass.
+ * @description Neutral, secret-free profile returned when no tenant can be resolved
+ * (unauthenticated callers or database outage). Never contains another tenant's data.
+ */
+function buildFallbackStoreProfile(): StoreProfile {
+  return {
+    id: 'default',
+    organizationId: null,
+    storeName: 'My Optical Store',
+    gstin: null,
+    phone: '',
+    address: '',
+    defaultTaxRate: '18.00',
+    receiptType: 'THERMAL_80MM' as ReceiptType,
+    defaultPosLayout: 'adaptive',
+    enableGst: true,
+    allowNegativeStock: false,
+    smtpHost: null,
+    smtpPort: null,
+    smtpSecure: null,
+    smtpUser: null,
+    smtpPass: null,
+    smtpFromEmail: null,
+    smtpFromName: null,
+    branchId: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
+/**
+ * @description Fetches the store profile of the caller's organization.
+ * Reads the tenant-scoped cache first (TTL 24h), falls back to the database, and
+ * lazily creates a default row on first access. Secrets are redacted on every path.
+ * @returns The caller's store profile with `smtpPass` masked (managers) or removed (other roles).
  */
 export async function getStoreProfile(): Promise<StoreProfile> {
   try {
-    // 1. Check Redis cache
-    const cached = await cacheGet<StoreProfile>(STORE_PROFILE_CACHE_KEY);
-    if (cached) {
-      return {
-        ...cached,
-        createdAt: new Date(cached.createdAt),
-        updatedAt: new Date(cached.updatedAt),
-      };
-    }
-
-    // 2. Cache miss: Query database
-    // TODO(security-SEC-004): Add organizationId foreign key to storeProfile table for multi-tenant isolation
-    const existing = await db.select().from(storeProfile).limit(1);
-
-
-    if (existing && existing.length > 0) {
-      const profile = existing[0];
-      await cacheSet(STORE_PROFILE_CACHE_KEY, profile, STORE_PROFILE_CACHE_TTL);
-      const isManager = await isManagerOrAdmin(await getCurrentSession());
-      return {
-        ...profile,
-        smtpPass: profile.smtpPass ? (isManager ? '••••••••' : null) : null,
-      };
-    }
-
-    // Initialize default profile row if table is empty
     const session = await getCurrentSession();
+    if (!session.user || !session.organizationId) {
+      return buildFallbackStoreProfile();
+    }
+    const isManager = await isManagerOrAdmin(session);
+    const cacheKey = storeProfileCacheKey(session.organizationId);
 
-    let validBranchId: string | null = null;
-    if (session.branchId) {
-      try {
-        const [foundBranch] = await db
-          .select({ id: branches.id })
-          .from(branches)
-          .where(eq(branches.id, session.branchId))
-          .limit(1);
-        if (foundBranch) {
-          validBranchId = foundBranch.id;
-        }
-      } catch {
-        validBranchId = null;
-      }
+    const cached = await cacheGet<StoreProfile>(cacheKey);
+    if (cached) {
+      return redactStoreProfile(
+        { ...cached, createdAt: new Date(cached.createdAt), updatedAt: new Date(cached.updatedAt) },
+        isManager
+      );
     }
 
-    const [newProfile] = await db
-      .insert(storeProfile)
-      .values({
-        storeName: 'Santhosh Optical Center',
-        gstin: '29AABCS1429B1Z8',
-        phone: '+91 98765 43210',
-        address: '123 Optical Plaza, MG Road, Bengaluru - 560001',
-        defaultTaxRate: '18.00',
-        receiptType: 'THERMAL_80MM',
-        defaultPosLayout: 'adaptive',
-        enableGst: true,
-        allowNegativeStock: false,
-        branchId: validBranchId,
-      })
-      .returning();
-
-    await cacheSet(STORE_PROFILE_CACHE_KEY, newProfile, STORE_PROFILE_CACHE_TTL);
-    return newProfile;
+    const profile = await ensureOrgStoreProfile(session.organizationId, session.branchId || null);
+    await cacheSet(cacheKey, profile, STORE_PROFILE_CACHE_TTL);
+    return redactStoreProfile(profile, isManager);
   } catch (error) {
     console.error('Failed to get or initialize store profile:', error);
-    // Return safe in-memory fallback if database query encounters an issue
-    return {
-      id: 'default',
-      storeName: 'Santhosh Optical Center',
-      gstin: '29AABCS1429B1Z8',
-      phone: '+91 98765 43210',
-      address: '123 Optical Plaza, MG Road, Bengaluru - 560001',
-      defaultTaxRate: '18.00',
-      receiptType: 'THERMAL_80MM' as ReceiptType,
-      defaultPosLayout: 'adaptive',
-      enableGst: true,
-      allowNegativeStock: false,
-      smtpHost: 'smtp.gmail.com',
-      smtpPort: 587,
-      smtpSecure: false,
-      smtpUser: 'msanthosh9943@gmail.com',
-      smtpPass: null,
-      smtpFromEmail: 'msanthosh9943@gmail.com',
-      smtpFromName: 'OptixOS Eyecare',
-      branchId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    return buildFallbackStoreProfile();
   }
 }
 
 /**
- * Update the singleton store profile row.
- * Invalidates the Redis cache key on success.
+ * @description Updates the caller organization's store profile (manager/admin only).
+ * Invalidates the tenant-scoped cache key on success.
+ * @param input - Validated store profile form values.
+ * @returns The updated profile (secrets redacted) or an error message.
  */
 export async function updateStoreProfile(
   input: StoreProfileInput
 ): Promise<StoreProfileResult> {
   try {
-    await requireManagerOrAdmin();
+    const session = await requireManagerOrAdmin();
     const validated = storeProfileSchema.parse(input);
 
-    const currentProfile = await getStoreProfile();
+    const currentProfile = await ensureOrgStoreProfile(session.organizationId, session.branchId || null);
 
     const formattedTaxRate = new Decimal(validated.defaultTaxRate).toFixed(2);
 
@@ -179,11 +153,15 @@ export async function updateStoreProfile(
     const [updated] = await db
       .update(storeProfile)
       .set(updateSet)
-      .where(eq(storeProfile.id, currentProfile.id))
+      .where(
+        and(
+          eq(storeProfile.id, currentProfile.id),
+          eq(storeProfile.organizationId, session.organizationId)
+        )
+      )
       .returning();
 
-    // Invalidate Redis cache
-    await cacheDel(STORE_PROFILE_CACHE_KEY);
+    await cacheDel(storeProfileCacheKey(session.organizationId));
 
     revalidatePath('/admin/settings');
     revalidatePath('/pos/new-bill');
@@ -192,7 +170,7 @@ export async function updateStoreProfile(
 
     return {
       success: true,
-      data: updated,
+      data: redactStoreProfile(updated, true),
     };
   } catch (error) {
     console.error('Failed to update store profile:', error);
@@ -220,11 +198,13 @@ export async function getInvoicePrintData(
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
     const profile = await getStoreProfile();
 
+    // Tenant isolation is enforced in the query itself — never fetch another org's invoice.
     const inv = await db.query.invoices.findFirst({
-      where: (invoices, { eq }) => eq(invoices.id, invoiceId),
+      where: (invoices, { eq, and }) =>
+        and(eq(invoices.id, invoiceId), eq(invoices.organizationId, session.organizationId)),
       with: {
         customer: true,
         prescription: true,
@@ -243,10 +223,6 @@ export async function getInvoicePrintData(
       return { success: false, error: 'Invoice not found' };
     }
 
-    if (session.organizationId && inv.organizationId && inv.organizationId !== session.organizationId) {
-      return { success: false, error: 'Unauthorized: Access to invoice denied' };
-    }
-
     const itemsList = (inv.items || []).map((item) => ({
       id: item.id,
       sku: item.inventoryItem?.sku || undefined,
@@ -255,6 +231,14 @@ export async function getInvoicePrintData(
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       discountPerUnit: item.discountPerUnit,
+      // Exact stored line discount = gross − taxable, where taxable = lineTotal − taxAmount.
+      // Printing from persisted values keeps receipts identical to the server-computed invoice.
+      discount: Decimal.max(
+        0,
+        new Decimal(item.unitPrice)
+          .times(item.quantity)
+          .minus(new Decimal(item.lineTotal).minus(item.taxAmount))
+      ).toFixed(2),
       taxRate: item.taxRate || '18.00',
       category: item.inventoryItem?.category || undefined,
       brand: item.inventoryItem?.brand || null,

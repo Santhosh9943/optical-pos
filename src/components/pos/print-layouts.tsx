@@ -1,6 +1,8 @@
 // src/components/pos/print-layouts.tsx
 import React, { useMemo } from 'react';
 import Decimal from 'decimal.js';
+import { computeGstLine } from '@/lib/gst';
+import { formatDiopter } from '@/lib/format';
 
 export interface PrintInvoiceItem {
   id?: string;
@@ -75,15 +77,6 @@ export interface PrintOrderData {
   storePhone?: string;
 }
 
-/** Format SPH/CYL/ADD with +/- sign and 2 decimals */
-function formatDiopter(val: number | string | null | undefined): string {
-  if (val === null || val === undefined || val === '') return '—';
-  const num = typeof val === 'number' ? val : parseFloat(val);
-  if (isNaN(num)) return '—';
-  const sign = num > 0 ? '+' : num < 0 ? '−' : '';
-  return `${sign}${Math.abs(num).toFixed(2)}`;
-}
-
 // ─────────────────────────────────────────────────────────────
 // 1. THERMAL 80mm RECEIPT (Output A - Customer Tax Invoice)
 // ─────────────────────────────────────────────────────────────
@@ -123,17 +116,18 @@ export function ThermalReceipt({ order }: { order: PrintOrderData }) {
     let sgst18 = new Decimal(0);
 
     for (const item of order.items) {
-      const qty = new Decimal(item.quantity > 0 ? item.quantity : 1);
-      const unitPrice = new Decimal(item.unitPrice || '0.00');
-      const discount = new Decimal(item.discount || item.discountPerUnit || '0.00');
-      const taxRate = new Decimal(item.taxRate || '0.00');
-
-      const lineSubtotal = unitPrice.times(qty);
-      const diff = lineSubtotal.minus(discount);
-      const lineTaxable = diff.isNegative() ? new Decimal(0) : diff;
-      const lineTax = lineTaxable.times(taxRate).dividedBy(100);
-      const lineCgst = lineTax.dividedBy(2);
-      const lineSgst = lineTax.dividedBy(2);
+      // Shared GST engine — same per-line paise rounding as the persisted invoice.
+      const line = computeGstLine({
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        lineDiscount: item.discount || item.discountPerUnit || '0.00',
+        taxRate: item.taxRate || '0.00',
+      });
+      const lineSubtotal = line.gross;
+      const discount = line.discount;
+      const lineTaxable = line.taxable;
+      const lineCgst = line.cgst;
+      const lineSgst = line.sgst;
 
       subtotal = subtotal.plus(lineSubtotal);
       totalDiscount = totalDiscount.plus(discount);
@@ -226,10 +220,13 @@ export function ThermalReceipt({ order }: { order: PrintOrderData }) {
           {order.items.map((item, idx) => {
             const qty = item.quantity;
             const rate = new Decimal(item.unitPrice || '0.00').toFixed(2);
-            const lineTotal = new Decimal(item.unitPrice || '0.00')
-              .times(qty)
-              .minus(item.discount || item.discountPerUnit || '0.00')
-              .toFixed(2);
+            // Net (pre-tax) line amount from the shared engine; discount is capped at the gross.
+            const lineTotal = computeGstLine({
+              unitPrice: item.unitPrice,
+              quantity: qty,
+              lineDiscount: item.discount || item.discountPerUnit || '0.00',
+              taxRate: '0',
+            }).taxable.toFixed(2);
 
             return (
               <tr key={item.id ?? idx}>
@@ -602,18 +599,10 @@ export function WorkshopSlip({ order }: { order: PrintOrderData }) {
           </div>
         </div>
       </div>
-
       {/*
-        STRICT REDACTION REQUIREMENT:
-        Wrapped inside .financial-data so that @media print forcibly applies
-        display: none !important; and strips all monetary figures.
+        STRICT REDACTION REQUIREMENT (Invariant #7 / BUG-005): the workshop slip must never
+        render financial data into the DOM — not even CSS-hidden. No totals, payments or prices here.
       */}
-      <div className="financial-data mt-6 p-2 border border-red-300 bg-red-50 text-red-700 text-xs">
-        <div className="font-bold">[REDACTED FINANCIAL DATA - LAB SLIP EXCLUSION]</div>
-        <div>Grand Total: ₹{order.grandTotal}</div>
-        <div>Advance Paid: ₹{order.advancePaid}</div>
-        <div>Balance Due: ₹{order.balanceDue}</div>
-      </div>
     </div>
   );
 }

@@ -643,10 +643,12 @@ export default function ManageStaffPage() {
                     const isSelected = selectedRoles.includes(roleDef.id);
                     const Icon = roleDef.icon;
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={roleDef.id}
                         onClick={() => toggleAddRole(roleDef.id)}
-                        className={`flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer ${
+                        aria-pressed={isSelected}
+                        className={`w-full text-left flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 ${
                           isSelected
                             ? `${roleDef.cardBorder} ring-1 ring-purple-500`
                             : 'border-border bg-background hover:bg-muted/40'
@@ -672,7 +674,7 @@ export default function ManageStaffPage() {
                             {roleDef.description}
                           </p>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -724,14 +726,18 @@ export default function ManageStaffPage() {
                     return (
                       <div
                         key={b.id}
-                        onClick={() => toggleBranchSelection(b.id)}
-                        className={`flex items-center justify-between p-2.5 rounded-xl border transition cursor-pointer text-xs ${
+                        className={`flex items-center justify-between gap-2 pr-2.5 rounded-xl border transition text-xs ${
                           isChecked
                             ? 'border-purple-500/50 bg-purple-500/5'
                             : 'border-border bg-background hover:bg-muted/40'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleBranchSelection(b.id)}
+                          aria-pressed={isChecked}
+                          className="flex flex-1 min-w-0 items-center gap-2 p-2.5 text-left rounded-xl cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500"
+                        >
                           <div
                             className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
                               isChecked
@@ -742,14 +748,12 @@ export default function ManageStaffPage() {
                             {isChecked && <Check className="h-3 w-3" />}
                           </div>
                           <span className="font-medium text-foreground">{b.name}</span>
-                        </div>
+                        </button>
                         {selectedBranchIds.length > 1 && isChecked && (
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPrimaryBranchId(b.id);
-                            }}
+                            aria-pressed={primaryBranchId === b.id}
+                            onClick={() => setPrimaryBranchId(b.id)}
                             className={`text-[10px] px-2 py-0.5 rounded-full font-semibold transition ${
                               primaryBranchId === b.id
                                 ? 'bg-purple-600 text-white'
@@ -806,10 +810,12 @@ export default function ManageStaffPage() {
                   const isSelected = editRoles.includes(roleDef.id);
                   const Icon = roleDef.icon;
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={roleDef.id}
                       onClick={() => toggleEditRole(roleDef.id)}
-                      className={`flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer ${
+                      aria-pressed={isSelected}
+                      className={`w-full text-left flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 ${
                         isSelected
                           ? `${roleDef.cardBorder} ring-1 ring-purple-500`
                           : 'border-border bg-background hover:bg-muted/40'
@@ -835,7 +841,7 @@ export default function ManageStaffPage() {
                           {roleDef.description}
                         </p>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>

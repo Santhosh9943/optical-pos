@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
+import { clearClientStorageCaches } from '@/hooks/use-cached-resource';
 import { toast } from 'sonner';
 
 interface UseIdleTimeoutOptions {
@@ -33,6 +34,8 @@ export function useIdleTimeout({
   const handleLogout = useCallback(async () => {
     clearAllTimers();
     setShowWarning(false);
+    // Purge tenant-scoped client caches so cached data never survives an idle logout
+    clearClientStorageCaches();
     try {
       await authClient.signOut();
     } catch {

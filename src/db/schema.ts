@@ -239,6 +239,7 @@ export const customers = pgTable(
       table.primaryCustomerId
     ),
     orgIdx: index('customers_organization_idx').on(table.organizationId),
+    orgPhoneIdx: index('customers_org_phone_idx').on(table.organizationId, table.phone),
   })
 );
 
@@ -358,7 +359,7 @@ export const inventoryItems = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    skuUniqueIdx: uniqueIndex('inventory_sku_unique_idx').on(table.sku),
+    skuUniqueIdx: uniqueIndex('inventory_org_sku_uidx').on(table.organizationId, table.sku),
     barcodeIdx: index('inventory_barcode_idx').on(table.barcode),
     categoryIdx: index('inventory_category_idx').on(table.category),
     brandModelIdx: index('inventory_brand_model_idx').on(
@@ -489,6 +490,7 @@ export const invoices = pgTable(
       table.prescriptionId
     ),
     orgIdx: index('invoice_organization_idx').on(table.organizationId),
+    orgCreatedIdx: index('invoice_org_created_idx').on(table.organizationId, table.createdAt),
     branchIdx: index('invoice_branch_idx').on(table.branchId),
   })
 );
@@ -511,6 +513,8 @@ export const invoiceItems = pgTable(
     description: varchar('description', { length: 300 }).notNull(),
     hsnCode: varchar('hsn_code', { length: 10 }),
     quantity: integer('quantity').notNull().default(1),
+    /** Units already returned against this line; bounded by `quantity` via atomic conditional update. */
+    returnedQuantity: integer('returned_quantity').notNull().default(0),
     unitPrice: numeric('unit_price', { precision: 12, scale: 2 })
       .notNull(),
     discountPerUnit: numeric('discount_per_unit', {
@@ -585,6 +589,7 @@ export const payments = pgTable(
     paidAtIdx: index('payment_paid_at_idx').on(table.paidAt),
     modeIdx: index('payment_mode_idx').on(table.paymentMode),
     orgIdx: index('payment_organization_idx').on(table.organizationId),
+    orgPaidAtIdx: index('payment_org_paid_at_idx').on(table.organizationId, table.paidAt),
     branchIdx: index('payment_branch_idx').on(table.branchId),
   })
 );
@@ -595,6 +600,10 @@ export const payments = pgTable(
 
 export const storeProfile = pgTable('store_profile', {
   id: uuid('id').primaryKey().defaultRandom(),
+  /** Owning tenant. Exactly one profile row per organization (SEC-004). */
+  organizationId: uuid('organization_id').references(() => organizations.id, {
+    onDelete: 'cascade',
+  }),
   storeName: varchar('store_name', { length: 200 })
     .notNull()
     .default('Santhosh Optical Center'),
@@ -636,7 +645,9 @@ export const storeProfile = pgTable('store_profile', {
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => ({
+  orgUniqueIdx: uniqueIndex('store_profile_org_uidx').on(table.organizationId),
+}));
 
 export type StoreProfile = typeof storeProfile.$inferSelect;
 export type NewStoreProfile = typeof storeProfile.$inferInsert;

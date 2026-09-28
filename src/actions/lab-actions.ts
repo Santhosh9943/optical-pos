@@ -3,12 +3,13 @@
 import { and, desc, eq, notInArray, isNull, or, inArray, type SQL } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
+import Decimal from 'decimal.js';
 import {
   invoices,
   orderStatusEnum,
   type OrderStatus,
 } from '@/db/schema';
-import { getCurrentSession } from '@/lib/auth-utils';
+import { requireAuthSession } from '@/lib/auth-utils';
 import type { PrintOrderData } from '@/components/pos/print-layouts';
 
 export interface LabOrderItemDetail {
@@ -65,13 +66,11 @@ export interface LabOrderSummary {
  */
 export async function getActiveLabOrders(branchIds?: string[]): Promise<LabOrderSummary[]> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireAuthSession();
 
     const whereConditions: (SQL | undefined)[] = [
-      or(
-        eq(invoices.organizationId, session.organizationId),
-        isNull(invoices.organizationId)
-      ),
+      // Strict tenant scope — rows without an organization are never visible to any tenant.
+      eq(invoices.organizationId, session.organizationId),
       notInArray(invoices.orderStatus, ['DRAFT', 'CANCELLED_REFUNDED']),
     ];
 
@@ -84,37 +83,36 @@ export async function getActiveLabOrders(branchIds?: string[]): Promise<LabOrder
       );
     }
 
-    const rawInvoices = await db.query.invoices.findMany({
-      where: and(...whereConditions),
-      with: {
-        customer: true,
-        prescription: true,
-        branch: true,
-        items: {
-          with: {
-            inventoryItem: true,
-            patient: true,
-            prescription: true,
-          },
+    const relations = {
+      customer: true,
+      prescription: true,
+      branch: true,
+      items: {
+        with: {
+          inventoryItem: true,
+          patient: true,
+          prescription: true,
         },
-        payments: true,
       },
-      orderBy: [desc(invoices.createdAt)],
-    });
+      payments: true,
+    } as const;
 
-    let completedCount = 0;
-    const filteredOrders: typeof rawInvoices = [];
-
-    for (const inv of rawInvoices) {
-      if (inv.orderStatus === 'DELIVERED_AND_CLOSED') {
-        if (completedCount < 50) {
-          completedCount++;
-          filteredOrders.push(inv);
-        }
-      } else {
-        filteredOrders.push(inv);
-      }
-    }
+    // Two bounded queries instead of loading the whole invoice history: every open order,
+    // plus only the 50 most recent completed ones.
+    const [openOrders, completedOrders] = await Promise.all([
+      db.query.invoices.findMany({
+        where: and(...whereConditions, notInArray(invoices.orderStatus, ['DELIVERED_AND_CLOSED'])),
+        with: relations,
+        orderBy: [desc(invoices.createdAt)],
+      }),
+      db.query.invoices.findMany({
+        where: and(...whereConditions, eq(invoices.orderStatus, 'DELIVERED_AND_CLOSED')),
+        with: relations,
+        orderBy: [desc(invoices.createdAt)],
+        limit: 50,
+      }),
+    ]);
+    const filteredOrders = [...openOrders, ...completedOrders];
 
     return filteredOrders.map((inv) => {
       const itemsList: LabOrderItemDetail[] = (inv.items || []).map((item) => ({
@@ -205,13 +203,25 @@ export async function getActiveLabOrders(branchIds?: string[]): Promise<LabOrder
           address: inv.customer?.addressLine1 || undefined,
           gstin: inv.customer?.gstin || undefined,
         },
-        items: itemsList.map((i) => ({
+        items: itemsList.map((i, idx) => {
+          const stored = inv.items[idx];
+          // Exact persisted line discount (gross − taxable) and the line's real GST slab,
+          // so reprints match the original invoice (never a hardcoded 18%).
+          const lineDiscount = Decimal.max(
+            0,
+            new Decimal(stored.unitPrice)
+              .times(stored.quantity)
+              .minus(new Decimal(stored.lineTotal).minus(stored.taxAmount))
+          ).toFixed(2);
+          return {
           id: i.id,
           sku: i.sku || undefined,
           description: i.description,
+          hsnCode: stored.hsnCode || stored.inventoryItem?.hsnCode || null,
           quantity: i.quantity,
           unitPrice: i.unitPrice,
-          taxRate: '18.00',
+          discount: lineDiscount,
+          taxRate: stored.taxRate || '18.00',
           category: i.category,
           brand: i.brand,
           model: i.model,
@@ -221,7 +231,8 @@ export async function getActiveLabOrders(branchIds?: string[]): Promise<LabOrder
           patientName: i.patientName,
           isCustomerOwnFrame: i.isCustomerOwnFrame,
           fittingNote: i.fittingNote,
-        })),
+          };
+        }),
         prescription: prescriptionsList[0] || null,
         prescriptions: prescriptionsList,
         grandTotal: inv.grandTotal,
@@ -264,25 +275,48 @@ export async function getActiveLabOrders(branchIds?: string[]): Promise<LabOrder
   }
 }
 
+/** Terminal states: an order in one of these can never be moved again (closed invoices are immutable). */
+const TERMINAL_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set<OrderStatus>([
+  'DELIVERED_AND_CLOSED',
+  'CANCELLED_REFUNDED',
+]);
+
 /**
- * Update the order status of a specific invoice.
+ * @description Moves an order through the lab workflow for the caller's organization.
+ * Closed (`DELIVERED_AND_CLOSED`) and cancelled orders are immutable; corrections require a credit note.
+ * @param invoiceId - Invoice to update.
+ * @param newStatus - Target workflow status.
+ * @returns The applied status.
  */
 export async function updateOrderStatus(
   invoiceId: string,
   newStatus: OrderStatus
 ): Promise<{ success: boolean; invoiceId: string; newStatus: OrderStatus }> {
   try {
-    if (!orderStatusEnum.enumValues.includes(newStatus)) {
+    const session = await requireAuthSession();
+    if (!orderStatusEnum.enumValues.includes(newStatus) || newStatus === 'DRAFT') {
       throw new Error(`Invalid order status: ${newStatus}`);
     }
 
-    await db
+    // Conditional update: tenant-scoped and refuses to touch terminal (immutable) orders.
+    const updated = await db
       .update(invoices)
       .set({
         orderStatus: newStatus,
         updatedAt: new Date(),
       })
-      .where(eq(invoices.id, invoiceId));
+      .where(
+        and(
+          eq(invoices.id, invoiceId),
+          eq(invoices.organizationId, session.organizationId),
+          notInArray(invoices.orderStatus, Array.from(TERMINAL_ORDER_STATUSES))
+        )
+      )
+      .returning({ id: invoices.id });
+
+    if (updated.length === 0) {
+      throw new Error('Order not found, or it is already closed and can no longer be changed.');
+    }
 
     revalidatePath('/admin/lab-orders');
 
@@ -293,6 +327,6 @@ export async function updateOrderStatus(
     };
   } catch (error) {
     console.error(`Failed to update order status for invoice ${invoiceId}:`, error);
-    throw new Error('Failed to update order status');
+    throw new Error(error instanceof Error ? error.message : 'Failed to update order status');
   }
 }

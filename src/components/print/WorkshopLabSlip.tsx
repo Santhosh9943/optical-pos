@@ -2,17 +2,10 @@
 
 import React, { useMemo } from 'react';
 import type { PrintOrderData } from '@/components/pos/print-layouts';
+import { formatDiopter } from '@/lib/format';
 
 interface WorkshopLabSlipProps {
   order: PrintOrderData;
-}
-
-function formatDiopter(val: number | string | null | undefined): string {
-  if (val === null || val === undefined || val === '') return '—';
-  const num = typeof val === 'number' ? val : parseFloat(String(val));
-  if (isNaN(num)) return '—';
-  const sign = num > 0 ? '+' : num < 0 ? '−' : '';
-  return `${sign}${Math.abs(num).toFixed(2)}`;
 }
 
 export function WorkshopLabSlip({ order }: WorkshopLabSlipProps) {

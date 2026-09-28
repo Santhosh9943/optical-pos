@@ -1,8 +1,26 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+/**
+ * Adds a note through the drawer's Quick Add card (drawer must already be open).
+ * Default sample notes were purged in Phase 31 (store initialises `notes: []`),
+ * so any test that needs existing cards must create them first.
+ */
+async function addNoteViaUI(
+  page: Page,
+  text: string,
+  priority: 'high' | 'medium' | 'low' = 'medium'
+): Promise<void> {
+  await page.locator('[data-testid="input-quick-note"]').fill(text);
+  await page.locator(`[data-testid="pill-priority-${priority}"]`).click();
+  await page.locator('[data-testid="btn-add-note"]').click();
+  await expect(
+    page.locator('[data-testid^="note-card-"]').filter({ hasText: text })
+  ).toBeVisible();
+}
 
 test.describe('Phase 26: Priority Notes (Temp Notes) Floating Drawer / Widget', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage to start with clean default notes
+    // Clear localStorage to start with an empty notes store (no default sample notes since Phase 31)
     await page.goto('/pos/new-bill');
     await page.evaluate(() => {
       localStorage.removeItem('priority_notes_cache');
@@ -16,9 +34,9 @@ test.describe('Phase 26: Priority Notes (Temp Notes) Floating Drawer / Widget', 
     const trigger = page.locator('[data-testid="topbar-priority-notes-trigger"]');
     await expect(trigger).toBeVisible();
 
-    // Verify initial badge count is visible
+    // Clean store: no default notes, so no uncompleted-count badge yet
     const badge = page.locator('[data-testid="priority-notes-badge-count"]');
-    await expect(badge).toBeVisible();
+    await expect(badge).not.toBeVisible();
 
     // Click trigger to open drawer
     await trigger.click();
@@ -30,10 +48,17 @@ test.describe('Phase 26: Priority Notes (Temp Notes) Floating Drawer / Widget', 
     const backdrop = page.locator('[data-testid="priority-notes-backdrop"]');
     await expect(backdrop).toBeVisible();
 
+    // Create a note so the topbar badge has an uncompleted count to show
+    await addNoteViaUI(page, 'Badge count seed note');
+
     // Click close button
     const closeBtn = page.locator('[data-testid="btn-close-drawer"]');
     await closeBtn.click();
     await expect(drawer).not.toBeVisible();
+
+    // Badge now reflects the single uncompleted note in the active store
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveText('1');
   });
 
   test('2. Can add High, Medium, and Low priority notes with immediate categorization', async ({
@@ -174,6 +199,18 @@ test.describe('Phase 26: Priority Notes (Temp Notes) Floating Drawer / Widget', 
   }) => {
     await page.locator('[data-testid="topbar-priority-notes-trigger"]').click();
 
+    // No default notes exist anymore - create one to batch-edit
+    await addNoteViaUI(page, 'Batch edit revert candidate', 'medium');
+    const noteCardTestId = await page
+      .locator('[data-testid^="note-card-"]')
+      .filter({ hasText: 'Batch edit revert candidate' })
+      .getAttribute('data-testid');
+    expect(noteCardTestId).toBeTruthy();
+    const cardId = noteCardTestId as string;
+    const mediumBucket = page.locator('[data-testid="priority-bucket-medium"]');
+    const lowBucket = page.locator('[data-testid="priority-bucket-low"]');
+    await expect(mediumBucket.getByTestId(cardId)).toBeVisible();
+
     // Enter batch edit mode
     const editBtn = page.locator('[data-testid="btn-edit-batch"]');
     await editBtn.click();
@@ -187,81 +224,98 @@ test.describe('Phase 26: Priority Notes (Temp Notes) Floating Drawer / Widget', 
     // Cards should show drag indicator text
     await expect(page.locator('text=Drag to shift').first()).toBeVisible();
 
-    // Click cancel to revert
+    // Change priority inside batch mode: card moves Medium -> Low
+    await mediumBucket
+      .getByTestId(cardId)
+      .getByRole('button', { name: 'Low', exact: true })
+      .click();
+    await expect(lowBucket.getByTestId(cardId)).toBeVisible();
+    await expect(mediumBucket.getByTestId(cardId)).toHaveCount(0);
+
+    // Click cancel to revert to the pre-edit snapshot
     await cancelBtn.click();
     await expect(page.locator('[data-testid="btn-edit-batch"]')).toBeVisible();
+    await expect(mediumBucket.getByTestId(cardId)).toBeVisible();
+    await expect(lowBucket.getByTestId(cardId)).toHaveCount(0);
   });
 
-  test('7. Multi-Store Branch Scoping & Org Admin Merged View Grouping', async ({
+  // NOTE: The former Org-Admin "All Branches (Merged)" view (option value="all",
+  // container-merged-branches, branch-group-*, select-add-note-branch) and the
+  // role-gated branch filter were removed from priority-notes-drawer.tsx. Notes are
+  // now strictly scoped to the single active store; the branch <select> renders
+  // whenever more than one branch is available, regardless of role.
+  test('7. Branch scope selector lists stores (no merged option) and switching store scopes notes', async ({
     page,
   }) => {
     await page.locator('[data-testid="topbar-priority-notes-trigger"]').click();
 
-    // 1. Verify Store Scope Bar exists with Org Admin badge
     const storeBar = page.locator('[data-testid="store-scope-bar"]');
     await expect(storeBar).toBeVisible();
 
+    // E2E tenant has multiple branches (DB branches, or the drawer's 2-branch fallback)
     const branchFilter = page.locator('[data-testid="select-branch-filter"]');
     await expect(branchFilter).toBeVisible();
 
-    // Should include 'All Branches (Merged)'
-    await expect(branchFilter.locator('option[value="all"]')).toBeAttached();
+    const optionValues = await branchFilter
+      .locator('option')
+      .evaluateAll((opts) => opts.map((o) => (o as HTMLOptionElement).value));
+    expect(optionValues.length).toBeGreaterThan(1);
+    expect(optionValues).not.toContain('all');
 
-    // 2. In Merged View, verify notes are grouped by branch
-    const mergedContainer = page.locator('[data-testid="container-merged-branches"]');
-    await expect(mergedContainer).toBeVisible();
+    // Single-store container is always used; merged container no longer exists
+    await expect(page.locator('[data-testid="container-single-branch"]')).toBeVisible();
+    await expect(page.locator('[data-testid="container-merged-branches"]')).toHaveCount(0);
 
-    // Should have branch group containers
-    const branchGroups = page.locator('[data-testid^="branch-group-"]');
-    await expect(branchGroups.first()).toBeVisible();
+    // Pin the first store, add a note there
+    const [firstBranchId, secondBranchId] = optionValues;
+    await branchFilter.selectOption(firstBranchId);
+    await expect(branchFilter).toHaveValue(firstBranchId);
+    await addNoteViaUI(page, 'Branch scoped note for first store');
 
-    // 3. Quick Add in Merged View shows 'Add to Store:' branch selector
-    const addNoteBranchSelect = page.locator('[data-testid="select-add-note-branch"]');
-    await expect(addNoteBranchSelect).toBeVisible();
+    const scopedNote = page
+      .locator('[data-testid^="note-card-"]')
+      .filter({ hasText: 'Branch scoped note for first store' });
 
-    // 4. Switch to single branch view from drawer dropdown
-    const options = await branchFilter.locator('option').all();
-    if (options.length > 1) {
-      const secondOptionVal = await options[1].getAttribute('value');
-      if (secondOptionVal) {
-        await branchFilter.selectOption(secondOptionVal);
+    // Switch to the second store: the first store's note is out of scope
+    await branchFilter.selectOption(secondBranchId);
+    await expect(branchFilter).toHaveValue(secondBranchId);
+    await expect(scopedNote).toHaveCount(0);
+    await expect(page.locator('[data-testid="container-single-branch"]')).toBeVisible();
 
-        // Merged container should disappear, single branch container should appear
-        await expect(page.locator('[data-testid="container-single-branch"]')).toBeVisible();
-        await expect(page.locator('[data-testid="container-merged-branches"]')).not.toBeVisible();
-      }
-    }
+    // Switch back: the note is visible again
+    await branchFilter.selectOption(firstBranchId);
+    await expect(branchFilter).toHaveValue(firstBranchId);
+    await expect(scopedNote).toBeVisible();
   });
 
-  test('8. Non-Org Admin Store Staff role restricts to single branch view without Merged option', async ({
+  test('8. Store scope bar shows either a branch select or a single-branch label, plus exactly one role badge', async ({
     page,
   }) => {
-    // Simulate non-org-admin user role in tenantStore
-    await page.evaluate(() => {
-      const stored = localStorage.getItem('optixos_tenant_store');
-      const data = stored ? JSON.parse(stored) : { state: {} };
-      data.state = {
-        ...data.state,
-        actualRole: 'user',
-        activeRoleMode: 'user',
-        selectedBranchId: '00000000-0000-0000-0000-000000000002',
-      };
-      localStorage.setItem('optixos_tenant_store', JSON.stringify(data));
-    });
-    await page.reload();
-
     await page.locator('[data-testid="topbar-priority-notes-trigger"]').click();
+    await expect(page.locator('[data-testid="store-scope-bar"]')).toBeVisible();
 
-    // Verify Org Admin multi-branch merged selector is NOT visible
     const branchFilter = page.locator('[data-testid="select-branch-filter"]');
-    await expect(branchFilter).not.toBeVisible();
+    const singleBranchLabel = page.locator('[data-testid="label-single-branch"]');
 
-    // Verify Single Store badge or lock is visible
+    // Select renders only when >1 branch is available; otherwise the read-only label
+    if ((await branchFilter.count()) > 0) {
+      await expect(branchFilter).toBeVisible();
+      await expect(singleBranchLabel).toHaveCount(0);
+      expect(await branchFilter.locator('option').count()).toBeGreaterThan(1);
+      await expect(branchFilter.locator('option[value="all"]')).toHaveCount(0);
+    } else {
+      await expect(singleBranchLabel).toBeVisible();
+      await expect(singleBranchLabel).not.toHaveText('');
+    }
+
+    // Exactly one role-scope badge (Org Admin vs Single Store lock) is rendered
+    const orgAdminBadge = page.locator('[data-testid="badge-org-admin-access"]');
     const singleStoreBadge = page.locator('[data-testid="badge-single-store-locked"]');
-    await expect(singleStoreBadge).toBeVisible();
+    expect((await orgAdminBadge.count()) + (await singleStoreBadge.count())).toBe(1);
 
-    // Merged container must NOT be visible
-    await expect(page.locator('[data-testid="container-merged-branches"]')).not.toBeVisible();
+    // No merged view / merged quick-add branch picker in any role
+    await expect(page.locator('[data-testid="container-merged-branches"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="select-add-note-branch"]')).toHaveCount(0);
     await expect(page.locator('[data-testid="container-single-branch"]')).toBeVisible();
   });
 });
