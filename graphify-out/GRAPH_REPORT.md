@@ -1,16 +1,16 @@
 # Graph Report - optical-pos  (2026-09-28)
 
 ## Corpus Check
-- 266 files · ~286,399 words
+- 267 files · ~293,324 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5312 nodes · 9080 edges · 441 communities (423 shown, 18 thin omitted)
+- 5327 nodes · 9137 edges · 437 communities (410 shown, 27 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 15 edges (avg confidence: 0.82)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e1a6378e`
+- Built from commit: `28b091e0`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -426,16 +426,12 @@
 - [[_COMMUNITY_Community 405|Community 405]]
 - [[_COMMUNITY_Community 406|Community 406]]
 - [[_COMMUNITY_dbindex.ts|db/index.ts]]
-- [[_COMMUNITY_Community 408|Community 408]]
 - [[_COMMUNITY_Community 409|Community 409]]
-- [[_COMMUNITY_Community 410|Community 410]]
 - [[_COMMUNITY_Community 411|Community 411]]
 - [[_COMMUNITY_Community 412|Community 412]]
-- [[_COMMUNITY_Community 413|Community 413]]
 - [[_COMMUNITY_Community 414|Community 414]]
 - [[_COMMUNITY_Community 415|Community 415]]
 - [[_COMMUNITY_Community 416|Community 416]]
-- [[_COMMUNITY_Community 417|Community 417]]
 - [[_COMMUNITY_Community 418|Community 418]]
 - [[_COMMUNITY_Community 419|Community 419]]
 - [[_COMMUNITY_Architecture Decision Records (ADRs)|Architecture Decision Records (ADRs)]]
@@ -467,8 +463,6 @@
 10. `db/index.ts` - 46 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `completeStaffInitialPasswordChangeAction()` --calls--> `headers`  [INFERRED]
-  src/actions/staff-auth-actions.ts → e2e/security-penetration-audit.spec.ts
 - `lowestPlanUnlocking()` --calls--> `canAccessFeature()`  [EXTRACTED]
   e2e/global-setup.ts → src/lib/feature-gate.ts
 - `lowestPlanUnlocking()` --calls--> `canAccessFeature()`  [EXTRACTED]
@@ -477,48 +471,50 @@
   src/actions/account-actions.ts → e2e/security-penetration-audit.spec.ts
 - `resetTwoFactorAction()` --calls--> `headers`  [INFERRED]
   src/actions/account-actions.ts → e2e/security-penetration-audit.spec.ts
+- `setUserPasswordAction()` --calls--> `headers`  [INFERRED]
+  src/actions/account-actions.ts → e2e/security-penetration-audit.spec.ts
 
 ## Hyperedges (group relationships)
 - **OptixOS Core Documentation Suite** — docs_prd, docs_architecture_optixos_system_architecture, docs_design_optixos_design_system_ui_specifications, docs_rules_optixos_operational_ai_coding_rules, docs_decisions_architecture_decision_records_adrs, docs_security_security_compliance_specification, docs_test_plan_test_plan_quality_assurance_matrix, docs_tasks_task_ledger_development_roadmap, docs_memory_project_memory_living_system_ledger, docs_vibe_workflow_the_optixos_vibe_coding_playbook [EXTRACTED 1.00]
 - **Optical Domain Invariants** — concept_decimal_js, concept_atomic_inventory, concept_multi_tenancy [EXTRACTED 1.00]
 
-## Communities (441 total, 18 thin omitted)
+## Communities (437 total, 27 thin omitted)
 
 ### Community 0 - "inventory-view.tsx"
-Cohesion: 0.11
-Nodes (29): getStoreApprovalRequestsAction(), InventoryRow, UpdateInventoryItemInput, getCurrentPlanAction(), inventory/page.tsx, DashboardLayout(), loadPlan(), owner/approvals/page.tsx (+21 more)
+Cohesion: 0.18
+Nodes (14): InventoryRow, UpdateInventoryItemInput, inventory/page.tsx, AddInventoryForm(), AddInventoryFormProps, EditInventoryModal(), EditInventoryModalProps, InventoryTable() (+6 more)
 
 ### Community 1 - "schema.ts"
 Cohesion: 0.04
-Nodes (69): OwnerPreflightResult, staffInitialPasswordChangeSchema, StaffPreflightResult, BranchDetail, branchNameSchema, createStaffMemberSchema, PlatformTenantDetail, RoleMode (+61 more)
+Nodes (55): razorpay/route.ts, ACTIVATABLE_SUBSCRIPTION_STATUSES, POST(), RazorpayWebhookBody, RazorpayWebhookEntity, account, accountRelations, Branch (+47 more)
 
 ### Community 2 - "Decimal.js"
-Cohesion: 0.05
-Nodes (56): dashboardBranchIdSchema, NON_REVENUE_ORDER_STATUSES, getInvoiceForEditAction(), updateInvoiceDetailsAction(), UpdateInvoiceInput, updateInvoiceSchema, collectBalance(), CollectBalanceResult (+48 more)
+Cohesion: 0.10
+Nodes (25): getInvoiceForEditAction(), UpdateInvoiceInput, updateInvoiceSchema, DailyFinancialsReport, DailyReportTransaction, DatePreset, FinancialsReportFilter, formatDateStr() (+17 more)
 
 ### Community 3 - "0000_dashing_runaways.sql"
 Cohesion: 0.06
 Nodes (53): "customers", customers_phone_idx, customers_phone_unique_idx, inventory_barcode_idx, inventory_brand_model_idx, inventory_category_idx, "inventory_items", inventory_low_stock_idx (+45 more)
 
 ### Community 4 - "print-layouts.tsx"
-Cohesion: 0.15
-Nodes (19): WorkshopSlipModalProps, A4Invoice(), PrintCustomerData, PrintInvoiceItem, PrintOrderData, PrintPrescriptionData, WorkshopSlip(), A4TaxInvoice() (+11 more)
+Cohesion: 0.13
+Nodes (23): PatientDetailHistory, PatientDetailSheetProps, WorkshopSlipModalProps, A4Invoice(), PrintCustomerData, PrintInvoiceItem, PrintOrderData, PrintPrescriptionData (+15 more)
 
 ### Community 5 - "cn"
-Cohesion: 0.12
-Nodes (28): class-variance-authority, react, BadgeProps, Button, ButtonProps, buttonVariants, Card, CardContent (+20 more)
+Cohesion: 0.16
+Nodes (19): Badge(), BadgeProps, badgeVariants, Card, CardContent, CardDescription, CardFooter, CardHeader (+11 more)
 
 ### Community 6 - "reports-view.tsx"
-Cohesion: 0.11
-Nodes (21): DashboardOperationalMetrics, getInvoiceForEditAction(), updateInvoiceDetailsAction(), DailyFinancialsReport, DatePreset, getFinancialsReport(), ProcessReturnRefundInput, admin/dashboard/page.tsx (+13 more)
+Cohesion: 0.13
+Nodes (22): getStoreApprovalRequestsAction(), resolveStoreApprovalRequestAction(), getInvoiceForEditAction(), DailyFinancialsReport, DatePreset, getFinancialsReport(), processReturnRefundAction(), ProcessReturnRefundInput (+14 more)
 
 ### Community 7 - "audit-design-system.ts"
 Cohesion: 0.54
 Nodes (6): auditFile(), EXCLUDE_DIRS, getAllFiles(), runAudit(), SRC_DIR, Violation
 
 ### Community 8 - "settings-actions.ts"
-Cohesion: 0.13
-Nodes (31): deleteUserAccountAction(), getUserAccountStatusAction(), resetTwoFactorAction(), setUserPasswordAction(), toggleEmailOtpTwoFactorAction(), updateTwoFactorMethodAction(), UserAccountStatus, buildFallbackStoreProfile() (+23 more)
+Cohesion: 0.12
+Nodes (34): deleteUserAccountAction(), getUserAccountStatusAction(), resetTwoFactorAction(), setUserPasswordAction(), toggleEmailOtpTwoFactorAction(), updateTwoFactorMethodAction(), UserAccountStatus, saveSmtpSettingsAction() (+26 more)
 
 ### Community 9 - "compilerOptions"
 Cohesion: 0.11
@@ -529,8 +525,8 @@ Cohesion: 0.19
 Nodes (17): "account", account_userId_idx, "invitation", invitation_email_idx, invitation_organizationId_idx, "member", member_organizationId_idx, member_userId_idx (+9 more)
 
 ### Community 11 - "package.json"
-Cohesion: 0.10
-Nodes (19): autoprefixer, better-auth, @better-fetch/fetch, clsx, eslint, eslint-config-next, nodemailer, postcss (+11 more)
+Cohesion: 0.07
+Nodes (27): autoprefixer, better-auth, @better-fetch/fetch, clsx, dotenv, drizzle-kit, eslint, eslint-config-next (+19 more)
 
 ### Community 12 - "dependencies"
 Cohesion: 0.09
@@ -538,7 +534,7 @@ Nodes (22): dependencies, better-auth, @better-fetch/fetch, class-variance-autho
 
 ### Community 13 - "cache.ts"
 Cohesion: 0.10
-Nodes (24): @upstash/redis, runTests(), getPatients(), GET(), GET(), buildCacheKey(), cacheDel(), cacheFlush() (+16 more)
+Nodes (25): @upstash/redis, runTests(), inventory/search/route.ts, dynamic, GET(), inventoryItems, buildCacheKey(), cacheDel() (+17 more)
 
 ### Community 14 - "Vibe Coding_ A Complete Beginner-to-Production Guide.md"
 Cohesion: 0.07
@@ -553,8 +549,8 @@ Cohesion: 0.33
 Nodes (6): **1\. What problem are you solving?**, **2\. Step 1: Define What You Want to Build**, **2\. Who is the user?**, **3\. What is the main outcome?**, **4\. What is the MVP?**, **5\. What is NOT part of the first version?**
 
 ### Community 17 - "lucide-react"
-Cohesion: 0.13
-Nodes (24): lucide-react, sonner, PublicReceiptData, completeStaffInitialPasswordChangeAction(), resolveOrganizationByInput(), verifyOwnerLoginPreflightAction(), verifyStaffPortalLoginPreflightAction(), 2fa/page.tsx (+16 more)
+Cohesion: 0.11
+Nodes (34): lucide-react, react, sonner, use-debounce, completeStaffInitialPasswordChangeAction(), resolveOrganizationByInput(), verifyOwnerLoginPreflightAction(), verifyStaffPortalLoginPreflightAction() (+26 more)
 
 ### Community 18 - "The OptixOS Vibe Coding Playbook"
 Cohesion: 0.15
@@ -570,7 +566,7 @@ Nodes (18): devDependencies, autoprefixer, dotenv, drizzle-kit, eslint, eslint-c
 
 ### Community 21 - "patient-actions.ts"
 Cohesion: 0.10
-Nodes (37): CreateStoreApprovalInput, createStoreApprovalRequestAction(), createStoreApprovalSchema, resolveStoreApprovalRequestAction(), StoreApprovalType, addInventoryItem(), deleteInventoryItem(), getInventoryList() (+29 more)
+Nodes (30): CreateStoreApprovalInput, createStoreApprovalRequestAction(), createStoreApprovalSchema, StoreApprovalType, addInventoryItem(), deleteInventoryItem(), getInventoryList(), moneyString (+22 more)
 
 ### Community 22 - "scripts"
 Cohesion: 0.12
@@ -581,8 +577,8 @@ Cohesion: 0.40
 Nodes (5): **25\. Step 22: Test Every Feature**, **Build**, **Lint**, **Tests**, **Type check**
 
 ### Community 25 - "test-vertex-converter.ts"
-Cohesion: 0.12
-Nodes (24): PatientPrescriptionHistory, calculateSphericalEquivalent(), ConvertedEyePower, ConvertedPrescriptionResult, convertSingleEyePower(), convertSpectacleToContactLens(), formatDiopter(), roundToQuarterStep() (+16 more)
+Cohesion: 0.17
+Nodes (15): PatientPrescriptionHistory, calculateSphericalEquivalent(), ConvertedEyePower, ConvertedPrescriptionResult, convertSingleEyePower(), convertSpectacleToContactLens(), formatDiopter(), roundToQuarterStep() (+7 more)
 
 ### Community 26 - "app/layout.tsx"
 Cohesion: 0.20
@@ -590,19 +586,19 @@ Nodes (7): next, next-themes, app/layout.tsx, inter, metadata, metadata, ThemePr
 
 ### Community 27 - "types.ts"
 Cohesion: 0.12
-Nodes (33): dismissNotificationAction(), getNotificationsAction(), getUnreadNotificationCountAction(), markAllNotificationsReadAction(), markNotificationReadAction(), seedInitialNotificationsAction(), notifications/index.ts, NotificationBellTrigger() (+25 more)
+Nodes (33): dismissNotificationAction(), dispatchNotificationAction(), getNotificationsAction(), getUnreadNotificationCountAction(), markAllNotificationsReadAction(), markNotificationReadAction(), seedInitialNotificationsAction(), notifications/index.ts (+25 more)
 
 ### Community 28 - "OptixOS — Universal AI Agent Engineering Guidelines"
 Cohesion: 0.10
 Nodes (19): 1.1 Dynamically Elastic Documentation, 1.2 Strict Archive Isolation Rule (`docs/archive/`), 1.3 Spec-Driven Feature Encapsulation (`specs/`), 1. Single Source of Truth: The `docs/` Suite, 2.1 Never Explore from Scratch ("No Blind Fresh Exploration"), 2.2 Write Clean, "Graphifyable" Code Before Extraction, 2.3 Mandatory Continuous Graph Sync, 2. Knowledge Graph-First Exploration & Graphify Protocol (+11 more)
 
 ### Community 29 - "tailwind.config.ts"
-Cohesion: 0.40
-Nodes (4): tailwindcss, tailwindcss-animate, config, tailwindV4CompatPlugin
+Cohesion: 0.08
+Nodes (36): drizzle-orm, migrate(), migrate(), OwnerPreflightResult, staffInitialPasswordChangeSchema, StaffPreflightResult, BranchDetail, branchNameSchema (+28 more)
 
 ### Community 30 - "dashboard-view.tsx"
-Cohesion: 0.06
-Nodes (65): CreateStoreApprovalInput, createStoreApprovalRequestAction(), createStoreApprovalSchema, getStoreApprovalRequestsAction(), resolveStoreApprovalRequestAction(), StoreApprovalType, getDashboardOperationalMetricsAction(), addInventoryItem() (+57 more)
+Cohesion: 0.05
+Nodes (64): CreateStoreApprovalInput, createStoreApprovalRequestAction(), createStoreApprovalSchema, resolveStoreApprovalRequestAction(), StoreApprovalType, deleteInventoryItem(), searchBarcodeItemAction(), ageSchema (+56 more)
 
 ### Community 36 - "**30\. Step 27: Prepare for Deployment**"
 Cohesion: 0.40
@@ -625,16 +621,16 @@ Cohesion: 0.67
 Nodes (3): **7\. Step 4: Install the Development Environment**, **Optional**, **Required**
 
 ### Community 45 - "pos-store.ts"
-Cohesion: 0.17
-Nodes (22): AddProductModal(), AddProductModalProps, CATEGORY_INFO, getInputType(), getStepName(), getStepOptions(), ICON_MAP, ProductCategory (+14 more)
+Cohesion: 0.09
+Nodes (34): AddFamilyMemberModalProps, AddProductModalProps, BillingCart(), BillingCartProps, calculateCartMetrics(), CalculatedCartLine, CartItem, CartRxInspectorModalProps (+26 more)
 
 ### Community 46 - "tenant-actions.ts"
-Cohesion: 0.22
-Nodes (25): createBranchAction(), createStaffMemberAction(), deleteBranchAction(), deleteStaffMemberAction(), getOrganizationBranchesAction(), getStaffMembersAction(), getUserTenancyContext(), OperationalRole (+17 more)
+Cohesion: 0.24
+Nodes (24): createBranchAction(), createStaffMemberAction(), deleteBranchAction(), deleteStaffMemberAction(), getOrganizationBranchesAction(), getStaffMembersAction(), getUserTenancyContext(), OperationalRole (+16 more)
 
 ### Community 47 - "pos-view.tsx"
 Cohesion: 0.11
-Nodes (23): getLinkedFamilyGroup(), getPatientOrderHistory(), getPatientPrescriptions(), PatientOrderHistoryItem, saveNewPrescription(), new-bill/page.tsx, AddFamilyMemberModal(), AddFamilyMemberModalProps (+15 more)
+Nodes (23): getLinkedFamilyGroup(), getPatientOrderHistory(), getPatientPrescriptions(), linkExistingCustomerToFamily(), PatientOrderHistoryItem, saveNewPrescription(), new-bill/page.tsx, AddFamilyMemberModal() (+15 more)
 
 ### Community 48 - "Historical Bug Fix Ledger"
 Cohesion: 0.05
@@ -653,8 +649,8 @@ Cohesion: 0.11
 Nodes (18): 1. Active Session Metadata, 2. Most Recent Task Accomplishments (Configured Store Product Types Display, Step Normalization, Lab Orders De-congestion & Direct Viewports), 2. Most Recent Task Accomplishments (Phase 29: Practice Account Creation with Org & Optional Branch Defaults, Owner Role Tagging, Env Prefix, and Super Admin Session Expiration), 2. Most Recent Task Accomplishments (Phase 30: Practice ID & Organization Generated Information Exposure Across Super Admin & Staff Portal), 2. Most Recent Task Accomplishments (Phase 31: Resolution of React 19 SSR Hydration Mismatch, Stale Cache Elimination & Zero-Mock Invariant Enforcement), 2. Most Recent Task Accomplishments (Phase 38: Settings UI/UX Refactor, Streamlining & Compact Redesign), 2. Most Recent Task Accomplishments (Phase 39: Full-Estate Audit — Security, Money Integrity, Data Layer & Premium UI), 3. Most Recent Task Accomplishments (Phase 32: Organization Owner Portal, Sovereign Practice Governance & Staff Isolation) (+10 more)
 
 ### Community 52 - "billing-cart.tsx"
-Cohesion: 0.12
-Nodes (19): BillingCart(), BillingCartProps, calculateCartMetrics(), CalculatedCartLine, CartRxInspectorModalProps, CartTotals, DiscountCellProps, CartItemEditModal() (+11 more)
+Cohesion: 0.18
+Nodes (16): PatientPrescriptionHistory, getEnabledProductTypesAction(), AddProductModal(), CATEGORY_INFO, getInputType(), getStepName(), getStepOptions(), ICON_MAP (+8 more)
 
 ### Community 53 - "settings-view.tsx"
 Cohesion: 0.03
@@ -673,8 +669,8 @@ Cohesion: 0.10
 Nodes (22): 024-gst-e-invoicing/plan.md, 1. System Architecture & Component Topology, 2. Database Schema DDL (`src/db/schema.ts`), 3. Pre-Implementation Blast Radius & Invariant Audit, 4. Verification & Testing Strategy, Technical Implementation Plan: Indian GST E-Invoicing & GSTR-1 Ledger Export, 024-gst-e-invoicing/spec.md, 1. Problem Statement & Business Objective (+14 more)
 
 ### Community 57 - "prescription.ts"
-Cohesion: 0.11
-Nodes (18): GST_RATES, addSchema, axisSchema, CreateOrderInput, createOrderSchema, cylinderSchema, InvoiceBillingDetailsInput, invoiceBillingDetailsSchema (+10 more)
+Cohesion: 0.08
+Nodes (25): computeGstInvoice(), GST_RATES, GstInvoiceResult, GstLineInput, GstLineResult, MoneyInput, roundPaise(), toDecimal() (+17 more)
 
 ### Community 58 - "security-audit.ts"
 Cohesion: 0.23
@@ -693,8 +689,8 @@ Cohesion: 0.67
 Nodes (3): archive/README.md, Archival Policy, OptixOS — Completed Specs Archive
 
 ### Community 62 - "subscription-actions.ts"
-Cohesion: 0.16
-Nodes (17): ACTIVATABLE_SUBSCRIPTION_STATUSES, buildAlreadyPaidResult(), checkOrganizationFeatureAccessAction(), createRazorpaySubscriptionOrderAction(), CreateSubscriptionOrderResult, getOrganizationSubscriptionStatusAction(), handlePaymentFailureAction(), paymentFailurePayloadSchema (+9 more)
+Cohesion: 0.18
+Nodes (17): ACTIVATABLE_SUBSCRIPTION_STATUSES, buildAlreadyPaidResult(), createRazorpaySubscriptionOrderAction(), CreateSubscriptionOrderResult, getOrganizationSubscriptionStatusAction(), handlePaymentFailureAction(), paymentFailurePayloadSchema, verifyPaymentPayloadSchema (+9 more)
 
 ### Community 63 - "3. Phased Implementation Sequence"
 Cohesion: 0.17
@@ -713,20 +709,20 @@ Cohesion: 0.20
 Nodes (10): 025-razorpay-saas-subscription/tasks.md, Phase 1: Environment & Secrets Setup, Phase 2: Database Schema & Subscriptions Table, Phase 3: Razorpay Server Engine & Actions, Phase 4: Feature Gating & Entitlements, Phase 5: Client Checkout & Onboarding UI, Phase 6: Webhook Redundancy, Phase 7: Verification & Quality Gate (+2 more)
 
 ### Community 67 - "dense-bottom-bar.tsx"
-Cohesion: 0.47
-Nodes (3): DenseBottomBarProps, PaymentMode, PaymentPanelProps
+Cohesion: 0.21
+Nodes (9): class-variance-authority, Button, ButtonProps, buttonVariants, ConfirmDialog(), ConfirmDialogProps, Dialog(), DialogProps (+1 more)
 
 ### Community 68 - "super-admin-auth-actions.ts"
 Cohesion: 0.11
-Nodes (39): getSuperAdminOtpConfigAction(), requestSuperAdminOtpAction(), verifySuperAdminOtpAction(), superAdminOtps, base64UrlDecodeToString(), base64UrlEncodeString(), bytesToBase64Url(), bytesToHex() (+31 more)
+Nodes (39): getSuperAdminOtpConfigAction(), getSuperAdminSessionAction(), requestSuperAdminOtpAction(), verifySuperAdminOtpAction(), superAdminOtps, base64UrlDecodeToString(), base64UrlEncodeString(), bytesToBase64Url() (+31 more)
 
 ### Community 69 - "5. Functional Requirements"
 Cohesion: 0.12
 Nodes (17): 026-priority-temp-notes/spec.md, 1. Problem Statement & Business Objective, 2. User Stories & Personas, 3. Data Model & Schema, 4.1 Branch-Specific Isolation, 4.1 Quick Action Topbar Trigger, 4.2 Organization Admin Privilege (`organizer` | `super_admin`), 4.2 Slide-Over Panel & Drawer Modes (+9 more)
 
 ### Community 70 - "getCurrentSession"
-Cohesion: 0.07
-Nodes (48): deleteUserAccountAction(), getUserAccountStatusAction(), resetTwoFactorAction(), setUserPasswordAction(), toggleEmailOtpTwoFactorAction(), updateTwoFactorMethodAction(), UserAccountStatus, buildFallbackStoreProfile() (+40 more)
+Cohesion: 0.08
+Nodes (45): deleteUserAccountAction(), getUserAccountStatusAction(), resetTwoFactorAction(), setUserPasswordAction(), toggleEmailOtpTwoFactorAction(), updateTwoFactorMethodAction(), UserAccountStatus, getNotificationsAction() (+37 more)
 
 ### Community 71 - "Task Checklist"
 Cohesion: 0.29
@@ -745,32 +741,32 @@ Cohesion: 0.31
 Nodes (6): generateInvoiceNumber(), processOpticalOrder(), ProcessOrderResult, InsufficientStockError, InsufficientStoreCreditError, NegativeBalanceError
 
 ### Community 75 - "verifySuperAdminAccessAction"
-Cohesion: 0.11
-Nodes (37): superAdminSignOutAction(), assignPlatformRoleAction(), createApprovalRequestAction(), createOrganizationAction(), deleteOrganizationAction(), getApprovalRequestsAction(), getPlatformTeamAction(), getSuperAdminPlatformMetrics() (+29 more)
+Cohesion: 0.16
+Nodes (26): getSuperAdminSessionAction(), assignPlatformRoleAction(), createApprovalRequestAction(), createOrganizationAction(), deleteOrganizationAction(), getApprovalRequestsAction(), getPlatformTeamAction(), getSuperAdminPlatformMetrics() (+18 more)
 
 ### Community 76 - "withCache"
-Cohesion: 0.08
-Nodes (42): getSuperAdminSessionAction(), assignPlatformRoleAction(), BranchDetail, branchNameSchema, createApprovalRequestAction(), createBranchAction(), createOrganizationAction(), createStaffMemberAction() (+34 more)
+Cohesion: 0.06
+Nodes (57): getStoreApprovalRequestsAction(), assignPlatformRoleAction(), BranchDetail, branchNameSchema, createApprovalRequestAction(), createBranchAction(), createOrganizationAction(), createStaffMemberAction() (+49 more)
 
 ### Community 77 - "crypto-utils.ts"
-Cohesion: 0.04
-Nodes (47): [BUG-001] `decimal.js` Serialization Drift, [BUG-002] String Concatenation in Financial Addition, [BUG-003] IEEE-754 Modulo Drift in 0.25 D Quarter-Step Diopter Validation, [BUG-004] Thermal 80mm Roll Premature Print Cutting, [BUG-005] Wholesale Cost Leak in Workshop Lab Slip, [BUG-006] Over-Selling Race Condition in Inventory Checkout, [BUG-007] Better Auth 2FA TOTP Stale Record Collision (`TOTP_ALREADY_ENABLED`), [BUG-008] Hardware Barcode Scanner Keystroke Interleaving (+39 more)
+Cohesion: 0.06
+Nodes (33): [BUG-005] Wholesale Cost Leak in Workshop Lab Slip, [BUG-007] Better Auth 2FA TOTP Stale Record Collision (`TOTP_ALREADY_ENABLED`), [BUG-008] Hardware Barcode Scanner Keystroke Interleaving, [BUG-010] Zod UUID Validation Mismatch on Synthetic Branch IDs, [BUG-011] Multi-Role Staff Collision with Better Auth Member Role, [BUG-012] Redis Cache Stale Reads During Automated Testing, [BUG-013] Wholesale `costPrice` Leak in `getInventoryList` Projection (SEC-001), [BUG-015] Next.js 16 `'use server'` Non-Async Value Export Crash (`invalid-use-server-value`) (+25 more)
 
 ### Community 78 - "customer-portal-actions.ts"
-Cohesion: 0.47
-Nodes (6): CustomerPortalData, getCustomerPortalDataAction(), resolveVerifiedCustomerRecord(), portal/page.tsx, CustomerPortalPage(), load()
+Cohesion: 0.22
+Nodes (8): dialect, id, prevId, name, schema, tables, public.invoice_items, version
 
 ### Community 79 - "email-actions.ts"
 Cohesion: 0.11
-Nodes (39): buildPlatformDefaultTestEmailHtml(), errorMessage(), getSmtpSettingsAction(), hasOwnTenantSmtp(), saveSmtpSettingsAction(), sendReceiptEmailAction(), SmtpSettingsResponse, smtpSettingsSchema (+31 more)
+Nodes (37): buildPlatformDefaultTestEmailHtml(), errorMessage(), getSmtpSettingsAction(), hasOwnTenantSmtp(), saveSmtpSettingsAction(), sendReceiptEmailAction(), SmtpSettingsResponse, smtpSettingsSchema (+29 more)
 
 ### Community 80 - "organizations/page.tsx"
-Cohesion: 0.05
-Nodes (39): columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom, tableTo, columns (+31 more)
+Cohesion: 0.13
+Nodes (15): columns, concurrently, isUnique, method, name, with, columns, concurrently (+7 more)
 
 ### Community 81 - "prescription-grid.tsx"
 Cohesion: 0.19
-Nodes (17): PatientPrescriptionHistory, formatDioptre(), initialPrescriptionValues, parseDioptre(), PrescriptionGrid(), PrescriptionGridProps, StepField(), StepFieldProps (+9 more)
+Nodes (17): assert(), eyeResult, fullResult, hyperopicExact, hyperopicQuarter, lowPower, myopicExact, myopicQuarter (+9 more)
 
 ### Community 82 - "🌟 Key Accomplishments & Feature Modules"
 Cohesion: 0.05
@@ -781,20 +777,20 @@ Cohesion: 0.29
 Nodes (3): metadata, nextConfig, next
 
 ### Community 84 - "quick-add-patient-modal.tsx"
-Cohesion: 0.28
-Nodes (6): use-debounce, Patient, PatientSearch(), PatientSearchProps, QuickAddPatientModal(), QuickAddPatientModalProps
+Cohesion: 0.22
+Nodes (9): columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom, tableTo, customers_organization_id_organizations_id_fk (+1 more)
 
 ### Community 85 - "auth-utils.ts"
-Cohesion: 0.08
-Nodes (45): decimal.js, drizzle-orm, zod, CustomerOrderSummary, CustomerPrescriptionSummary, dashboardBranchIdSchema, getDashboardOperationalMetricsAction(), NON_REVENUE_ORDER_STATUSES (+37 more)
+Cohesion: 0.06
+Nodes (55): decimal.js, zod, CustomerOrderSummary, CustomerPortalData, CustomerPrescriptionSummary, getCustomerPortalDataAction(), resolveVerifiedCustomerRecord(), dashboardBranchIdSchema (+47 more)
 
 ### Community 86 - "OptixOS — Architecture, PRD & Master System Roadmap"
 Cohesion: 0.06
 Nodes (35): 1. Atomic Order Processor (`src/actions/process-optical-order.ts`), 1. Executive Summary & Architectural Evolution, 2. Dynamic Reciprocal Family Billing Engine (`src/lib/patient-relationship.ts`), 2. High-Level System Architecture, 3.1 Tier 1: Presentation Layer, 3.2 Tier 2: Business & Application Layer, 3.3 Tier 3: Data & Persistence Layer, 3. Detailed 3-Tier Decomposition (+27 more)
 
 ### Community 87 - "patients-view.tsx"
-Cohesion: 0.20
-Nodes (9): PatientDetailHistory, PatientSummary, patients/page.tsx, AddPatientModal(), AddPatientModalProps, EditPatientModal(), EditPatientModalProps, PatientDetailSheetProps (+1 more)
+Cohesion: 0.11
+Nodes (19): createPatientAction(), PatientSummary, updatePatientAction(), admin/dashboard/page.tsx, metadata, patients/page.tsx, AddPatientModal(), AddPatientModalProps (+11 more)
 
 ### Community 88 - "2. Active Phase (Phase 14): Production-Level Vibe Coding Infrastructure"
 Cohesion: 0.22
@@ -809,20 +805,20 @@ Cohesion: 0.06
 Nodes (32): 1.1 Mandatory Tenant Scoping, 1.2 Data Access Invariant, 1. Multi-Tenant Isolation Model, 2.1 Permission Capabilities Matrix, 2. Role-Based Access Control (RBAC) Matrix, 3.1 Network-Level Protection, 3.2 Server-Side Projection Redaction, 3. Query-Level Data Masking (Wholesale Cost Protection) (+24 more)
 
 ### Community 91 - "email.ts"
-Cohesion: 0.11
-Nodes (41): buildPlatformDefaultTestEmailHtml(), errorMessage(), getSmtpSettingsAction(), hasOwnTenantSmtp(), saveSmtpSettingsAction(), sendReceiptEmailAction(), SmtpSettingsResponse, smtpSettingsSchema (+33 more)
+Cohesion: 0.13
+Nodes (34): buildPlatformDefaultTestEmailHtml(), errorMessage(), getSmtpSettingsAction(), hasOwnTenantSmtp(), sendReceiptEmailAction(), SmtpSettingsResponse, smtpSettingsSchema, testSmtpConnectionAction() (+26 more)
 
 ### Community 92 - "add-product-modal.tsx"
-Cohesion: 0.11
-Nodes (13): completeStaffInitialPasswordChangeAction(), verifyOwnerLoginPreflightAction(), superAdminSignOutAction(), ThemeToggle(), CachedResourceOptions, CachedResourceResult, clearClientStorageCaches(), key (+5 more)
+Cohesion: 0.10
+Nodes (14): verifyOwnerLoginPreflightAction(), superAdminSignOutAction(), setupPracticeOnboardingAction(), ThemeToggle(), CachedResourceOptions, CachedResourceResult, clearClientStorageCaches(), key (+6 more)
 
 ### Community 93 - "Project Memory & Living System Ledger"
 Cohesion: 0.33
 Nodes (4): 1. System Specifications & Versions, 2. Test Pass Status & Verification State, 3. Active Feature Matrix, Project Memory & Living System Ledger
 
 ### Community 94 - "razorpay/route.ts"
-Cohesion: 0.33
-Nodes (7): razorpay/route.ts, ACTIVATABLE_SUBSCRIPTION_STATUSES, POST(), RazorpayWebhookBody, RazorpayWebhookEntity, subscriptions, verifyRazorpayWebhookSignature()
+Cohesion: 0.25
+Nodes (8): inventory_items_organization_id_organizations_id_fk, columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom, tableTo
 
 ### Community 95 - "OptixOS Documentation Archive Log"
 Cohesion: 0.33
@@ -833,20 +829,20 @@ Cohesion: 0.29
 Nodes (5): 3. Future Roadmap (Phase 17), 4. Definition of Done (DoD) Checklist, Active Security Debt & Hardening Backlog (from `SECURITY_LOG.md`), Phase 17: Indian GST E-Invoicing & E-Way Bill Integration, Task Ledger & Development Roadmap
 
 ### Community 97 - "dotenv"
-Cohesion: 0.29
-Nodes (4): dotenv, drizzle-kit, @neondatabase/serverless, main()
+Cohesion: 0.25
+Nodes (8): checkConstraints, compositePrimaryKeys, isRLSEnabled, name, policies, schema, uniqueConstraints, public.branches
 
 ### Community 98 - "invoice-details-modal.tsx"
-Cohesion: 0.67
-Nodes (3): InvoiceDetailsModal(), InvoiceDetailsModalProps, InvoiceBillingDetails
+Cohesion: 0.25
+Nodes (8): checkConstraints, compositePrimaryKeys, isRLSEnabled, name, policies, schema, uniqueConstraints, public.customers
 
 ### Community 99 - "Community 99"
-Cohesion: 0.08
-Nodes (6): cacheDel(), cacheFlush(), HybridCacheManager, LocalRedisProvider, MemoryLRUProvider, UpstashRedisProvider
+Cohesion: 0.09
+Nodes (5): cacheFlush(), HybridCacheManager, LocalRedisProvider, MemoryLRUProvider, UpstashRedisProvider
 
 ### Community 100 - "Community 100"
-Cohesion: 0.11
-Nodes (23): cn(), Button, ButtonProps, buttonVariants, Card, CardContent, CardDescription, CardFooter (+15 more)
+Cohesion: 0.05
+Nodes (45): DashboardLayout(), BranchSwitcher(), RouteErrorFallback(), RouteErrorFallbackProps, RouteLoadingSkeleton(), SettingsSidebar(), SETTINGS_NAV_GROUPS, SettingsCategoryGroup (+37 more)
 
 ### Community 101 - "Community 101"
 Cohesion: 0.06
@@ -857,8 +853,8 @@ Cohesion: 0.07
 Nodes (26): 1.1 Design Philosophy, 1.1 Typography, Numbers & Tailwind Version, 1.2 Color Palette & Semantic Tokens, 1. Visual Aesthetics & Design Foundations, 2.1 Viewport Spacing Mandate, 2.2 Standard Page Header Block, 2. Spacing Architecture & Fluid Full-Width Layouts, 3. Accessibility & WCAG AA Standards (+18 more)
 
 ### Community 103 - "Community 103"
-Cohesion: 0.06
-Nodes (31): fitting_note, is_customer_own_frame, line_total, quantity, tax_amount, name, primaryKey, type (+23 more)
+Cohesion: 0.07
+Nodes (30): fitting_note, invoice_id, line_total, patient_id, prescription_id, unit_price, name, primaryKey (+22 more)
 
 ### Community 104 - "Community 104"
 Cohesion: 0.06
@@ -877,20 +873,20 @@ Cohesion: 0.14
 Nodes (14): 1. Completed Phases (Phases 1 – 13), Phase 10: Store Settings & Hardware Configuration, Phase 11: End-to-End Test Automation Pyramid, Phase 12: UI/UX Modernization & WCAG AA Dark Mode Compliance, Phase 13: POS Counter Viewport Modes, Phase 1: Core Multi-Tenant Architecture & Database Schema, Phase 2: Upstash Redis High-Speed Caching Layer, Phase 3: Clinical Refraction Matrix & Patient Prescription Management (+6 more)
 
 ### Community 108 - "LocalRedisProvider"
-Cohesion: 0.13
-Nodes (20): OwnerApprovalsPage(), ManageBranchesPage(), OwnerManageBranchesPage(), DashboardLayout(), BranchSwitcher(), SettingsSidebar(), SimulationBanner(), UserNav() (+12 more)
+Cohesion: 0.29
+Nodes (7): columns, concurrently, isUnique, method, name, with, customers_organization_idx
 
 ### Community 109 - "4. The 13 Core Regression Workflows"
 Cohesion: 0.08
 Nodes (23): 1. Quality Assurance Philosophy: Virtual Testing Pyramid, 2. Test Execution & CI Commands, 3.1 Authentication Bypass for E2E Tests, 3.2 Database Seeding & Clean State, 3.3 Upstash Redis Cache Invalidation, 3. Test Isolation & Environment Protocol, 4. The 13 Core Regression Workflows, 5. Definition of Done (DoD) for Automated Tests (+15 more)
 
 ### Community 110 - "Community 110"
-Cohesion: 0.11
-Nodes (20): useBarcodeScanner(), UseBarcodeScannerOptions, getDynamicRelationship(), PatientRelationMeta, buildWhatsAppReceiptMessage(), formatWhatsAppPhone(), getWhatsAppShareUrl(), AddFamilyMemberModal() (+12 more)
+Cohesion: 0.12
+Nodes (18): PatientOrderHistoryItem, useBarcodeScanner(), UseBarcodeScannerOptions, getDynamicRelationship(), PatientRelationMeta, buildWhatsAppReceiptMessage(), formatWhatsAppPhone(), getWhatsAppShareUrl() (+10 more)
 
 ### Community 111 - "react"
-Cohesion: 0.10
-Nodes (27): zustand, (dashboard)/layout.tsx, BranchSwitcher(), SettingsSidebar(), SimulationBanner(), priority-notes/index.ts, PriorityNoteCard(), PriorityNoteCardProps (+19 more)
+Cohesion: 0.11
+Nodes (27): zustand, (dashboard)/layout.tsx, BranchSwitcher(), SettingsSidebar(), SimulationBanner(), UserNav(), priority-notes/index.ts, PriorityNoteCard() (+19 more)
 
 ### Community 112 - "Community 112"
 Cohesion: 0.12
@@ -905,24 +901,24 @@ Cohesion: 0.07
 Nodes (28): **13\. Step 10: Create `RULES.md`**, **14\. Step 11: Create `TASKS.md`**, **15\. Step 12: Create `DECISIONS.md`**, **16\. Step 13: Create `MEMORY.md`**, **17\. Step 14: Create `TEST_PLAN.md`**, **18\. Step 15: Create `SECURITY.md`**, **19\. Step 16: Create `.env.example`**, **20\. Step 17: Give the AI Project Context** (+20 more)
 
 ### Community 115 - "Community 115"
-Cohesion: 0.07
-Nodes (27): name, notNull, primaryKey, type, name, notNull, primaryKey, type (+19 more)
+Cohesion: 0.09
+Nodes (23): name, notNull, primaryKey, type, name, notNull, primaryKey, type (+15 more)
 
 ### Community 116 - "Community 116"
 Cohesion: 0.08
 Nodes (26): name, notNull, primaryKey, type, name, notNull, primaryKey, type (+18 more)
 
 ### Community 117 - "Community 117"
-Cohesion: 0.08
-Nodes (26): name, notNull, primaryKey, type, address_line2, gstin, metadata, primary_customer_id (+18 more)
+Cohesion: 0.07
+Nodes (27): name, notNull, primaryKey, type, name, notNull, primaryKey, type (+19 more)
 
 ### Community 118 - "Community 118"
-Cohesion: 0.08
-Nodes (26): name, notNull, primaryKey, type, name, notNull, primaryKey, type (+18 more)
+Cohesion: 0.07
+Nodes (28): name, notNull, primaryKey, type, name, notNull, primaryKey, type (+20 more)
 
 ### Community 119 - "Community 119"
-Cohesion: 0.17
-Nodes (20): dismissNotificationAction(), getNotificationsAction(), getUnreadNotificationCountAction(), markAllNotificationsReadAction(), markNotificationReadAction(), seedInitialNotificationsAction(), Notification, notifications (+12 more)
+Cohesion: 0.13
+Nodes (29): dismissNotificationAction(), dispatchNotificationAction(), markNotificationReadAction(), seedInitialNotificationsAction(), Notification, notifications, dispatchNotificationInternal(), InternalNotificationParams (+21 more)
 
 ### Community 120 - "4. Critical Developer Gotchas & Invariants"
 Cohesion: 0.12
@@ -930,15 +926,15 @@ Nodes (16): 4.10 Continuous Knowledge Graph (`graphify`) & Exploration Invariant
 
 ### Community 121 - "Community 121"
 Cohesion: 0.11
-Nodes (19): computeGstInvoice(), computeGstLine(), GST_RATES, GstInvoiceResult, GstLineInput, GstLineResult, MoneyInput, normalizeGstRate() (+11 more)
+Nodes (18): computeGstInvoice(), computeGstLine(), GST_RATES, GstInvoiceResult, GstLineInput, GstLineResult, MoneyInput, roundPaise() (+10 more)
 
 ### Community 122 - "Community 122"
-Cohesion: 0.14
-Nodes (21): getActiveLabOrders(), LabOrderItemDetail, LabOrderSummary, TERMINAL_ORDER_STATUSES, updateOrderStatus(), collectBalance(), lab-orders/page.tsx, dynamic (+13 more)
+Cohesion: 0.19
+Nodes (12): getActiveLabOrders(), collectBalance(), lab-orders/page.tsx, dynamic, LabOrdersPage(), metadata, LabOrdersView(), TabKey (+4 more)
 
 ### Community 123 - "Community 123"
-Cohesion: 0.08
-Nodes (24): created_at, id, is_active, name, default, name, notNull, primaryKey (+16 more)
+Cohesion: 0.09
+Nodes (23): created_at, id, name, organization_id, default, name, notNull, primaryKey (+15 more)
 
 ### Community 124 - "Community 124"
 Cohesion: 0.09
@@ -953,8 +949,8 @@ Cohesion: 0.09
 Nodes (22): model, selling_price, sku, stock_quantity, name, notNull, primaryKey, type (+14 more)
 
 ### Community 127 - "Community 127"
-Cohesion: 0.14
-Nodes (15): ACTIVATABLE_SUBSCRIPTION_STATUSES, buildAlreadyPaidResult(), CreateSubscriptionOrderResult, getOrganizationSubscriptionStatusAction(), handlePaymentFailureAction(), paymentFailurePayloadSchema, verifyPaymentPayloadSchema, VerifyPaymentResult (+7 more)
+Cohesion: 0.15
+Nodes (11): VerifyPaymentResult, CheckoutOptions, useRazorpayCheckout(), Window, PRICING_PLANS, PricingPlan, PricingPage(), StepContent (+3 more)
 
 ### Community 128 - "Community 128"
 Cohesion: 0.10
@@ -973,40 +969,40 @@ Cohesion: 0.11
 Nodes (18): 1. Problem Statement & Business Objective, 2. User Stories & Personas, 3. Data Model & Schema, 4.1 Branch-Specific Isolation, 4.1 Quick Action Topbar Trigger, 4.2 Organization Admin Privilege (`organizer` | `super_admin`), 4.2 Slide-Over Panel & Drawer Modes, 4.3 Quick Add Card (+10 more)
 
 ### Community 132 - "Community 132"
-Cohesion: 0.14
-Nodes (10): CustomerOrderSummary, CustomerPortalData, CustomerPrescriptionSummary, getCustomerPortalDataAction(), resolveVerifiedCustomerRecord(), ProcessOrderResult, opticalPrescriptions, InsufficientStockError (+2 more)
+Cohesion: 0.09
+Nodes (21): CustomerOrderSummary, CustomerPortalData, CustomerPrescriptionSummary, getCustomerPortalDataAction(), resolveVerifiedCustomerRecord(), customers, balanceDueDisplay, collectBtn (+13 more)
 
 ### Community 133 - "Community 133"
-Cohesion: 0.12
-Nodes (10): DashboardOperationalMetrics, DashboardView(), InventoryView(), PatientsView(), metadata, readCacheSnapshot(), useCachedResource(), NotificationBellTrigger() (+2 more)
+Cohesion: 0.09
+Nodes (24): dashboardBranchIdSchema, DashboardOperationalMetrics, getDashboardOperationalMetricsAction(), NON_REVENUE_ORDER_STATUSES, DashboardView(), metadata, payments, getAuthorizedBranchIds() (+16 more)
 
 ### Community 134 - "Community 134"
-Cohesion: 0.18
-Nodes (17): deleteProductTypeAction(), getEnabledProductTypesAction(), getProductTypesAction(), ProductTypeItem, saveProductTypeAction(), SaveProductTypeInput, saveProductTypeSchema, StepDependency (+9 more)
+Cohesion: 0.10
+Nodes (38): addInventoryItem(), getInventoryList(), InventoryRow, moneyString, updateInventoryItem(), UpdateInventoryItemInput, updateInventoryItemSchema, updateInvoiceDetailsAction() (+30 more)
 
 ### Community 135 - "Community 135"
-Cohesion: 0.11
-Nodes (18): 1. Active Session Metadata, 2. Most Recent Task Accomplishments (Configured Store Product Types Display, Step Normalization, Lab Orders De-congestion & Direct Viewports), 2. Most Recent Task Accomplishments (Phase 29: Practice Account Creation with Org & Optional Branch Defaults, Owner Role Tagging, Env Prefix, and Super Admin Session Expiration), 2. Most Recent Task Accomplishments (Phase 30: Practice ID & Organization Generated Information Exposure Across Super Admin & Staff Portal), 2. Most Recent Task Accomplishments (Phase 31: Resolution of React 19 SSR Hydration Mismatch, Stale Cache Elimination & Zero-Mock Invariant Enforcement), 2. Most Recent Task Accomplishments (Phase 38: Settings UI/UX Refactor, Streamlining & Compact Redesign), 2. Most Recent Task Accomplishments (Phase 39: Full-Estate Audit — Security, Money Integrity, Data Layer & Premium UI), 3. Most Recent Task Accomplishments (Phase 32: Organization Owner Portal, Sovereign Practice Governance & Staff Isolation) (+10 more)
+Cohesion: 0.10
+Nodes (20): 1. Active Session Metadata, 2. Most Recent Task Accomplishments (Clean-Slate Purge, Re-Seed, Live E2E Audit & Fixes), 2. Most Recent Task Accomplishments (Configured Store Product Types Display, Step Normalization, Lab Orders De-congestion & Direct Viewports), 2. Most Recent Task Accomplishments (Inventory Creation & System-Wide Save & Validation Hardening - BUG-040), 2. Most Recent Task Accomplishments (Phase 29: Practice Account Creation with Org & Optional Branch Defaults, Owner Role Tagging, Env Prefix, and Super Admin Session Expiration), 2. Most Recent Task Accomplishments (Phase 30: Practice ID & Organization Generated Information Exposure Across Super Admin & Staff Portal), 2. Most Recent Task Accomplishments (Phase 31: Resolution of React 19 SSR Hydration Mismatch, Stale Cache Elimination & Zero-Mock Invariant Enforcement), 2. Most Recent Task Accomplishments (Phase 38: Settings UI/UX Refactor, Streamlining & Compact Redesign) (+12 more)
 
 ### Community 136 - "Community 136"
 Cohesion: 0.11
 Nodes (18): activeStoreName, addProductBtn, branchBtn, branchCol, branchHeader, branchSelect, breakdownSection, counterContainer (+10 more)
 
 ### Community 137 - "Community 137"
-Cohesion: 0.11
-Nodes (18): addBtn, addPatientBtn, closeBtn, confirmDeleteBtn, deleteBtn, deleteDialogTitle, detailSheet, editBtn (+10 more)
+Cohesion: 0.08
+Nodes (23): addBtn, addPatientBtn, addProductBtn, closeBtn, confirmDeleteBtn, createdRow, deleteBtn, deleteDialogTitle (+15 more)
 
 ### Community 138 - "Community 138"
-Cohesion: 0.23
-Nodes (12): PriorityNoteCard(), PriorityNoteCardProps, PriorityBucketSectionProps, PriorityNotesDrawer(), PriorityNotesTrigger(), PriorityNote, PriorityNotesState, PriorityTier (+4 more)
+Cohesion: 0.29
+Nodes (7): inventory_low_stock_idx, columns, concurrently, isUnique, method, name, with
 
 ### Community 139 - "product-type-actions.ts"
-Cohesion: 0.18
-Nodes (18): deleteProductTypeAction(), getEnabledProductTypesAction(), getProductTypesAction(), ProductTypeItem, saveProductTypeAction(), SaveProductTypeInput, saveProductTypeSchema, StepDependency (+10 more)
+Cohesion: 0.27
+Nodes (13): deleteProductTypeAction(), getProductTypesAction(), ProductTypeItem, saveProductTypeAction(), SaveProductTypeInput, saveProductTypeSchema, StepDependency, StepOption (+5 more)
 
 ### Community 140 - "Community 140"
-Cohesion: 0.18
-Nodes (14): getActiveLabOrders(), LabOrderItemDetail, LabOrderSummary, TERMINAL_ORDER_STATUSES, updateOrderStatus(), getCurrentPlanAction(), LabOrdersView(), LabOrdersViewProps (+6 more)
+Cohesion: 0.12
+Nodes (22): getActiveLabOrders(), LabOrderItemDetail, LabOrderSummary, TERMINAL_ORDER_STATUSES, updateOrderStatus(), collectBalance(), CollectBalanceResult, collectBalanceSchema (+14 more)
 
 ### Community 141 - "Community 141"
 Cohesion: 0.11
@@ -1029,24 +1025,24 @@ Cohesion: 0.12
 Nodes (16): 10. Automated AI Code Review, Security Auditing & Technical Debt Protocol, 1. Stack & Runtime, 2. Strict Monetary & Accounting Rules, 3. Optical Domain & Prescription Rules, 4. Concurrency & Transaction Safety, 5. Security & RBAC Enforcement, 6. Document Output & Printing Rules, 7. Code Organization & Workflow (+8 more)
 
 ### Community 146 - "Community 146"
-Cohesion: 0.12
-Nodes (17): inventory_items_branch_id_branches_id_fk, inventory_items_organization_id_organizations_id_fk, columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom (+9 more)
+Cohesion: 0.22
+Nodes (9): inventory_items_branch_id_branches_id_fk, columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom, tableTo (+1 more)
 
 ### Community 147 - "Community 147"
 Cohesion: 0.12
 Nodes (16): scripts, audit:design, audit:security, build, check, db:clean, db:generate, db:push (+8 more)
 
 ### Community 148 - "Community 148"
-Cohesion: 0.12
-Nodes (16): inventory_item_id, invoice_id, unit_price, name, notNull, primaryKey, type, name (+8 more)
+Cohesion: 0.09
+Nodes (23): invoice_id, lens_material, line_total, tax_amount, name, notNull, primaryKey, type (+15 more)
 
 ### Community 149 - "Community 149"
-Cohesion: 0.12
-Nodes (16): columns, concurrently, isUnique, method, name, with, branches_organization_idx, checkConstraints (+8 more)
+Cohesion: 0.25
+Nodes (8): columns, concurrently, isUnique, method, name, with, branches_organization_idx, indexes
 
 ### Community 150 - "Community 150"
-Cohesion: 0.12
-Nodes (16): columns, concurrently, isUnique, method, name, with, branches_organization_idx, checkConstraints (+8 more)
+Cohesion: 0.08
+Nodes (25): columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom, tableTo, columns (+17 more)
 
 ### Community 151 - "Community 151"
 Cohesion: 0.13
@@ -1057,28 +1053,28 @@ Cohesion: 0.13
 Nodes (15): invoice_item_inventory_idx, invoice_item_invoice_idx, columns, concurrently, isUnique, method, name, with (+7 more)
 
 ### Community 153 - "Community 153"
-Cohesion: 0.13
-Nodes (15): columns, concurrently, isUnique, method, name, with, columns, concurrently (+7 more)
+Cohesion: 0.25
+Nodes (8): columns, concurrently, isUnique, method, name, with, customers_phone_idx, indexes
 
 ### Community 154 - "Community 154"
-Cohesion: 0.13
-Nodes (15): inventory_barcode_idx, inventory_low_stock_idx, columns, concurrently, isUnique, method, name, with (+7 more)
+Cohesion: 0.25
+Nodes (8): inventory_barcode_idx, columns, concurrently, isUnique, method, name, with, indexes
 
 ### Community 155 - "Community 155"
 Cohesion: 0.13
 Nodes (15): id, organization_id, default, name, notNull, primaryKey, type, name (+7 more)
 
 ### Community 156 - "Community 156"
-Cohesion: 0.27
-Nodes (11): checkOrganizationFeatureAccessAction(), canAccessFeature(), FEATURE_METADATA, FeatureKey, PLAN_LIMITS_MAP, PlanLimits, PlanTier, PlanUpgradeGate() (+3 more)
+Cohesion: 0.29
+Nodes (10): canAccessFeature(), FEATURE_METADATA, FeatureKey, PLAN_LIMITS_MAP, PlanLimits, PlanTier, PlanUpgradeGate(), PlanUpgradeGateProps (+2 more)
 
 ### Community 157 - "Community 157"
-Cohesion: 0.14
-Nodes (13): dialect, id, prevId, checkConstraints, compositePrimaryKeys, isRLSEnabled, name, policies (+5 more)
+Cohesion: 0.25
+Nodes (8): checkConstraints, compositePrimaryKeys, isRLSEnabled, name, policies, schema, uniqueConstraints, public.inventory_items
 
 ### Community 158 - "Community 158"
-Cohesion: 0.14
-Nodes (13): dialect, id, prevId, checkConstraints, compositePrimaryKeys, isRLSEnabled, name, policies (+5 more)
+Cohesion: 0.12
+Nodes (16): columns, concurrently, isUnique, method, name, with, account_userId_idx, checkConstraints (+8 more)
 
 ### Community 159 - "Community 159"
 Cohesion: 0.15
@@ -1089,20 +1085,20 @@ Cohesion: 0.15
 Nodes (12): 1.1 Three-Tier User Hierarchy, 1.2 Database Changes, 1. Technical Architecture & Invariants, 2. Implementation Phasing (Small Chunks), code:block1 (┌───────────────────────────────────────────────────────────), Implementation Plan: 027 Multi-Tenant Isolation, 3-Tier User Hierarchy & Staff Portal, Phase 1: Database Migration & Schema Extensions, Phase 2: Core Tenancy Context & Onboarding Isolation Fix (+4 more)
 
 ### Community 161 - "Community 161"
-Cohesion: 0.28
-Nodes (11): createRazorpaySubscriptionOrderAction(), CreateOrderParams, createRazorpayOrder(), createRazorpayPaymentLink(), getRazorpayCredentials(), paiseToRupees(), RazorpayOrderResponse, RazorpayPaymentLinkParams (+3 more)
+Cohesion: 0.32
+Nodes (11): CreateOrderParams, createRazorpayOrder(), createRazorpayPaymentLink(), getRazorpayCredentials(), paiseToRupees(), RazorpayOrderResponse, RazorpayPaymentLinkParams, RazorpayPaymentLinkResponse (+3 more)
 
 ### Community 162 - "Community 162"
 Cohesion: 0.15
 Nodes (12): accountTabBtn, backupTitle, confirmPassInput, disableBtn, disablePwdInput, downloadPromise, newPassInput, orgInput (+4 more)
 
 ### Community 163 - "Community 163"
-Cohesion: 0.32
-Nodes (11): runTests(), CreateOrderParams, createRazorpayOrder(), createRazorpayPaymentLink(), getRazorpayCredentials(), paiseToRupees(), RazorpayOrderResponse, RazorpayPaymentLinkParams (+3 more)
+Cohesion: 0.30
+Nodes (10): CreateOrderParams, createRazorpayOrder(), createRazorpayPaymentLink(), getRazorpayCredentials(), paiseToRupees(), RazorpayOrderResponse, RazorpayPaymentLinkParams, RazorpayPaymentLinkResponse (+2 more)
 
 ### Community 165 - "Community 165"
-Cohesion: 0.29
-Nodes (10): PlanUpgradeGate(), PlanUpgradeGateProps, PlanUpgradeModal(), PlanUpgradeModalProps, canAccessFeature(), FEATURE_METADATA, FeatureKey, PLAN_LIMITS_MAP (+2 more)
+Cohesion: 0.26
+Nodes (11): checkOrganizationFeatureAccessAction(), PlanUpgradeGate(), PlanUpgradeGateProps, PlanUpgradeModal(), PlanUpgradeModalProps, canAccessFeature(), FEATURE_METADATA, FeatureKey (+3 more)
 
 ### Community 166 - "Community 166"
 Cohesion: 0.17
@@ -1113,8 +1109,8 @@ Cohesion: 0.17
 Nodes (11): 1. Problem Statement & Business Objective, 2. User Stories & Personas, 3. Optical Domain & Security Invariants, 4.1 Schema Additions, 4.2 Auth & Onboarding Flow, 4.3 Staff Portal (`/auth/staff-login`), 4.4 Staff Management & Store Assignments (`/admin/staff`), 4. Functional Requirements (+3 more)
 
 ### Community 168 - "Community 168"
-Cohesion: 0.23
-Nodes (3): RouteErrorFallback(), RouteErrorFallbackProps, RouteLoadingSkeleton()
+Cohesion: 0.29
+Nodes (7): columns, concurrently, isUnique, method, name, with, customers_primary_customer_idx
 
 ### Community 169 - "Community 169"
 Cohesion: 0.17
@@ -1133,12 +1129,12 @@ Cohesion: 0.17
 Nodes (11): 1. Universal In-Project Memory Hub (Read First!), 2. Knowledge Graph-First Exploration (`graphify`), 3. Pre-Implementation Protocol: Root Cause & Blast Radius Analysis, 4. Autonomous Official Documentation & MCP Protocol, 5. Quality & Bug-Free Correctness Over Token Optimization, 6. Automated Code Review & Security Vulnerability Protocol, 7. Automated UI/UX Consistency & Component-First Protocol, 8. Zero-Latency Stale-While-Revalidate (SWR) & 3-Tier Caching Protocol (+3 more)
 
 ### Community 173 - "Community 173"
-Cohesion: 0.32
-Nodes (9): getCategoryIcon(), getRelativeTime(), getSeverityBadge(), NotificationItemCard(), NotificationItemCardProps, NotificationPopover(), NotificationPopoverProps, TabType (+1 more)
+Cohesion: 0.33
+Nodes (6): is_active, default, name, notNull, primaryKey, type
 
 ### Community 174 - "Community 174"
-Cohesion: 0.23
-Nodes (7): (dashboard)/error.tsx, (dashboard)/loading.tsx, owner/error.tsx, owner/loading.tsx, RouteErrorFallback(), RouteErrorFallbackProps, RouteLoadingSkeleton()
+Cohesion: 0.20
+Nodes (8): (dashboard)/error.tsx, (dashboard)/loading.tsx, owner/error.tsx, owner/loading.tsx, RouteErrorFallback(), RouteErrorFallbackProps, RouteLoadingSkeleton(), Skeleton()
 
 ### Community 175 - "Community 175"
 Cohesion: 0.18
@@ -1149,8 +1145,8 @@ Cohesion: 0.18
 Nodes (10): billingFocusBtn, compactStrip, frameOnlyBtn, inventoryOption, inventorySearch, layoutSwitcher, patientOption, patientSearch (+2 more)
 
 ### Community 177 - "Community 177"
-Cohesion: 0.18
-Nodes (11): name, notNull, primaryKey, type, brand, model, name, notNull (+3 more)
+Cohesion: 0.09
+Nodes (22): model, selling_price, sku, stock_quantity, name, notNull, primaryKey, type (+14 more)
 
 ### Community 178 - "Community 178"
 Cohesion: 0.18
@@ -1169,8 +1165,8 @@ Cohesion: 0.22
 Nodes (8): Phase 1: Database Migration & Schema, Phase 2: Tenancy Context & Onboarding Isolation Fix, Phase 3: Staff Creation & Multi-Store Management, Phase 4: Dedicated Staff Portal, Phase 5: Viewport Scoping, Branch Switcher & SaaS Redaction, Phase 6: Testing, Quality Gate & Documentation, Task Breakdown, Tasks: 027 Multi-Tenant Isolation, 3-Tier User Hierarchy & Staff Portal
 
 ### Community 182 - "Community 182"
-Cohesion: 0.28
-Nodes (7): completeOnboardingAction(), useRazorpayCheckout(), PricingPage(), StepContent, SubscriberOnboardingModal(), SubscriberOnboardingModalProps, TOUR_STEPS
+Cohesion: 0.33
+Nodes (6): is_customer_own_frame, default, name, notNull, primaryKey, type
 
 ### Community 183 - "Community 183"
 Cohesion: 0.22
@@ -1233,12 +1229,12 @@ Cohesion: 0.22
 Nodes (9): columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom, tableTo, account_user_id_user_id_fk (+1 more)
 
 ### Community 198 - "Community 198"
-Cohesion: 0.22
-Nodes (9): columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom, tableTo, branches_organization_id_organizations_id_fk (+1 more)
+Cohesion: 0.33
+Nodes (6): lens_material, name, notNull, primaryKey, type, typeSchema
 
 ### Community 199 - "Community 199"
-Cohesion: 0.22
-Nodes (9): inventory_items_branch_id_branches_id_fk, columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom, tableTo (+1 more)
+Cohesion: 0.12
+Nodes (17): inventory_items_branch_id_branches_id_fk, inventory_items_organization_id_organizations_id_fk, columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom (+9 more)
 
 ### Community 200 - "Community 200"
 Cohesion: 0.25
@@ -1257,20 +1253,20 @@ Cohesion: 0.25
 Nodes (7): backToPosBtn, emailItem, posLayoutItem, posSettingsBtn, productTypesItem, settingsSidebar, systemItem
 
 ### Community 204 - "Community 204"
-Cohesion: 0.25
-Nodes (8): columns, concurrently, isUnique, method, name, with, customers_phone_idx, indexes
+Cohesion: 0.13
+Nodes (15): columns, concurrently, isUnique, method, name, with, columns, concurrently (+7 more)
 
 ### Community 205 - "Community 205"
 Cohesion: 0.25
 Nodes (8): invoice_items_invoice_id_invoices_id_fk, columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom, tableTo
 
 ### Community 206 - "Community 206"
-Cohesion: 0.25
-Nodes (8): inventory_category_idx, columns, concurrently, isUnique, method, name, with, indexes
+Cohesion: 0.29
+Nodes (7): inventory_category_idx, columns, concurrently, isUnique, method, name, with
 
 ### Community 207 - "Community 207"
-Cohesion: 0.25
-Nodes (8): invoice_item_inventory_idx, columns, concurrently, isUnique, method, name, with, indexes
+Cohesion: 0.13
+Nodes (15): invoice_item_inventory_idx, invoice_item_invoice_idx, columns, concurrently, isUnique, method, name, with (+7 more)
 
 ### Community 208 - "Community 208"
 Cohesion: 0.25
@@ -1305,20 +1301,20 @@ Cohesion: 0.25
 Nodes (8): checkConstraints, compositePrimaryKeys, isRLSEnabled, name, policies, schema, uniqueConstraints, public.customers
 
 ### Community 216 - "Community 216"
-Cohesion: 0.25
-Nodes (8): columns, concurrently, isUnique, method, name, with, account_userId_idx, indexes
+Cohesion: 0.33
+Nodes (6): quantity, default, name, notNull, primaryKey, type
 
 ### Community 217 - "Community 217"
-Cohesion: 0.25
-Nodes (8): inventory_items_organization_id_organizations_id_fk, columnsFrom, columnsTo, name, onDelete, onUpdate, tableFrom, tableTo
+Cohesion: 0.33
+Nodes (6): tax_amount, default, name, notNull, primaryKey, type
 
 ### Community 218 - "Community 218"
-Cohesion: 0.25
-Nodes (8): inventory_category_idx, columns, concurrently, isUnique, method, name, with, indexes
+Cohesion: 0.29
+Nodes (7): inventory_category_idx, columns, concurrently, isUnique, method, name, with
 
 ### Community 219 - "Community 219"
-Cohesion: 0.25
-Nodes (8): checkConstraints, compositePrimaryKeys, isRLSEnabled, name, policies, schema, uniqueConstraints, public.inventory_items
+Cohesion: 0.14
+Nodes (13): dialect, id, prevId, checkConstraints, compositePrimaryKeys, isRLSEnabled, name, policies (+5 more)
 
 ### Community 220 - "Community 220"
 Cohesion: 0.25
@@ -1353,12 +1349,12 @@ Cohesion: 0.29
 Nodes (7): payment_status, default, name, notNull, primaryKey, type, typeSchema
 
 ### Community 228 - "Community 228"
-Cohesion: 0.29
-Nodes (7): columns, concurrently, isUnique, method, name, with, customers_phone_unique_idx
+Cohesion: 0.40
+Nodes (5): name, notNull, primaryKey, type, brand
 
 ### Community 229 - "Community 229"
-Cohesion: 0.29
-Nodes (7): inventory_barcode_idx, columns, concurrently, isUnique, method, name, with
+Cohesion: 0.25
+Nodes (8): inventory_barcode_idx, columns, concurrently, isUnique, method, name, with, indexes
 
 ### Community 230 - "Community 230"
 Cohesion: 0.29
@@ -1373,8 +1369,8 @@ Cohesion: 0.29
 Nodes (7): inventory_sku_unique_idx, columns, concurrently, isUnique, method, name, with
 
 ### Community 233 - "Community 233"
-Cohesion: 0.29
-Nodes (7): invoice_item_invoice_idx, columns, concurrently, isUnique, method, name, with
+Cohesion: 0.40
+Nodes (5): inventory_item_id, name, notNull, primaryKey, type
 
 ### Community 234 - "Community 234"
 Cohesion: 0.29
@@ -1449,8 +1445,8 @@ Cohesion: 0.29
 Nodes (7): inventory_sku_unique_idx, columns, concurrently, isUnique, method, name, with
 
 ### Community 252 - "Community 252"
-Cohesion: 0.29
-Nodes (7): inventory_barcode_idx, columns, concurrently, isUnique, method, name, with
+Cohesion: 0.13
+Nodes (15): inventory_barcode_idx, inventory_low_stock_idx, columns, concurrently, isUnique, method, name, with (+7 more)
 
 ### Community 253 - "Community 253"
 Cohesion: 0.29
@@ -1461,8 +1457,8 @@ Cohesion: 0.29
 Nodes (7): inventory_brand_model_idx, columns, concurrently, isUnique, method, name, with
 
 ### Community 255 - "Community 255"
-Cohesion: 0.29
-Nodes (7): inventory_low_stock_idx, columns, concurrently, isUnique, method, name, with
+Cohesion: 0.40
+Nodes (5): unit_price, name, notNull, primaryKey, type
 
 ### Community 256 - "Community 256"
 Cohesion: 0.29
@@ -1501,8 +1497,8 @@ Cohesion: 0.33
 Nodes (5): invSearchInput, patientRow, patientSearchInput, resultItem, storeNameInput
 
 ### Community 265 - "Community 265"
-Cohesion: 0.33
-Nodes (6): name, notNull, primaryKey, type, address_line1, columns
+Cohesion: 0.40
+Nodes (5): name, notNull, primaryKey, type, address_line1
 
 ### Community 266 - "Community 266"
 Cohesion: 0.33
@@ -1561,8 +1557,8 @@ Cohesion: 0.33
 Nodes (6): is_active, default, name, notNull, primaryKey, type
 
 ### Community 280 - "Community 280"
-Cohesion: 0.33
-Nodes (6): lens_material, name, notNull, primaryKey, type, typeSchema
+Cohesion: 0.40
+Nodes (5): name, notNull, primaryKey, type, age
 
 ### Community 281 - "Community 281"
 Cohesion: 0.33
@@ -1581,16 +1577,16 @@ Cohesion: 0.33
 Nodes (6): sgst_amount, default, name, notNull, primaryKey, type
 
 ### Community 285 - "Community 285"
-Cohesion: 0.33
-Nodes (6): stock_quantity, default, name, notNull, primaryKey, type
+Cohesion: 0.40
+Nodes (5): name, notNull, primaryKey, type, branch_id
 
 ### Community 286 - "Community 286"
 Cohesion: 0.33
 Nodes (6): subtotal, default, name, notNull, primaryKey, type
 
 ### Community 287 - "Community 287"
-Cohesion: 0.33
-Nodes (6): tax_amount, default, name, notNull, primaryKey, type
+Cohesion: 0.40
+Nodes (5): name, notNull, primaryKey, type, brand
 
 ### Community 288 - "Community 288"
 Cohesion: 0.33
@@ -1605,8 +1601,8 @@ Cohesion: 0.33
 Nodes (6): total_tax, default, name, notNull, primaryKey, type
 
 ### Community 291 - "Community 291"
-Cohesion: 0.33
-Nodes (6): updated_at, default, name, notNull, primaryKey, type
+Cohesion: 0.09
+Nodes (22): deleted_at, full_name, phone, updated_at, name, notNull, primaryKey, type (+14 more)
 
 ### Community 292 - "Community 292"
 Cohesion: 0.33
@@ -1705,12 +1701,12 @@ Cohesion: 0.33
 Nodes (6): name, notNull, primaryKey, type, typeSchema, category
 
 ### Community 316 - "Community 316"
-Cohesion: 0.33
-Nodes (6): name, notNull, primaryKey, type, typeSchema, coating
+Cohesion: 0.40
+Nodes (5): name, notNull, primaryKey, type, city
 
 ### Community 317 - "Community 317"
-Cohesion: 0.33
-Nodes (6): cost_price, default, name, notNull, primaryKey, type
+Cohesion: 0.40
+Nodes (5): phone, name, notNull, primaryKey, type
 
 ### Community 318 - "Community 318"
 Cohesion: 0.33
@@ -1765,20 +1761,20 @@ Cohesion: 0.33
 Nodes (6): gender, name, notNull, primaryKey, type, typeSchema
 
 ### Community 331 - "Community 331"
-Cohesion: 0.33
-Nodes (6): lens_material, name, notNull, primaryKey, type, typeSchema
+Cohesion: 0.40
+Nodes (5): primary_customer_id, name, notNull, primaryKey, type
 
 ### Community 332 - "Community 332"
 Cohesion: 0.33
 Nodes (6): lens_type, name, notNull, primaryKey, type, typeSchema
 
 ### Community 333 - "Community 333"
-Cohesion: 0.33
-Nodes (6): low_stock_threshold, default, name, notNull, primaryKey, type
+Cohesion: 0.40
+Nodes (5): name, notNull, primaryKey, type, address_line2
 
 ### Community 334 - "Community 334"
-Cohesion: 0.33
-Nodes (6): relation_type, default, name, notNull, primaryKey, type
+Cohesion: 0.40
+Nodes (5): name, notNull, primaryKey, type, brand
 
 ### Community 335 - "Community 335"
 Cohesion: 0.33
@@ -1797,8 +1793,8 @@ Cohesion: 0.33
 Nodes (5): Phase 1: Database & Validation Layer, Phase 2: Server Actions & Business Logic, Phase 3: Client State & UI Components, Phase 4: Quality Gate & Handoff, Task Checklist: [Feature Name]
 
 ### Community 339 - "Community 339"
-Cohesion: 0.40
-Nodes (5): completeOnboardingAction(), StepContent, SubscriberOnboardingModal(), SubscriberOnboardingModalProps, TOUR_STEPS
+Cohesion: 0.17
+Nodes (18): getCurrentPlanAction(), updateOrganizationPlanAction(), completeOnboardingAction(), requestOrganizationDeletionAction(), DashboardLayout(), loadPlan(), owner/settings/page.tsx, OwnerSettingsPage() (+10 more)
 
 ### Community 340 - "Community 340"
 Cohesion: 0.40
@@ -1838,7 +1834,7 @@ Nodes (5): customer_id, name, notNull, primaryKey, type
 
 ### Community 349 - "Community 349"
 Cohesion: 0.40
-Nodes (5): deleted_at, name, notNull, primaryKey, type
+Nodes (5): description, name, notNull, primaryKey, type
 
 ### Community 350 - "Community 350"
 Cohesion: 0.40
@@ -1846,7 +1842,7 @@ Nodes (5): description, name, notNull, primaryKey, type
 
 ### Community 351 - "Community 351"
 Cohesion: 0.40
-Nodes (5): full_name, name, notNull, primaryKey, type
+Nodes (5): metadata, name, notNull, primaryKey, type
 
 ### Community 352 - "Community 352"
 Cohesion: 0.40
@@ -1866,7 +1862,7 @@ Nodes (5): invoice_number, name, notNull, primaryKey, type
 
 ### Community 356 - "Community 356"
 Cohesion: 0.40
-Nodes (5): line_total, name, notNull, primaryKey, type
+Nodes (5): model, name, notNull, primaryKey, type
 
 ### Community 357 - "Community 357"
 Cohesion: 0.40
@@ -1878,7 +1874,7 @@ Nodes (5): mrp, name, notNull, primaryKey, type
 
 ### Community 359 - "Community 359"
 Cohesion: 0.40
-Nodes (5): phone, name, notNull, primaryKey, type
+Nodes (5): primary_customer_id, name, notNull, primaryKey, type
 
 ### Community 360 - "Community 360"
 Cohesion: 0.40
@@ -1894,11 +1890,11 @@ Nodes (5): promised_delivery_date, name, primaryKey, type, columns
 
 ### Community 363 - "Community 363"
 Cohesion: 0.40
-Nodes (5): selling_price, name, notNull, primaryKey, type
+Nodes (5): scope, name, notNull, primaryKey, type
 
 ### Community 364 - "Community 364"
 Cohesion: 0.40
-Nodes (5): sku, name, notNull, primaryKey, type
+Nodes (5): state, name, notNull, primaryKey, type
 
 ### Community 365 - "Community 365"
 Cohesion: 0.40
@@ -1985,12 +1981,8 @@ Cohesion: 0.40
 Nodes (5): unit_price, name, notNull, primaryKey, type
 
 ### Community 386 - "Community 386"
-Cohesion: 0.40
-Nodes (5): name, notNull, primaryKey, type, address_line1
-
-### Community 387 - "Community 387"
-Cohesion: 0.40
-Nodes (5): name, notNull, primaryKey, type, address_line2
+Cohesion: 0.67
+Nodes (3): InvoiceDetailsModal(), InvoiceDetailsModalProps, InvoiceBillingDetails
 
 ### Community 388 - "Community 388"
 Cohesion: 0.40
@@ -2000,10 +1992,6 @@ Nodes (5): deleted_at, name, notNull, primaryKey, type
 Cohesion: 0.40
 Nodes (5): description, name, notNull, primaryKey, type
 
-### Community 390 - "Community 390"
-Cohesion: 0.40
-Nodes (5): gstin, name, notNull, primaryKey, type
-
 ### Community 391 - "Community 391"
 Cohesion: 0.40
 Nodes (5): hsn_code, name, notNull, primaryKey, type
@@ -2011,10 +1999,6 @@ Nodes (5): hsn_code, name, notNull, primaryKey, type
 ### Community 392 - "Community 392"
 Cohesion: 0.40
 Nodes (5): inventory_item_id, name, notNull, primaryKey, type
-
-### Community 393 - "Community 393"
-Cohesion: 0.40
-Nodes (5): invoice_id, name, notNull, primaryKey, type
 
 ### Community 394 - "Community 394"
 Cohesion: 0.40
@@ -2028,61 +2012,29 @@ Nodes (5): model, name, notNull, primaryKey, type
 Cohesion: 0.40
 Nodes (5): mrp, name, notNull, primaryKey, type
 
-### Community 397 - "Community 397"
-Cohesion: 0.40
-Nodes (5): organization_id, name, notNull, primaryKey, type
-
-### Community 398 - "Community 398"
-Cohesion: 0.40
-Nodes (5): patient_id, name, notNull, primaryKey, type
-
 ### Community 399 - "Community 399"
 Cohesion: 0.40
 Nodes (5): pincode, name, notNull, primaryKey, type
-
-### Community 400 - "Community 400"
-Cohesion: 0.40
-Nodes (5): prescription_id, name, notNull, primaryKey, type
 
 ### Community 401 - "Community 401"
 Cohesion: 0.40
 Nodes (5): sku, name, notNull, primaryKey, type
 
-### Community 402 - "Community 402"
-Cohesion: 0.40
-Nodes (5): state, name, notNull, primaryKey, type
-
-### Community 403 - "Community 403"
-Cohesion: 0.40
-Nodes (5): unit_price, name, notNull, primaryKey, type
-
 ### Community 404 - "Community 404"
 Cohesion: 0.40
 Nodes (5): name, notNull, primaryKey, type, account_id
-
-### Community 405 - "Community 405"
-Cohesion: 0.40
-Nodes (5): name, notNull, primaryKey, type, address_line1
 
 ### Community 406 - "Community 406"
 Cohesion: 0.40
 Nodes (5): name, notNull, primaryKey, type, age
 
 ### Community 407 - "db/index.ts"
-Cohesion: 0.03
-Nodes (83): updateOrganizationPlanAction(), OwnerPreflightResult, resolveOrganizationByInput(), staffInitialPasswordChangeSchema, StaffPreflightResult, verifyStaffPortalLoginPreflightAction(), { GET, POST }, db (+75 more)
-
-### Community 408 - "Community 408"
-Cohesion: 0.40
-Nodes (5): name, notNull, primaryKey, type, city
+Cohesion: 0.04
+Nodes (79): getEnabledProductTypesAction(), OwnerPreflightResult, resolveOrganizationByInput(), staffInitialPasswordChangeSchema, StaffPreflightResult, verifyStaffPortalLoginPreflightAction(), db, pool (+71 more)
 
 ### Community 409 - "Community 409"
 Cohesion: 0.40
 Nodes (5): deleted_at, name, notNull, primaryKey, type
-
-### Community 410 - "Community 410"
-Cohesion: 0.40
-Nodes (5): full_name, name, notNull, primaryKey, type
 
 ### Community 411 - "Community 411"
 Cohesion: 0.40
@@ -2091,10 +2043,6 @@ Nodes (5): hsn_code, name, notNull, primaryKey, type
 ### Community 412 - "Community 412"
 Cohesion: 0.40
 Nodes (5): mrp, name, notNull, primaryKey, type
-
-### Community 413 - "Community 413"
-Cohesion: 0.40
-Nodes (5): password, name, notNull, primaryKey, type
 
 ### Community 414 - "Community 414"
 Cohesion: 0.40
@@ -2107,10 +2055,6 @@ Nodes (5): pincode, name, notNull, primaryKey, type
 ### Community 416 - "Community 416"
 Cohesion: 0.40
 Nodes (5): refresh_token, name, notNull, primaryKey, type
-
-### Community 417 - "Community 417"
-Cohesion: 0.40
-Nodes (5): selling_price, name, notNull, primaryKey, type
 
 ### Community 418 - "Community 418"
 Cohesion: 0.40
@@ -2145,24 +2089,24 @@ Cohesion: 0.67
 Nodes (3): **7\. Step 4: Install the Development Environment**, **Optional**, **Required**
 
 ## Knowledge Gaps
-- **3003 isolated node(s):** `nextConfig`, `dev`, `build`, `start`, `db:generate` (+2998 more)
+- **3012 isolated node(s):** `nextConfig`, `dev`, `build`, `start`, `db:generate` (+3007 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **18 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **27 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `runTests()` connect `cache.ts` to `patient-actions.ts`, `getCurrentSession`, `dashboard-view.tsx`?**
+- **Why does `runTests()` connect `cache.ts` to `tenant-actions.ts`, `Community 133`, `dashboard-view.tsx`?**
   _High betweenness centrality (0.043) - this node is a cross-community bridge._
-- **Why does `invalidateCache()` connect `dashboard-view.tsx` to `Community 161`, `Decimal.js`, `Community 99`, `Community 132`, `Community 134`, `getCurrentSession`, `withCache`, `cache.ts`, `Community 119`, `Community 182`, `db/index.ts`, `Community 127`?**
-  _High betweenness centrality (0.028) - this node is a cross-community bridge._
-- **Why does `invalidateCache()` connect `patient-actions.ts` to `schema.ts`, `process-optical-order.ts`, `product-type-actions.ts`, `cache.ts`, `tenant-actions.ts`, `Community 339`, `auth-utils.ts`, `razorpay/route.ts`, `Community 122`, `types.ts`, `subscription-actions.ts`?**
-  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+- **Why does `invalidateCache()` connect `dashboard-view.tsx` to `db/index.ts`, `Decimal.js`, `Community 99`, `Community 133`, `getCurrentSession`, `Community 134`, `Community 140`, `withCache`, `cache.ts`, `Community 119`, `add-product-modal.tsx`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
+- **Why does `invalidateCache()` connect `tenant-actions.ts` to `schema.ts`, `reports-view.tsx`, `process-optical-order.ts`, `cache.ts`, `pos-view.tsx`, `lucide-react`, `Community 339`, `patient-actions.ts`, `auth-utils.ts`, `patients-view.tsx`, `Community 122`, `types.ts`, `tailwind.config.ts`, `subscription-actions.ts`?**
+  _High betweenness centrality (0.023) - this node is a cross-community bridge._
 - **What connects `nextConfig`, `dev`, `build` to the rest of the system?**
-  _3004 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `inventory-view.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.1092436974789916 - nodes in this community are weakly interconnected._
+  _3013 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `schema.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.0355434039644566 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.04053236539624924 - nodes in this community are weakly interconnected._
 - **Should `Decimal.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.046948356807511735 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10338680926916222 - nodes in this community are weakly interconnected._
+- **Should `0000_dashing_runaways.sql` be split into smaller, more focused modules?**
+  _Cohesion score 0.06363636363636363 - nodes in this community are weakly interconnected._

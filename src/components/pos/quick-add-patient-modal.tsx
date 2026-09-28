@@ -5,6 +5,7 @@ import { X, UserPlus, Phone, User, MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createPatientAction } from '@/actions/patient-actions';
 import type { Patient } from '@/components/pos/patient-search';
+import { cleanErrorMessage } from '@/lib/action-utils';
 
 interface QuickAddPatientModalProps {
   isOpen: boolean;
@@ -91,13 +92,13 @@ export function QuickAddPatientModal({
         onClose();
       } else {
         toast.error('Failed to create patient', {
-          description: res.error || 'Please check the information and try again.',
+          description: cleanErrorMessage(res.error) || 'Please check the information and try again.',
         });
       }
     } catch (err) {
       console.error('[QuickAddPatientModal] Error creating patient:', err);
       toast.error('Unexpected error', {
-        description: 'Failed to communicate with patient service.',
+        description: cleanErrorMessage(err instanceof Error ? err.message : 'Failed to communicate with patient service.'),
       });
     } finally {
       setIsSubmitting(false);

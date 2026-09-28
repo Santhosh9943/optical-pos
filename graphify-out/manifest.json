@@ -1736,8 +1736,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\e2e\\patient-inventory-crud.spec.ts": {
-    "mtime": 1790534657.410795,
-    "ast_hash": "fbb9c5c4d8e1ac8baa81ff4b14f553ce",
+    "mtime": 1790585160.327901,
+    "ast_hash": "9095fdf9c00c8af0c0516ce0044c9a64",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\e2e\\pos-checkout.spec.ts": {
@@ -1881,13 +1881,13 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\actions\\inventory-actions.ts": {
-    "mtime": 1790575297.446072,
-    "ast_hash": "c1ae9296b33848ec5777932747f841b8",
+    "mtime": 1790584637.4616113,
+    "ast_hash": "e113e34257c975524d9c4fc60f4ee5e6",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\actions\\invoice-edit-actions.ts": {
-    "mtime": 1790575297.4470701,
-    "ast_hash": "eca0f4ae91469e520bf1de5cfc1322dd",
+    "mtime": 1790584732.1351745,
+    "ast_hash": "5928545a69c50ddd78fc5dee1a8517bb",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\actions\\lab-actions.ts": {
@@ -1901,8 +1901,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\actions\\patient-actions.ts": {
-    "mtime": 1790575297.4480698,
-    "ast_hash": "4f61f08c2ccd98c01e837a0e303dc706",
+    "mtime": 1790584749.8782084,
+    "ast_hash": "40e60c92c01fa1c9ca9111482ad171a5",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\actions\\payment-actions.ts": {
@@ -1916,13 +1916,13 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\actions\\process-optical-order.ts": {
-    "mtime": 1790575297.44907,
-    "ast_hash": "2e5f6996a76ed3b4ae8437037e060295",
+    "mtime": 1790584776.3422253,
+    "ast_hash": "7724092c86fd9359b95ceb1b2ac1485f",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\actions\\product-type-actions.ts": {
-    "mtime": 1790564677.712903,
-    "ast_hash": "9547e4aed9ab03a87a6ddaf92742dd75",
+    "mtime": 1790584957.3669543,
+    "ast_hash": "901ad4705cde5270b35fd8e6154e3d2c",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\actions\\receipt-actions.ts": {
@@ -2211,13 +2211,13 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\add-inventory-form.tsx": {
-    "mtime": 1790530929.3715727,
-    "ast_hash": "1e53cf44e75e9b52d9acfef55de93b77",
+    "mtime": 1790584803.3485324,
+    "ast_hash": "902f4957ea02816b6bee840989b960cd",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\add-patient-modal.tsx": {
-    "mtime": 1790575297.4605813,
-    "ast_hash": "b45b8a54ca08df7b28c2c772b77e927f",
+    "mtime": 1790584860.6385932,
+    "ast_hash": "cfddea4c98c267eec1ab11abc4f71f3b",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\dashboard-view.tsx": {
@@ -2226,8 +2226,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\edit-inventory-modal.tsx": {
-    "mtime": 1790575297.4616463,
-    "ast_hash": "a1f84216567e5b87b25910385c781cdb",
+    "mtime": 1790584834.3583207,
+    "ast_hash": "5a8c03ec8f53880c2765c096df0254ba",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\edit-invoice-modal.tsx": {
@@ -2391,8 +2391,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\pos-view.tsx": {
-    "mtime": 1790575297.4708536,
-    "ast_hash": "c16ab70d4936c1b4a8a18e6bdff93cf2",
+    "mtime": 1790584896.2642746,
+    "ast_hash": "99d90610e9437f9af8b4bf0f0675d419",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\prescription-grid.tsx": {
@@ -2411,8 +2411,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\quick-add-patient-modal.tsx": {
-    "mtime": 1789371610.1600375,
-    "ast_hash": "168c0b7366d867e87d1dcc6b34a92d71",
+    "mtime": 1790584877.5189922,
+    "ast_hash": "66020ca6b2798dd6211e0c45bf4cb4c6",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\spectacle-wizard-modal.tsx": {
@@ -2716,13 +2716,13 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\lib\\validators\\inventory.ts": {
-    "mtime": 1790530888.2268622,
-    "ast_hash": "ed80396d5907c4993d49654b895dafc3",
+    "mtime": 1790584535.6639824,
+    "ast_hash": "01f5361d1aaa34a74fa75272cb80574a",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\lib\\validators\\prescription.ts": {
-    "mtime": 1790575297.479373,
-    "ast_hash": "68b73ab54fd653c3086f36916138c70a",
+    "mtime": 1790584595.8988056,
+    "ast_hash": "2d92b42f689371885059e40a489253d9",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\store\\pos-store.ts": {
@@ -2816,8 +2816,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\BUG_FIX_LOG.md": {
-    "mtime": 1790575297.4190257,
-    "ast_hash": "4833503436edd4dbd8c46c5d31e4d4ce",
+    "mtime": 1790585271.7802444,
+    "ast_hash": "1ad778e8776133f9441c011bd03bbe1a",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\SECURITY_LOG.md": {
@@ -2826,8 +2826,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\SESSION_HANDOFF.md": {
-    "mtime": 1790575297.420083,
-    "ast_hash": "5742f1be6bb866eabca74960719814ba",
+    "mtime": 1790585301.5681121,
+    "ast_hash": "6f5c57baa392b146287cb41805c8e93a",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\archive\\ARCHIVE_LOG.md": {
@@ -2923,6 +2923,21 @@
   "F:\\hobby-projects\\optical-pos\\specs\\TEMPLATE\\tasks.md": {
     "mtime": 1790388173.2415125,
     "ast_hash": "b26eb06a48a0c62b15da2317dc5082a1",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\src\\lib\\action-utils.ts": {
+    "mtime": 1790584950.0349014,
+    "ast_hash": "dc45fa0d14780272043cdec6c5c03150",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\OptixOS_User_Guide.html": {
+    "mtime": 1790581316.7432468,
+    "ast_hash": "7834aee98861e4e9c39215b5fedf1aa2",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\public\\guide.html": {
+    "mtime": 1790581288.0588496,
+    "ast_hash": "7834aee98861e4e9c39215b5fedf1aa2",
     "semantic_hash": ""
   }
 }

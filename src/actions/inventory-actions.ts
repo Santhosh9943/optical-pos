@@ -21,6 +21,7 @@ import {
 import { withCache, invalidateCache } from '@/lib/cache';
 import { dispatchNotificationInternal } from '@/lib/notifications-internal';
 import { createStoreApprovalRequestAction } from '@/actions/approval-actions';
+import { formatActionError, formatZodError, lenientUuidSchema } from '@/lib/action-utils';
 
 export type InventoryRow = Omit<typeof inventoryItems.$inferSelect, 'costPrice'> & {
   costPrice?: string | null;
@@ -119,7 +120,14 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
 }> {
   try {
     const session = await requireManagerOrAdmin();
-    const parsed = createInventoryItemSchema.parse(rawInput);
+    const parsedResult = createInventoryItemSchema.safeParse(rawInput);
+    if (!parsedResult.success) {
+      return {
+        success: false,
+        error: formatZodError(parsedResult.error, 'Invalid inventory item details'),
+      };
+    }
+    const parsed = parsedResult.data;
 
     // Auto-generate a random SKU if left blank
     const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -151,7 +159,16 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
       else if (parsed.category === 'ACCESSORY') hsnCode = '9003';
     }
 
-    const targetBranchId = parsed.branchId || session.branchId;
+    let targetBranchId = parsed.branchId || session.branchId || null;
+    if (!targetBranchId) {
+      const [firstBranch] = await db
+        .select({ id: branches.id })
+        .from(branches)
+        .where(and(eq(branches.organizationId, session.organizationId), eq(branches.isActive, true)))
+        .limit(1);
+      targetBranchId = firstBranch?.id || null;
+    }
+
     if (targetBranchId && !(await canAccessBranches(session, [targetBranchId]))) {
       return { success: false, error: 'Forbidden: Branch does not belong to your organization' };
     }
@@ -197,7 +214,7 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
     console.error('[addInventoryItem] Failed:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to add inventory item',
+      error: formatActionError(error, 'Failed to add inventory item'),
     };
   }
 }
@@ -238,12 +255,7 @@ const updateInventoryItemSchema = z.object({
   lowStockThreshold: z.number().int().min(0).max(1_000_000).optional(),
   taxRate: z.enum(GST_RATES).optional(),
   hsnCode: z.string().max(10).nullable().optional(),
-  // Lenient UUID shape: seeded ids like 00000000-0000-0000-0000-000000000002 fail Zod 4's strict .uuid()
-  branchId: z
-    .string()
-    .regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/, 'Invalid branch id')
-    .nullable()
-    .optional(),
+  branchId: lenientUuidSchema,
 });
 
 /**
@@ -395,7 +407,7 @@ export async function updateInventoryItem(
     console.error('[updateInventoryItem] Failed:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update inventory item',
+      error: formatActionError(error, 'Failed to update inventory item'),
     };
   }
 }

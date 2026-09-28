@@ -7,6 +7,7 @@ import { eq, and, asc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { seedDefaultProductTypesForOrganization } from '@/lib/default-product-types';
+import { formatActionError, formatZodError, lenientUuidSchema } from '@/lib/action-utils';
 
 export interface StepOption {
   label: string;
@@ -48,7 +49,7 @@ export interface ProductTypeItem {
 }
 
 const saveProductTypeSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: lenientUuidSchema,
   code: z.string().min(1, 'Code is required').max(50),
   name: z.string().min(1, 'Name is required').max(100),
   description: z.string().optional().nullable(),
@@ -61,7 +62,7 @@ const saveProductTypeSchema = z.object({
   workflowSteps: z.array(z.any()).default([]),
 });
 
-export type SaveProductTypeInput = z.infer<typeof saveProductTypeSchema>;
+export type SaveProductTypeInput = z.input<typeof saveProductTypeSchema>;
 
 /**
  * Fetch all product types configured for the active organization.
@@ -175,7 +176,14 @@ export async function saveProductTypeAction(input: SaveProductTypeInput): Promis
 }> {
   try {
     const session = await requireManagerOrAdmin();
-    const validated = saveProductTypeSchema.parse(input);
+    const parsedResult = saveProductTypeSchema.safeParse(input);
+    if (!parsedResult.success) {
+      return {
+        success: false,
+        error: formatZodError(parsedResult.error, 'Invalid product type details'),
+      };
+    }
+    const validated = parsedResult.data;
 
     if (validated.id) {
       // Update existing
@@ -251,7 +259,7 @@ export async function saveProductTypeAction(input: SaveProductTypeInput): Promis
     console.error('[saveProductTypeAction] Error:', err);
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'Failed to save product type',
+      error: formatActionError(err, 'Failed to save product type'),
     };
   }
 }

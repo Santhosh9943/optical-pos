@@ -28,6 +28,7 @@ import { computeGstLine, roundPaise, normalizeGstRate } from '@/lib/gst';
 import { invalidateCache } from '@/lib/cache';
 import { checkRateLimit } from '@/lib/ratelimit';
 import { generateReceiptToken } from '@/lib/crypto-utils';
+import { formatZodError } from '@/lib/action-utils';
 
 // ─────────────────────────────────────────────────────────────
 // Typed response
@@ -85,10 +86,11 @@ export async function processOpticalOrder(
   // ── Step 1: Strict input parsing ──
   const parsed = createOrderSchema.safeParse(rawInput);
   if (!parsed.success) {
+    const formattedError = formatZodError(parsed.error, 'Order data failed validation');
     return {
       success: false,
       error: 'VALIDATION_ERROR',
-      message: 'Order data failed validation',
+      message: `Order validation error: ${formattedError}`,
       details: parsed.error.flatten().fieldErrors as Record<string, unknown>,
     };
   }

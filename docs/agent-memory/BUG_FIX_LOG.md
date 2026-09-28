@@ -631,3 +631,24 @@
   1. Preference auto-saves (e.g. print layout, counter layout) must never require re-transmitting contact identity fields.
   2. Form dirty tracking baselines must strictly equal the initial loaded state to prevent phantom navigation blocking.
   3. Default store profile rows must always be provisioned with valid, non-empty placeholder contact details.
+
+---
+
+### [BUG-040] Strict RFC 4122 UUID Rejection on Seeded Entity Identifiers & Raw Zod Issue JSON Error Banner Leak
+- **Component**: Inventory Creation, Clinical Validators & Global Action Error Layer / `src/lib/action-utils.ts`, `src/lib/validators/inventory.ts`, `src/lib/validators/prescription.ts`, `src/actions/inventory-actions.ts`, `src/components/admin/add-inventory-form.tsx`
+- **Symptom**: Creating an inventory item in a seeded or default branch (`00000000-0000-0000-0000-000000000002`) failed with a red alert banner displaying raw unparsed JSON issues:
+  `[ { "origin": "string", "code": "invalid_format", "format": "uuid", "path": [ "branchId" ], "message": "Invalid UUID" } ]`
+- **Root Cause**:
+  1. `createInventoryItemSchema` used Zod's strict RFC 4122 `.uuid()`, which expects version bits 1–8 and variant bits `[89abAB]`. Deterministic seeded identifiers (like `DEFAULT_BRANCH_ID` `00000000-0000-0000-0000-000000000002`) failed validation with `"Invalid UUID"`.
+  2. `addInventoryItem` executed `createInventoryItemSchema.parse(...)` inside a `try...catch` and returned `error instanceof Error ? error.message : ...`. In Zod, `ZodError.message` is serialized as a raw JSON array of issues.
+  3. In `AddInventoryForm`, `branchId` was not guarded against `'all'` or empty values when the modal opened, and the component rendered `validationError` directly into the DOM without sanitizing raw JSON.
+- **The Fix**:
+  1. Created `src/lib/action-utils.ts` providing `lenientUuidSchema` (36-character hexadecimal UUID regex matching seeded and standard UUIDs, safely normalizing `""` or `"all"` to `null`), `requiredLenientUuidSchema`, `formatZodError`, `formatActionError`, and client-side `cleanErrorMessage`.
+  2. Updated `createInventoryItemSchema`, `updateInventoryItemSchema`, `prescriptionSchema`, `invoiceItemSchema`, `patientInputSchema`, `createOrderSchema`, `saveProductTypeSchema`, `updateInvoiceSchema`, and `createPatientSchema`.
+  3. Added safe fallback resolution in `addInventoryItem` to automatically bind `session.branchId` or the organization's primary active branch if `branchId` is omitted.
+  4. Wrapped all action catch blocks with `formatActionError` and client-side form error banners/toasts with `cleanErrorMessage`.
+  5. Added an automated E2E test in `e2e/patient-inventory-crud.spec.ts` testing the complete Add Inventory Item modal flow in Chromium.
+- **Permanent Invariants**:
+  1. Never use strict `.uuid()` on seeded branch, org, or entity IDs that may be deterministic 36-char hex strings; always use `lenientUuidSchema`.
+  2. Server actions must never return raw `error.message` on Zod errors; always format issues using `formatActionError` or `formatZodError`.
+  3. Client UI alerts and toasts must pass error strings through `cleanErrorMessage` to guarantee clean, readable English text.

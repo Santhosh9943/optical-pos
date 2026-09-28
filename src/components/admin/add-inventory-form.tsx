@@ -29,6 +29,7 @@ import {
   type CreateInventoryItemInput,
 } from '@/lib/validators/inventory';
 import { useTenantStore } from '@/store/tenant-store';
+import { cleanErrorMessage } from '@/lib/action-utils';
 
 interface AddInventoryFormProps {
   isOpen: boolean;
@@ -71,14 +72,22 @@ export function AddInventoryForm({
 
   useEffect(() => {
     if (isOpen) {
-      setBranchId(selectedBranchId || branches[0]?.id || '');
+      const initialBranch =
+        selectedBranchId && selectedBranchId !== 'all'
+          ? selectedBranchId
+          : branches[0]?.id || '';
+      setBranchId(initialBranch);
     }
   }, [isOpen, selectedBranchId, branches]);
 
   if (!isOpen) return null;
 
   const resetForm = () => {
-    setBranchId(selectedBranchId || branches[0]?.id || '');
+    const initialBranch =
+      selectedBranchId && selectedBranchId !== 'all'
+        ? selectedBranchId
+        : branches[0]?.id || '';
+    setBranchId(initialBranch);
     setProductName('');
     setCategory('FRAME');
     setIsCustomCategory(false);
@@ -176,7 +185,7 @@ export function AddInventoryForm({
         lowStockThreshold: Number(lowStockThreshold) || 5,
         taxRate: finalTaxRate,
         hsnCode: hsnCode.trim() || null,
-        branchId: branchId || null,
+        branchId: branchId && branchId !== 'all' ? branchId : (branches[0]?.id || null),
       };
 
       const result = await addInventoryItem(payload);
@@ -189,14 +198,15 @@ export function AddInventoryForm({
         onSuccess?.(result.item);
         onClose();
       } else {
-        setValidationError(result.error || 'Failed to add item. Check your inputs.');
+        const errorMsg = cleanErrorMessage(result.error) || 'Failed to add item. Check your inputs.';
+        setValidationError(errorMsg);
         toast.error('Failed to Add Item', {
-          description: result.error || 'Please review the form for errors.',
+          description: errorMsg,
         });
       }
     } catch (err) {
       console.error('[AddInventoryForm] error:', err);
-      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      const msg = cleanErrorMessage(err instanceof Error ? err.message : 'An unexpected error occurred');
       setValidationError(msg);
       toast.error('Unexpected Error', { description: msg });
     } finally {

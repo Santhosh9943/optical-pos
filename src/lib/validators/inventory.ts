@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { lenientUuidSchema } from '@/lib/action-utils';
 
 export const inventoryCategoryValues = [
   'FRAME',
@@ -50,7 +51,7 @@ export const createInventoryItemSchema = z.object({
     .default(5),
   taxRate: z.string().trim().default('18.00'),
   hsnCode: z.string().trim().max(10).optional().nullable(),
-  branchId: z.string().uuid().optional().nullable(),
+  branchId: lenientUuidSchema,
 });
 
 export type CreateInventoryItemInput = z.infer<typeof createInventoryItemSchema>;

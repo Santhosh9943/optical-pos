@@ -8,9 +8,10 @@ import { revalidatePath } from 'next/cache';
 import Decimal from 'decimal.js';
 import { computeGstLine } from '@/lib/gst';
 import { z } from 'zod';
+import { formatActionError, formatZodError, requiredLenientUuidSchema } from '@/lib/action-utils';
 
 const updateInvoiceSchema = z.object({
-  invoiceId: z.string().uuid(),
+  invoiceId: requiredLenientUuidSchema,
   customerName: z.string().min(1, 'Customer name is required').max(100),
   customerPhone: z.string().min(10, 'Valid phone number is required').max(20),
   customerAddress: z.string().optional().nullable(),
@@ -89,7 +90,14 @@ export async function getInvoiceForEditAction(invoiceId: string) {
 export async function updateInvoiceDetailsAction(input: UpdateInvoiceInput) {
   try {
     const session = await requireManagerOrAdmin();
-    const validated = updateInvoiceSchema.parse(input);
+    const parsedResult = updateInvoiceSchema.safeParse(input);
+    if (!parsedResult.success) {
+      return {
+        success: false,
+        error: formatZodError(parsedResult.error, 'Invalid invoice details'),
+      };
+    }
+    const validated = parsedResult.data;
 
     return await db.transaction(async (tx) => {
       // 1. Fetch current invoice with items
@@ -216,7 +224,7 @@ export async function updateInvoiceDetailsAction(input: UpdateInvoiceInput) {
     console.error('[updateInvoiceDetailsAction] Error:', err);
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'Failed to update invoice details',
+      error: formatActionError(err, 'Failed to update invoice details'),
     };
   }
 }

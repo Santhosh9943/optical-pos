@@ -1,6 +1,7 @@
 // src/lib/validators/prescription.ts
 import { z } from 'zod';
 import { GST_RATES } from '@/lib/gst';
+import { lenientUuidSchema, requiredLenientUuidSchema } from '@/lib/action-utils';
 
 /** Integer-scaling refinement to prevent IEEE-754 floating-point validation bugs */
 export const isQuarterStep = (val: number): boolean => {
@@ -98,7 +99,7 @@ export const pdSchema = z.preprocess(
 
 export const prescriptionSchema = z
   .object({
-    customerId: z.string().uuid().optional(),
+    customerId: lenientUuidSchema,
     odSphere: sphereSchema,
     odCylinder: cylinderSchema,
     odAxis: axisSchema,
@@ -154,7 +155,7 @@ export type PrescriptionInput = z.infer<typeof prescriptionSchema>;
 // ─────────────────────────────────────────────────────────────
 
 export const invoiceItemSchema = z.object({
-  inventoryItemId: z.string().uuid().nullable(),
+  inventoryItemId: lenientUuidSchema,
   description: z.string().min(1).max(300),
   hsnCode: z.string().max(10).nullable().optional(),
   quantity: z.number().int().min(1).max(99999),
@@ -197,8 +198,8 @@ export const invoiceItemSchema = z.object({
     .nullable()
     .optional(),
   // Family & Clinical mapping
-  patientId: z.string().uuid().nullable().optional(),
-  prescriptionId: z.string().uuid().nullable().optional(),
+  patientId: lenientUuidSchema,
+  prescriptionId: lenientUuidSchema,
   isCustomerOwnFrame: z.boolean().default(false).optional(),
   fittingNote: z.string().max(500).nullable().optional(),
 });
@@ -206,26 +207,26 @@ export const invoiceItemSchema = z.object({
 export type InvoiceItemInput = z.infer<typeof invoiceItemSchema>;
 
 export const patientInputSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: lenientUuidSchema,
   fullName: z.string().min(1, 'Patient name is required'),
   phone: z.string().min(3, 'Phone number is required'),
   age: z.number().nullable().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).nullable().optional(),
   relationType: z.string().default('Self'),
-  primaryCustomerId: z.string().uuid().nullable().optional(),
+  primaryCustomerId: lenientUuidSchema,
 });
 
 export type PatientInput = z.infer<typeof patientInputSchema>;
 
 export const prescriptionItemInputSchema = z.union([
   z.object({
-    patientId: z.string().uuid().optional(),
+    patientId: lenientUuidSchema,
     patientName: z.string().optional(),
     data: prescriptionSchema,
   }),
   prescriptionSchema.and(
     z.object({
-      patientId: z.string().uuid().optional(),
+      patientId: lenientUuidSchema,
       patientName: z.string().optional(),
     })
   ),
@@ -245,7 +246,7 @@ export const invoiceBillingDetailsSchema = z.object({
 export type InvoiceBillingDetailsInput = z.infer<typeof invoiceBillingDetailsSchema>;
 
 export const createOrderSchema = z.object({
-  customerId: z.string().uuid(),
+  customerId: requiredLenientUuidSchema,
   // Multi-patient family support
   patients: z.array(patientInputSchema).optional(),
   prescriptions: z.array(prescriptionItemInputSchema).optional(),
@@ -262,11 +263,7 @@ export const createOrderSchema = z.object({
   promisedDeliveryDate: z.string().datetime().optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   billingDetails: invoiceBillingDetailsSchema.optional(),
-  branchId: z
-    .string()
-    .regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/, 'Invalid UUID')
-    .optional()
-    .nullable(),
+  branchId: lenientUuidSchema,
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

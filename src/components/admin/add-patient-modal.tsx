@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, UserPlus, Phone, User, MapPin, Loader2, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { createPatientAction, type PatientSummary } from '@/actions/patient-actions';
+import { cleanErrorMessage } from '@/lib/action-utils';
 
 interface AddPatientModalProps {
   isOpen: boolean;
@@ -91,13 +92,13 @@ export function AddPatientModal({
         setRelationType('Self');
       } else {
         toast.error('Failed to add patient', {
-          description: res.error || 'Please review information and try again.',
+          description: cleanErrorMessage(res.error) || 'Please review information and try again.',
         });
       }
     } catch (err) {
       console.error('[AddPatientModal] Error:', err);
       toast.error('Unexpected error', {
-        description: 'Failed to connect to patient service.',
+        description: cleanErrorMessage(err instanceof Error ? err.message : 'Failed to connect to patient service.'),
       });
     } finally {
       setIsSubmitting(false);

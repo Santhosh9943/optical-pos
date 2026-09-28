@@ -17,6 +17,7 @@ import { prescriptionSchema } from '@/lib/validators/prescription';
 import { createStoreApprovalRequestAction } from '@/actions/approval-actions';
 import { withCache, invalidateCache } from '@/lib/cache';
 import type { POSPatient } from '@/store/pos-store';
+import { formatActionError, lenientUuidSchema, requiredLenientUuidSchema } from '@/lib/action-utils';
 
 export interface CreatePatientInput {
   fullName: string;
@@ -61,7 +62,7 @@ const createPatientSchema = z.object({
   state: optionalTrimmedText(120),
   pincode: optionalTrimmedText(12),
   relationType: z.string().max(40).optional(),
-  primaryCustomerId: z.string().uuid().nullable().optional(),
+  primaryCustomerId: lenientUuidSchema,
 });
 
 /** Zod schema for updatePatientAction input (mirrors UpdatePatientInput). */
@@ -643,8 +644,8 @@ export async function linkExistingCustomerToFamily(
 
     const parsed = z
       .object({
-        primaryCustomerId: z.string().uuid(),
-        targetCustomerId: z.string().uuid(),
+        primaryCustomerId: requiredLenientUuidSchema,
+        targetCustomerId: requiredLenientUuidSchema,
         relationType: z.string().max(40),
       })
       .safeParse({ primaryCustomerId, targetCustomerId, relationType: relationType ?? '' });
@@ -718,7 +719,7 @@ export async function updateCustomerPhone(
     const session = await requireAuthSession();
 
     const parsed = z
-      .object({ customerId: z.string().uuid(), phone: z.string().trim().min(1, 'Phone number cannot be empty').max(20) })
+      .object({ customerId: requiredLenientUuidSchema, phone: z.string().trim().min(1, 'Phone number cannot be empty').max(20) })
       .safeParse({ customerId, phone: newPhone ?? '' });
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message || 'Invalid phone update' };

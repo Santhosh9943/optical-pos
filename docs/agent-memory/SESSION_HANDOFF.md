@@ -7,21 +7,37 @@
 ---
 
 ## 1. Active Session Metadata
-- **Last Updated**: `2026-09-28T13:21:00+05:30`
+- **Last Updated**: `2026-09-28T14:19:00+05:30`
 - **Active Platform / Agent**: Antigravity (Advanced Agentic Pair Programmer)
 - **Active Workspace**: `f:\hobby-projects\optical-pos`
-- **Current Git Branch**: `main` (clean, synchronized with `origin/main` at commit `0be84b4`)
+- **Current Git Branch**: `main`
 - **Deliverables**:
-  - `OptixOS_User_Guide.html` (Standalone, zero-dependency HTML user guide with embedded styling, copy buttons, feature breakdown, test credentials, and runbook for non-technical retail end users).
-  - `public/guide.html` (Served directly via web server at `http://localhost:3000/guide.html`).
+  - `src/lib/action-utils.ts` (Centralized `lenientUuidSchema`, `requiredLenientUuidSchema`, `formatZodError`, `formatActionError`, and `cleanErrorMessage`).
+  - System-wide validator hardening: `createInventoryItemSchema`, `updateInventoryItemSchema`, `prescriptionSchema`, `invoiceItemSchema`, `patientInputSchema`, `createOrderSchema`, `saveProductTypeSchema`, `updateInvoiceSchema`, `createPatientSchema`.
+  - Server action hardening: `addInventoryItem`, `updateInventoryItem`, `saveProductTypeAction`, `updateInvoiceDetailsAction`, `createPatientAction`, `processOpticalOrder`.
+  - Frontend form ergonomics: `AddInventoryForm`, `EditInventoryModal`, `AddPatientModal`, `QuickAddPatientModal`, `POSView`.
+  - `e2e/patient-inventory-crud.spec.ts` (4/4 tests passing in Chromium including Add Inventory Item modal).
 - **Latest Quality Gate State**:
   - `npm run check`: **PASS (0 errors, 0 warnings)**
   - `npm run audit:security`: **PASS (0 critical violations)**
   - `npm run audit:design`: **PASS (92 UI components audited, 0 violations)**
   - Core POS Workflows (`npm run test:pos`): **12/12 PASS (100% green)**
-  - Full Live E2E Matrix: **100% PASS** across all 23 spec files (Signup & Branch, Multi-Branch Relations, Patient & Inventory CRUD, Core POS, Lab Orders, Reports & Ledger, Balance Settlement, Settings Sidebar, Dashboard Routing, Notifications, Priority Notes, Caching & Performance, Digital Engagement, Staff Portal, Tenant Roles, Auth Flow, Auth Security, Super Admin OTP, SaaS Subscriptions, Security Penetration, Settings Print & Auto-Save).
-  - Knowledge Graph (`graphify update .`): Rebuilt and synchronized (5,312 nodes, 9,080 edges, 441 communities).
-  - Bug Fix Log: BUG-001 … BUG-039 (Appended BUG-039).
+  - Inventory & Patient CRUD (`patient-inventory-crud.spec.ts`): **4/4 PASS (100% green)**
+  - Bug Fix Log: BUG-001 … BUG-040 (Appended BUG-040).
+
+---
+
+## 2. Most Recent Task Accomplishments (Inventory Creation & System-Wide Save & Validation Hardening - BUG-040)
+1. **Lenient UUID Schema & Seeded ID Resolution**:
+   - Built `src/lib/action-utils.ts` with `lenientUuidSchema` and `requiredLenientUuidSchema` matching 36-char hex UUIDs, supporting seeded `00000000-0000-0000-0000-000000000002` and normalizing `""` or `"all"` into `null`.
+2. **Centralized Action Error Formatting**:
+   - Implemented `formatZodError`, `formatActionError`, and `cleanErrorMessage` to completely prevent raw Zod issue JSON array dumps (`[{ "origin": "string", "code": "invalid_format", ... }]`) from reaching the UI.
+3. **Safe Branch Fallback Resolution**:
+   - In `addInventoryItem`, if `branchId` is omitted, `null`, or `'all'`, it automatically resolves to `session.branchId` or the organization's primary active store branch.
+4. **Hardened Forms & Modals**:
+   - `AddInventoryForm`, `EditInventoryModal`, `AddPatientModal`, `QuickAddPatientModal`, and `POSView` now pass all server messages through `cleanErrorMessage`.
+5. **Verified with Playwright & Quality Gates**:
+   - Verified in Chromium via `e2e/patient-inventory-crud.spec.ts` and `npm run test:pos` (12/12 pass). All static and design checks pass with 0 errors.
 
 ---
 

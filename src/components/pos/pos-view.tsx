@@ -24,6 +24,7 @@ import {
   type PaymentMode,
 } from '@/components/pos/payment-panel';
 import { processOpticalOrder } from '@/actions/process-optical-order';
+import { cleanErrorMessage } from '@/lib/action-utils';
 import { type PrintOrderData } from '@/components/pos/print-layouts';
 import {
   ThermalReceipt,
@@ -621,7 +622,7 @@ export function PosView() {
         });
       } else {
         toast.error(`Checkout Failed: ${result.error}`, {
-          description: result.message,
+          description: cleanErrorMessage(result.message),
           duration: 7000,
         });
       }

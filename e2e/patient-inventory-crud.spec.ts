@@ -145,4 +145,42 @@ test.describe('Patient and Inventory Comprehensive CRUD & UI Verification', () =
     await page.locator('button:has-text("Cancel")').click();
     await expect(deleteDialogTitle).not.toBeVisible();
   });
+
+  test('Admin Inventory: Add New Inventory Item with single identifier and custom tax', async ({ page }) => {
+    // 1. Navigate to /admin/inventory
+    await page.goto('/admin/inventory');
+    await page.waitForLoadState('networkidle');
+
+    // 2. Click "Add New Item" button
+    const addProductBtn = page.getByTestId('btn-add-product');
+    await expect(addProductBtn).toBeVisible({ timeout: 15000 });
+    await addProductBtn.click();
+
+    // 3. Modal opens
+    const modalHeader = page.locator('h2:has-text("Add Inventory Item")');
+    await expect(modalHeader).toBeVisible({ timeout: 5000 });
+
+    // 4. Fill in product details
+    const uniqueSuffix = Date.now().toString().slice(-4);
+    const testProductName = `Demo Frame Optix ${uniqueSuffix}`;
+    const testSku = `FRM-TST-${uniqueSuffix}`;
+
+    await page.getByTestId('input-inventory-product-name').fill(testProductName);
+    await page.getByTestId('select-inventory-category').selectOption('FRAME');
+    await page.getByTestId('input-inventory-identifier').fill(testSku);
+    await page.getByTestId('input-inventory-selling-price').fill('1499.00');
+    await page.getByTestId('input-inventory-stock').fill('3');
+
+    // 5. Submit the form
+    const submitBtn = page.getByTestId('btn-save-inventory-item');
+    await expect(submitBtn).toBeVisible();
+    await submitBtn.click();
+
+    // 6. Modal should close without raw JSON error banner
+    await expect(modalHeader).not.toBeVisible({ timeout: 10000 });
+
+    // 7. Verify the new product appears in the inventory table
+    const createdRow = page.locator('tbody tr', { hasText: testProductName }).first();
+    await expect(createdRow).toBeVisible({ timeout: 10000 });
+  });
 });

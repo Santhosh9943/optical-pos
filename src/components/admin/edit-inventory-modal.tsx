@@ -10,6 +10,7 @@ import {
 } from '@/actions/inventory-actions';
 import type { CreateInventoryItemInput } from '@/lib/validators/inventory';
 import { useTenantStore } from '@/store/tenant-store';
+import { cleanErrorMessage } from '@/lib/action-utils';
 
 interface EditInventoryModalProps {
   isOpen: boolean;
@@ -78,7 +79,7 @@ export function EditInventoryModal({
     try {
       setIsSubmitting(true);
       const res = await updateInventoryItem(item.id, {
-        branchId: branchId || null,
+        branchId: branchId && branchId !== 'all' ? branchId : null,
         sku: sku.trim(),
         barcode: barcode.trim() || null,
         category,
@@ -102,13 +103,13 @@ export function EditInventoryModal({
         onClose();
       } else {
         toast.error('Failed to update item', {
-          description: res.error || 'Please check the values and try again.',
+          description: cleanErrorMessage(res.error) || 'Please check the values and try again.',
         });
       }
     } catch (err) {
       console.error('[EditInventoryModal] Error:', err);
       toast.error('Error updating item', {
-        description: 'Failed to connect to inventory service.',
+        description: cleanErrorMessage(err instanceof Error ? err.message : 'Failed to connect to inventory service.'),
       });
     } finally {
       setIsSubmitting(false);
