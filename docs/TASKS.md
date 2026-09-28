@@ -361,6 +361,13 @@ This document serves as the master task ledger and release roadmap for **OptixOS
 - [x] **Comprehensive E2E Coverage**: Created `e2e/pos-settings-sidebar.spec.ts` (100% pass) and verified `e2e/settings-autosave-navigation.spec.ts`, `e2e/settings-print.spec.ts`, `e2e/auth-security.spec.ts`, and core POS tests (`npm run test:pos`). All 100% green.
 - [x] **Graphify Sync**: AST knowledge graph refreshed to 5,037 nodes and 8,365 edges.
 
+### Phase 38: Settings UI/UX Refactor, Streamlining & Compact Redesign
+- [x] **Settings Taxonomy Consolidation (`src/lib/settings-registry.ts`)**: Eliminated redundant menus pointing to duplicate tabs (`tab=general`, `tab=account`) and out-of-scope external destinations (`/admin/branches`, `/admin/staff`, `/owner/approvals`, `/pricing`). Streamlined to 7 non-redundant configuration panels across 5 logical categories (Store & Practice, Catalog & Dispensing, Profile & Security, Communications & Alerts, Subscription & System).
+- [x] **Compact Sidebar & Design Parity (`src/components/layout/settings-sidebar.tsx`)**: Refactored aside width to exact `w-56` (matching operations sidebar, eliminating layout shift). Aligned navigation items with standard `px-3 py-2 text-xs font-semibold`, inline `h-4 w-4` icons (no bulky icon cards), subtle badges, clean category headings, and standard keyboard shortcuts footer (`F1 Bill`, `F3 Stock`, `F10 Pay`, `F5 Print`).
+- [x] **Settings Breadcrumb Alignment (`src/components/admin/settings-view.tsx`)**: Synchronized active section breadcrumb with the 5 streamlined categories and 7 non-redundant tabs.
+- [x] **Full Quality Gate Verification**: `npm run check` (0 errors, 0 warnings), `npm run audit:design` (0 violations), `npm run audit:security` (0 critical), `e2e/pos-settings-sidebar.spec.ts` (100% pass), `e2e/settings-autosave-navigation.spec.ts` (100% pass), `e2e/settings-print.spec.ts` (100% pass), `e2e/auth-security.spec.ts` (8/8 pass), and core POS tests `npm run test:pos` (12/12 pass).
+- [x] **Knowledge Graph Sync**: Refreshed AST knowledge graph to 5,039 nodes and 8,367 edges across 431 communities.
+
 ---
 
 ## 3. Future Roadmap (Phase 17)

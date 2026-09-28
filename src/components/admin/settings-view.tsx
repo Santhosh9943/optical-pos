@@ -764,15 +764,14 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
       {/* ── Active Section Header & Navigation Breadcrumb ── */}
       <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
         <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-          <span className="text-foreground">
-            {activeTab === 'general' && 'Store & Practice · Store Identity & Legal Details'}
-            {activeTab === 'print' && 'Store & Practice · Hardware & Print Engine Configuration'}
-            {activeTab === 'pos-layout' && 'Store & Practice · POS Viewport & Counter Layout'}
+          <span className="text-foreground font-medium">
+            {activeTab === 'general' && 'Store & Practice · Store Profile & Legal'}
+            {activeTab === 'print' && 'Store & Practice · Hardware & Print Engine'}
+            {activeTab === 'pos-layout' && 'Store & Practice · POS Viewport Layout'}
             {activeTab === 'products' && 'Catalog & Dispensing · Product Types & Workflows'}
+            {activeTab === 'account' && 'Profile & Security · Account & Security'}
             {activeTab === 'email' && 'Communications & Alerts · Email & SMTP Gateway'}
-            {activeTab === 'account' && 'Profile & Security · User Profile & Two-Factor Authentication'}
-            {activeTab === 'notifications' && 'Communications & Alerts · Practice Notifications'}
-            {activeTab === 'system' && 'Subscription & System · System Engine & Cache Diagnostics'}
+            {activeTab === 'system' && 'Subscription & System · System Engine & Cache'}
           </span>
           {isCurrentTabDirty && (
             <Badge variant="outline" className="text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-800 text-[10px] ml-2">

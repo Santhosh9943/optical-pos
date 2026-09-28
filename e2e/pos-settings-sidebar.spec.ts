@@ -21,17 +21,16 @@ test.describe('POS Screen Settings & Categorized Grouped Sidebar E2E Suite', () 
     const settingsSidebar = page.getByTestId('settings-navigation-sidebar');
     await expect(settingsSidebar).toBeVisible({ timeout: 10000 });
 
-    // Verify 6 Category Group Labels
+    // Verify 5 Category Group Labels
     await expect(settingsSidebar.locator('text=Store & Practice')).toBeVisible();
     await expect(settingsSidebar.locator('text=Catalog & Dispensing')).toBeVisible();
     await expect(settingsSidebar.locator('text=Profile & Security')).toBeVisible();
-    await expect(settingsSidebar.locator('text=Team & Permissions')).toBeVisible();
     await expect(settingsSidebar.locator('text=Communications & Alerts')).toBeVisible();
     await expect(settingsSidebar.locator('text=Subscription & System')).toBeVisible();
 
     // 5. Test navigation across categorized groups:
 
-    // 5a. POS Viewport & Counter Layout
+    // 5a. POS Viewport Layout
     const posLayoutItem = page.getByTestId('tab-pos-layout');
     await expect(posLayoutItem).toBeVisible();
     await posLayoutItem.click();

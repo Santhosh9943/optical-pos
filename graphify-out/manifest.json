@@ -2122,8 +2122,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\settings-view.tsx": {
-    "mtime": 1790566937.2742248,
-    "ast_hash": "108fe0498e7b81ec94a4af5e00a0055b",
+    "mtime": 1790568853.0933385,
+    "ast_hash": "c5e0fa54bb730e2f01609cc4bdf5e3fb",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\settle-balance-modal.tsx": {
@@ -2592,8 +2592,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\TASKS.md": {
-    "mtime": 1790565742.4206038,
-    "ast_hash": "99c99fac22d1fddad17b1a31385e458c",
+    "mtime": 1790567232.1650977,
+    "ast_hash": "5e2f1e4016680f7ffe3ae6cf2b94d832",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\TEST_PLAN.md": {
@@ -2622,8 +2622,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\SESSION_HANDOFF.md": {
-    "mtime": 1790565727.3941722,
-    "ast_hash": "a6ac5e9aeddd2707b5080db253771e2e",
+    "mtime": 1790567212.4741118,
+    "ast_hash": "dfc9ab5023a960e0229159e5480db2a4",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\archive\\ARCHIVE_LOG.md": {
@@ -2722,18 +2722,18 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\e2e\\pos-settings-sidebar.spec.ts": {
-    "mtime": 1790567007.8668463,
-    "ast_hash": "c0f6a924f91731ea7256d672f3f1e75e",
+    "mtime": 1790568841.1150262,
+    "ast_hash": "b9654a8dd8a68d59c7c47341879288d6",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\layout\\settings-sidebar.tsx": {
-    "mtime": 1790566592.8852353,
-    "ast_hash": "40f8d0bc0787c45a24bec64d6c279f49",
+    "mtime": 1790568831.984837,
+    "ast_hash": "775ce9c95da9d9a597584d4f21ce96b0",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\lib\\settings-registry.ts": {
-    "mtime": 1790566259.3961678,
-    "ast_hash": "b9a432183a358dc072cb866baf338e59",
+    "mtime": 1790568814.9496498,
+    "ast_hash": "c3365b9b47b06e9f1b9020ea619a5c28",
     "semantic_hash": ""
   }
 }
