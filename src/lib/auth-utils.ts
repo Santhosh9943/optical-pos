@@ -121,7 +121,12 @@ export async function getCurrentSession(): Promise<CurrentSessionContext> {
             const [assignedBranch] = await db
               .select()
               .from(branches)
-              .where(eq(branches.id, primaryAssignment.branchId))
+              .where(
+                and(
+                  eq(branches.id, primaryAssignment.branchId),
+                  eq(branches.organizationId, organizationId)
+                )
+              )
               .limit(1);
 
             if (assignedBranch) {

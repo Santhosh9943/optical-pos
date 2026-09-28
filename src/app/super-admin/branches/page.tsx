@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  getUserTenancyContext,
+  getAllPlatformBranchesForSuperAdminAction,
   createBranchAction,
   toggleBranchStatusAction,
   getStaffMembersAction,
@@ -37,31 +37,40 @@ export default function SuperAdminBranchesPage() {
   const loadData = React.useCallback(async () => {
     setLoading(true);
     try {
-      const ctx = await getUserTenancyContext();
-      setTenancy(ctx);
-      if (ctx.organizations.length > 0 && !targetOrgId) {
-        setTargetOrgId(ctx.organizations[0].id);
-      }
-
-      // Load staff members for each organization to associate with branches
-      const staffMap = new Map<string, StaffMember[]>();
-      for (const org of ctx.organizations) {
-        try {
-          const res = await getStaffMembersAction(org.id);
-          if (res.success && res.staff) {
-            for (const s of res.staff) {
-              const list = staffMap.get(s.branchId) || [];
-              list.push(s);
-              staffMap.set(s.branchId, list);
-            }
-          }
-        } catch {
-          // ignore background staff fetch error
+      const res = await getAllPlatformBranchesForSuperAdminAction();
+      if (res.success) {
+        setTenancy({
+          branches: res.branches,
+          organizations: res.organizations,
+          user: null,
+          role: 'super_admin',
+          activeOrganizationId: res.organizations[0]?.id || '',
+          activeBranchId: res.branches[0]?.id || '',
+        });
+        if (res.organizations.length > 0 && !targetOrgId) {
+          setTargetOrgId(res.organizations[0].id);
         }
+
+        // Load staff members for each organization to associate with branches
+        const staffMap = new Map<string, StaffMember[]>();
+        for (const org of res.organizations) {
+          try {
+            const staffRes = await getStaffMembersAction(org.id);
+            if (staffRes.success && staffRes.staff) {
+              for (const s of staffRes.staff) {
+                const list = staffMap.get(s.branchId) || [];
+                list.push(s);
+                staffMap.set(s.branchId, list);
+              }
+            }
+          } catch {
+            // ignore background staff fetch error
+          }
+        }
+        setStaffByBranch(staffMap);
       }
-      setStaffByBranch(staffMap);
     } catch {
-      toast.error('Failed to load physical store directory');
+      toast.error('Failed to load branches directory');
     } finally {
       setLoading(false);
     }

@@ -1881,8 +1881,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\actions\\inventory-actions.ts": {
-    "mtime": 1790584637.4616113,
-    "ast_hash": "e113e34257c975524d9c4fc60f4ee5e6",
+    "mtime": 1790587096.8341272,
+    "ast_hash": "e07514f8c883a0e85043d55d5e781f11",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\actions\\invoice-edit-actions.ts": {
@@ -1961,8 +1961,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\actions\\tenant-actions.ts": {
-    "mtime": 1790575297.4525812,
-    "ast_hash": "5abecf910dec51fd8f488639e1cdcfa0",
+    "mtime": 1790586872.5495496,
+    "ast_hash": "b26fc2d721aaa7dc8a7e212333dd9a7a",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\app\\layout.tsx": {
@@ -2176,8 +2176,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\app\\super-admin\\branches\\page.tsx": {
-    "mtime": 1790554581.0618782,
-    "ast_hash": "128298a2d9b60f1282cd387ffb74a760",
+    "mtime": 1790586938.0616603,
+    "ast_hash": "f0603a73ad1deb40aa39b63d9a0f2cf6",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\app\\super-admin\\dashboard\\page.tsx": {
@@ -2296,8 +2296,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\layout\\branch-switcher.tsx": {
-    "mtime": 1790554724.2473593,
-    "ast_hash": "4cf7c3cc158eb56d206db78c6450df1e",
+    "mtime": 1790586976.4819963,
+    "ast_hash": "5cfafd123f2d93d48705890cd5af7529",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\layout\\route-states.tsx": {
@@ -2596,8 +2596,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\lib\\auth-utils.ts": {
-    "mtime": 1790575297.476372,
-    "ast_hash": "f773918d3cdaf0cccbd64ff211e41053",
+    "mtime": 1790587110.652754,
+    "ast_hash": "49bdb3b19a7f00f7adcf0c291d55c1bf",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\lib\\auth.ts": {
@@ -2736,13 +2736,13 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\store\\tenant-store.ts": {
-    "mtime": 1790554688.71924,
-    "ast_hash": "a9cf58c1b3357b01fe22d450aeb713dd",
+    "mtime": 1790587127.9769635,
+    "ast_hash": "c690615f44e924fe84d47ccd5d3ccc56",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\AGENTS.md": {
-    "mtime": 1790451092.8761454,
-    "ast_hash": "667cb74e4a4538c45a7a02d396b8c182",
+    "mtime": 1790587198.0233743,
+    "ast_hash": "af395f1795689980de186e7e0f5f74e5",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\CLAUDE.md": {
@@ -2751,8 +2751,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\GEMINI.md": {
-    "mtime": 1790451109.6670353,
-    "ast_hash": "0d429ec9858181b87863549df92a2f2f",
+    "mtime": 1790587214.4317474,
+    "ast_hash": "5034fabaac5c70c2758557a0b542f195",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\README.md": {
@@ -2786,13 +2786,13 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\RULES.md": {
-    "mtime": 1790451079.328473,
-    "ast_hash": "d058915a26231614dc173787d93d6d60",
+    "mtime": 1790587148.6291623,
+    "ast_hash": "41bcce214f4e9e340cd0d65af6005c43",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\SECURITY.md": {
-    "mtime": 1790389774.9886763,
-    "ast_hash": "25bba9d9d5fec29041dac38d1334c80b",
+    "mtime": 1790587181.3232577,
+    "ast_hash": "099ef21047410301d02ffd607fb0a7c9",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\TASKS.md": {
@@ -2816,8 +2816,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\BUG_FIX_LOG.md": {
-    "mtime": 1790585271.7802444,
-    "ast_hash": "1ad778e8776133f9441c011bd03bbe1a",
+    "mtime": 1790587388.2653632,
+    "ast_hash": "d35df738ffa572557ec7eefe76866a8e",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\SECURITY_LOG.md": {
@@ -2826,8 +2826,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\SESSION_HANDOFF.md": {
-    "mtime": 1790585301.5681121,
-    "ast_hash": "6f5c57baa392b146287cb41805c8e93a",
+    "mtime": 1790587406.8271704,
+    "ast_hash": "b20be5c8c957778fb21a535880e99af8",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\archive\\ARCHIVE_LOG.md": {

@@ -54,7 +54,7 @@ Before touching, modifying, or deleting any code:
 
 ## 6. Automated Code Review & Security Vulnerability Protocol
 
-- **8-Point Security Gate**: Multi-tenant scoping, costPrice masking, secret protection, rate-limiting, exact financial math, 0.25 D diopters, workshop slip redaction, and parameterized SQL.
+- **9-Point Security Gate**: Multi-tenant scoping, operational branch isolation (never leak branches or entities of Practice A into Practice B, even for Super Admins in operational context), costPrice masking, secret protection, rate-limiting, exact financial math, 0.25 D diopters, workshop slip redaction, and parameterized SQL.
 - **Unresolved Risk Protocol**: If an agent discovers a vulnerability, code smell, or debt that **cannot be resolved immediately in the current task**:
   - Annotate in code: `// TODO(security-SEC-XXX): [Details and mitigation]`
   - Register in [`docs/agent-memory/SECURITY_LOG.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/SECURITY_LOG.md).

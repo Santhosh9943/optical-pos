@@ -153,6 +153,7 @@ export const useTenantStore = create<TenantState>()(
             selectedOrganizationId: orgId,
             selectedBranchId: firstBranchId,
             selectedBranchIds: [firstBranchId],
+            branches: orgBranches,
           };
         }),
 
@@ -237,7 +238,7 @@ export const useTenantStore = create<TenantState>()(
             selectedBranchIds: [finalBranchId],
             activeOrgCode,
             organizations: data.organizations,
-            branches: data.branches,
+            branches: data.branches.filter((b) => b.organizationId === finalOrgId),
             isLoading: false,
           };
         }),

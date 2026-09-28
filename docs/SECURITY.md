@@ -17,14 +17,17 @@ Platform (Super Admin)
 
 ### 1.1 Mandatory Tenant Scoping
 Every table containing business data incorporates an `organization_id` column (UUID). Tables tied to physical store operations also include a `branch_id` column:
+- `branches` (`organization_id`) — Physical store locations strictly isolated to the owning practice
 - `customers` (`organization_id`)
 - `customer_prescriptions` (`organization_id`, `customer_id`)
 - `inventory_items` (`organization_id`, `branch_id`)
 - `invoices` (`organization_id`, `branch_id`, `customer_id`)
 - `payments` (`organization_id`, `branch_id`, `invoice_id`)
 
-### 1.2 Data Access Invariant
+### 1.2 Zero Cross-Tenant Leakage & Data Access Invariant
 **Strict Invariant**: Every database query (`SELECT`, `UPDATE`, `DELETE`) initiated from an authenticated session must include an explicit tenant filter:
+- No operational view (`(dashboard)`, `/pos/`, inventory, patients, branch switcher) may ever display branches or records belonging to other practices.
+- Even when a Root Super Admin is logged in and navigating an operational store, the session is quarantined to that active practice (`session.organizationId`). Global platform-wide inspection is strictly isolated to dedicated `/super-admin/*` routes.
 
 ```typescript
 // MANDATORY Pattern:

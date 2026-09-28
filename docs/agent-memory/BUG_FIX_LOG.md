@@ -652,3 +652,28 @@
   1. Never use strict `.uuid()` on seeded branch, org, or entity IDs that may be deterministic 36-char hex strings; always use `lenientUuidSchema`.
   2. Server actions must never return raw `error.message` on Zod errors; always format issues using `formatActionError` or `formatZodError`.
   3. Client UI alerts and toasts must pass error strings through `cleanErrorMessage` to guarantee clean, readable English text.
+
+---
+
+### [BUG-041] Cross-Tenant Physical Store Branch Leakage in Store Switcher & Operational Tenancy Context
+- **Component**: Multi-Tenant Isolation & Store Branch Architecture / `src/actions/tenant-actions.ts`, `src/components/layout/branch-switcher.tsx`, `src/store/tenant-store.ts`, `src/lib/auth-utils.ts`, `src/actions/inventory-actions.ts`
+- **Symptom**: When logged into a tenant practice (e.g. `OPT-2` Downtown Clinic Branch), the "Switch Physical Store" dropdown displayed physical branches belonging to entirely different practices ("Main Branch", "Main Flagship Store", "Store Branch 2404"), violating tenant data isolation.
+- **Root Cause**:
+  1. In `src/actions/tenant-actions.ts`, `getUserTenancyContext()` executed `db.select().from(branches).orderBy(branches.name)` with no `where` filter when the user had the `super_admin` role (e.g. `msanthosh9943@gmail.com`). This returned every branch across all organizations in the platform.
+  2. In `src/components/layout/branch-switcher.tsx`, the component mapped `branches.map(...)` without checking `branch.organizationId === selectedOrganizationId`, blindly rendering all branches stored in client state.
+  3. In `src/store/tenant-store.ts`, `setTenancyData` stored all returned branches without filtering by `finalOrgId`, allowing foreign branches to persist in the tenant store.
+  4. `src/app/super-admin/branches/page.tsx` was calling `getUserTenancyContext()`, which previously prompted developers to return all branches from that action instead of creating an isolated platform-level action.
+- **The Fix**:
+  1. Scoped `branchRows` in `getUserTenancyContext()` strictly to `session.organizationId || orgRows[0]?.id` (`eq(branches.organizationId, targetOrgId)`). An operational store session now NEVER returns branches from other practices.
+  2. Created `getAllPlatformBranchesForSuperAdminAction()` in `src/actions/tenant-actions.ts` specifically for `/super-admin/branches/page.tsx`, isolating platform-wide multi-tenant aggregation from operational POS/dashboard contexts.
+  3. Updated `src/app/super-admin/branches/page.tsx` to use `getAllPlatformBranchesForSuperAdminAction()`.
+  4. Added defense-in-depth filtering in `src/components/layout/branch-switcher.tsx`:
+     `const tenantBranches = activeOrgId ? branches.filter(b => b.organizationId === activeOrgId) : branches;`
+     Mapped `tenantBranches` instead of `branches`, and added auto-correction to ensure `selectedBranchId` always belongs to the active organization.
+  5. In `src/store/tenant-store.ts`, strictly filtered `branches: data.branches.filter((b) => b.organizationId === finalOrgId)` in `setTenancyData` and pruned branches in `setSelectedOrganization`.
+  6. Updated `src/actions/inventory-actions.ts` and `src/lib/auth-utils.ts` to strictly enforce `organizationId` in all branch lookup queries.
+  7. Formally updated `docs/RULES.md`, `docs/SECURITY.md`, `AGENTS.md`, and `GEMINI.md` establishing the **Zero Cross-Tenant Data Leakage & Operational Branch Isolation Invariant**.
+- **Permanent Invariants**:
+  1. `branches` is a tenant-scoped entity and MUST always be scoped by `organizationId`. Under no circumstances may branches of Organization A appear in Organization B.
+  2. Operational store contexts (`(dashboard)`, `/pos/`, `getUserTenancyContext`, `branch-switcher.tsx`) MUST NEVER receive, store, or display branches or records belonging to other organizations.
+  3. Platform-wide multi-tenant aggregation is exclusively restricted to dedicated `/super-admin/*` routes using dedicated super-admin actions.

@@ -7,37 +7,43 @@
 ---
 
 ## 1. Active Session Metadata
-- **Last Updated**: `2026-09-28T14:19:00+05:30`
+- **Last Updated**: `2026-09-28T14:54:00+05:30`
 - **Active Platform / Agent**: Antigravity (Advanced Agentic Pair Programmer)
 - **Active Workspace**: `f:\hobby-projects\optical-pos`
 - **Current Git Branch**: `main`
 - **Deliverables**:
-  - `src/lib/action-utils.ts` (Centralized `lenientUuidSchema`, `requiredLenientUuidSchema`, `formatZodError`, `formatActionError`, and `cleanErrorMessage`).
-  - System-wide validator hardening: `createInventoryItemSchema`, `updateInventoryItemSchema`, `prescriptionSchema`, `invoiceItemSchema`, `patientInputSchema`, `createOrderSchema`, `saveProductTypeSchema`, `updateInvoiceSchema`, `createPatientSchema`.
-  - Server action hardening: `addInventoryItem`, `updateInventoryItem`, `saveProductTypeAction`, `updateInvoiceDetailsAction`, `createPatientAction`, `processOpticalOrder`.
-  - Frontend form ergonomics: `AddInventoryForm`, `EditInventoryModal`, `AddPatientModal`, `QuickAddPatientModal`, `POSView`.
-  - `e2e/patient-inventory-crud.spec.ts` (4/4 tests passing in Chromium including Add Inventory Item modal).
+  - `src/actions/tenant-actions.ts`: Scoped `getUserTenancyContext()` strictly to `targetOrgId`; added `getAllPlatformBranchesForSuperAdminAction()` for platform super-admin directory.
+  - `src/app/super-admin/branches/page.tsx`: Updated to use `getAllPlatformBranchesForSuperAdminAction()`.
+  - `src/components/layout/branch-switcher.tsx`: Added strict active organization filtering (`tenantBranches`), rendering only matching branches, and auto-correcting foreign branch selections.
+  - `src/store/tenant-store.ts`: Filtered `branches: data.branches.filter((b) => b.organizationId === finalOrgId)` in `setTenancyData` and pruned branches in `setSelectedOrganization`.
+  - Rules & Invariants: Formally established **Zero Cross-Tenant Data Leakage & Operational Branch Isolation Invariant** across `docs/RULES.md`, `docs/SECURITY.md`, `AGENTS.md`, and `GEMINI.md`.
+  - Bug Fix Log: Appended BUG-041.
 - **Latest Quality Gate State**:
   - `npm run check`: **PASS (0 errors, 0 warnings)**
   - `npm run audit:security`: **PASS (0 critical violations)**
   - `npm run audit:design`: **PASS (92 UI components audited, 0 violations)**
   - Core POS Workflows (`npm run test:pos`): **12/12 PASS (100% green)**
+  - Multi-Branch Relations (`multi-branch-relations.spec.ts`): **6/6 PASS (100% green)**
   - Inventory & Patient CRUD (`patient-inventory-crud.spec.ts`): **4/4 PASS (100% green)**
-  - Bug Fix Log: BUG-001 … BUG-040 (Appended BUG-040).
+  - Bug Fix Log: BUG-001 … BUG-041 (Appended BUG-041).
 
 ---
 
-## 2. Most Recent Task Accomplishments (Inventory Creation & System-Wide Save & Validation Hardening - BUG-040)
-1. **Lenient UUID Schema & Seeded ID Resolution**:
-   - Built `src/lib/action-utils.ts` with `lenientUuidSchema` and `requiredLenientUuidSchema` matching 36-char hex UUIDs, supporting seeded `00000000-0000-0000-0000-000000000002` and normalizing `""` or `"all"` into `null`.
-2. **Centralized Action Error Formatting**:
-   - Implemented `formatZodError`, `formatActionError`, and `cleanErrorMessage` to completely prevent raw Zod issue JSON array dumps (`[{ "origin": "string", "code": "invalid_format", ... }]`) from reaching the UI.
-3. **Safe Branch Fallback Resolution**:
-   - In `addInventoryItem`, if `branchId` is omitted, `null`, or `'all'`, it automatically resolves to `session.branchId` or the organization's primary active store branch.
-4. **Hardened Forms & Modals**:
-   - `AddInventoryForm`, `EditInventoryModal`, `AddPatientModal`, `QuickAddPatientModal`, and `POSView` now pass all server messages through `cleanErrorMessage`.
-5. **Verified with Playwright & Quality Gates**:
-   - Verified in Chromium via `e2e/patient-inventory-crud.spec.ts` and `npm run test:pos` (12/12 pass). All static and design checks pass with 0 errors.
+## 2. Most Recent Task Accomplishments (Cross-Tenant Branch Isolation & Zero Data Leakage Rule Enforcement - BUG-041)
+1. **Root Cause Diagnosis**:
+   - `getUserTenancyContext()` in `src/actions/tenant-actions.ts` performed an unbounded `db.select().from(branches)` whenever the logged-in user had the `super_admin` role (e.g. `msanthosh9943@gmail.com`), returning all branches across all organizations.
+   - `branch-switcher.tsx` rendered `branches.map(...)` without checking `branch.organizationId === selectedOrganizationId`.
+2. **Strict Operational Scoping in `getUserTenancyContext()`**:
+   - Scoped `branchRows` strictly to `session.organizationId || orgRows[0]?.id` (`eq(branches.organizationId, targetOrgId)`). A practice store session will NEVER receive branches from any other practice.
+3. **Dedicated Super-Admin Action for Platform Governance Directory**:
+   - Implemented `getAllPlatformBranchesForSuperAdminAction()` in `src/actions/tenant-actions.ts` and updated `src/app/super-admin/branches/page.tsx` to use it, cleanly isolating platform-wide multi-tenant aggregation from operational POS/dashboard contexts.
+4. **Defense-in-Depth UI Quarantine in `branch-switcher.tsx`**:
+   - Filtered branches strictly by `activeOrgId = selectedOrganizationId || branches[0]?.organizationId`.
+   - Added auto-correction to ensure that if `selectedBranchId` belongs to a different organization, it immediately auto-corrects to the active organization's branch.
+5. **System-Wide Rule & Documentation Updates**:
+   - Updated `docs/RULES.md` (Section 4), `docs/SECURITY.md` (Section 1), `AGENTS.md` (Invariant 17), and `GEMINI.md` (Section 6) establishing the permanent rule that no tenant user or super admin in operational context may ever see other organizations' branches or data.
+6. **Verified Quality Gates**:
+   - Passed `npm run check`, `npm run audit:security`, `npm run audit:design`, `npm run test:pos` (12/12), `multi-branch-relations.spec.ts` (6/6), and `patient-inventory-crud.spec.ts` (4/4).
 
 ---
 

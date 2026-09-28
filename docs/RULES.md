@@ -65,9 +65,13 @@ This document specifies the strict architectural invariants, mathematical standa
 
 ## 4. Multi-Tenant SaaS & Security Invariants
 
-1. **Mandatory Tenant Scoping:** Every SQL query selecting or mutating `customers`, `inventory_items`, `invoices`, or `staff` must include `eq(table.organizationId, session.organizationId)`.
-2. **Query-Level Cost Price Redaction:** Non-admin roles (`CLERK`, `OPTOMETRIST`) must never receive wholesale costs (`cost_price`) or profit margins. Omit `costPrice` in Drizzle query projections (`select({ ... })`). Never send cost data to the client and hide it with CSS.
-3. **Immutable Closed Orders:** Invoices marked `DELIVERED_AND_CLOSED` cannot be updated directly. Any post-delivery financial adjustments require a supervisor credit note or refund payment entry.
+1. **Mandatory Tenant Scoping:** Every SQL query selecting or mutating `branches`, `customers`, `inventory_items`, `invoices`, `prescriptions`, `payments`, or `staff` must include `eq(table.organizationId, session.organizationId)` (or `eq(table.organizationId, scope.organizationId)`). Cross-tenant table scans are strictly prohibited.
+2. **Absolute Branch & Operational Data Isolation:**
+   - Physical store locations (`branches`) belong strictly to their owning organization. Under NO circumstances may branches belonging to Organization A appear in the branch switcher, inventory tables, or POS dropdowns of Organization B.
+   - Even when a Root Super Admin is logged in and operating within a practice session (`(dashboard)` or `/pos/`), all operational layouts, branch switchers, and list queries MUST be strictly quarantined to that active practice (`session.organizationId`).
+   - Cross-practice aggregation is strictly restricted to dedicated, isolated platform management routes (`/super-admin/*`) using dedicated super-admin actions (`getAllPlatformBranchesForSuperAdminAction`). Operational context endpoints (`getUserTenancyContext`) must NEVER dump platform-wide branches into store state.
+3. **Query-Level Cost Price Redaction:** Non-admin roles (`CLERK`, `OPTOMETRIST`) must never receive wholesale costs (`cost_price`) or profit margins. Omit `costPrice` in Drizzle query projections (`select({ ... })`). Never send cost data to the client and hide it with CSS.
+4. **Immutable Closed Orders:** Invoices marked `DELIVERED_AND_CLOSED` cannot be updated directly. Any post-delivery financial adjustments require a supervisor credit note or refund payment entry.
 
 ---
 

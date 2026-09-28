@@ -267,15 +267,21 @@ export async function getUserTenancyContext(): Promise<TenancyContext> {
       .from(organizations)
       .orderBy(organizations.name);
 
-    branchRows = await db
-      .select({
-        id: branches.id,
-        name: branches.name,
-        organizationId: branches.organizationId,
-        isActive: branches.isActive,
-      })
-      .from(branches)
-      .orderBy(branches.name);
+    // Resolve target organization for operational practice context
+    const targetOrgId = session.organizationId || orgRows[0]?.id;
+
+    if (targetOrgId) {
+      branchRows = await db
+        .select({
+          id: branches.id,
+          name: branches.name,
+          organizationId: branches.organizationId,
+          isActive: branches.isActive,
+        })
+        .from(branches)
+        .where(eq(branches.organizationId, targetOrgId))
+        .orderBy(branches.name);
+    }
   } else if (session.organizationId) {
     // Non-super-admins strictly only see their own registered organization
     orgRows = await db
@@ -359,6 +365,48 @@ export async function getUserTenancyContext(): Promise<TenancyContext> {
     activeBranchId: session.branchId || branchRows[0]?.id || '',
     activeOrgCode,
   };
+}
+
+/**
+ * Dedicated Super Admin action for the platform governance directory (/super-admin/branches).
+ * Strictly isolated so platform-wide multi-tenant aggregation is never leaked into operational POS/dashboard contexts.
+ */
+export async function getAllPlatformBranchesForSuperAdminAction(): Promise<{
+  success: boolean;
+  branches: { id: string; name: string; organizationId: string; isActive: boolean }[];
+  organizations: { id: string; name: string; orgCode?: string | null; orgNumber?: number | null }[];
+  error?: string;
+}> {
+  try {
+    if (!(await isVerifiedPlatformAdmin(false))) {
+      return { success: false, branches: [], organizations: [], error: 'Unauthorized: Platform super admin access required' };
+    }
+
+    const orgs = await db
+      .select({
+        id: organizations.id,
+        name: organizations.name,
+        orgCode: organizations.orgCode,
+        orgNumber: organizations.orgNumber,
+      })
+      .from(organizations)
+      .orderBy(organizations.name);
+
+    const allBranchRows = await db
+      .select({
+        id: branches.id,
+        name: branches.name,
+        organizationId: branches.organizationId,
+        isActive: branches.isActive,
+      })
+      .from(branches)
+      .orderBy(branches.name);
+
+    return { success: true, branches: allBranchRows, organizations: orgs };
+  } catch (err: unknown) {
+    console.error('[getAllPlatformBranchesForSuperAdminAction] Failed:', err);
+    return { success: false, branches: [], organizations: [], error: 'Failed to load platform branches' };
+  }
 }
 
 /**

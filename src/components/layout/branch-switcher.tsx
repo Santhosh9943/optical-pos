@@ -26,12 +26,29 @@ export function BranchSwitcher() {
     activeRoleMode,
     branches,
     selectedBranchId,
+    selectedOrganizationId,
     setSelectedBranch,
     activeOrgCode,
   } = useTenantStore();
 
+  // Strict Multi-Tenant Isolation: Ensure branches are strictly scoped to the active organization
+  const activeOrgId = selectedOrganizationId || branches[0]?.organizationId;
+  const tenantBranches = activeOrgId
+    ? branches.filter((b) => b.organizationId === activeOrgId)
+    : branches;
+
   const isMultiBranchAllowed =
-    mounted && branches.length > 1;
+    mounted && tenantBranches.length > 1;
+
+  // Auto-correct active branch if current selection belongs to a different organization
+  useEffect(() => {
+    if (mounted && tenantBranches.length > 0) {
+      const isValid = tenantBranches.some((b) => b.id === selectedBranchId);
+      if (!isValid && tenantBranches[0]) {
+        setSelectedBranch(tenantBranches[0].id);
+      }
+    }
+  }, [mounted, tenantBranches, selectedBranchId, setSelectedBranch]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -47,8 +64,8 @@ export function BranchSwitcher() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Compute active branch info
-  const activeBranch = branches.find((b) => b.id === selectedBranchId) || branches[0];
+  // Compute active branch info strictly within the active organization
+  const activeBranch = tenantBranches.find((b) => b.id === selectedBranchId) || tenantBranches[0];
   const displayLabel = mounted ? (activeBranch?.name || 'Main Branch') : 'Store Location';
 
   const handleSelectBranch = (branchId: string, branchName: string) => {
@@ -136,7 +153,7 @@ export function BranchSwitcher() {
 
           {/* List of Individual Physical Stores */}
           <div className="space-y-0.5 max-h-56 overflow-y-auto pr-0.5">
-            {branches.map((branch) => {
+            {tenantBranches.map((branch) => {
               const isSelected = branch.id === (activeBranch?.id || selectedBranchId);
 
               return (

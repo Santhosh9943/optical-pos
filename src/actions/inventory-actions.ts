@@ -202,7 +202,7 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
       const [branch] = await db
         .select({ name: branches.name })
         .from(branches)
-        .where(eq(branches.id, inserted.branchId));
+        .where(and(eq(branches.id, inserted.branchId), eq(branches.organizationId, session.organizationId)));
       branchName = branch?.name || null;
     }
 
@@ -375,7 +375,7 @@ export async function updateInventoryItem(
       const [branch] = await db
         .select({ name: branches.name })
         .from(branches)
-        .where(eq(branches.id, updated.branchId));
+        .where(and(eq(branches.id, updated.branchId), eq(branches.organizationId, session.organizationId)));
       branchName = branch?.name || null;
     }
 
