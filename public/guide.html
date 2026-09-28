@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OptixOS — Optical POS & Practice Management Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --surface: #111827;
+      --surface-elevated: #1a2234;
+      --surface-border: #26334d;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-light: #60a5fa;
+      --accent: #06b6d4;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --shadow-subtle: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+      --shadow-glow: 0 0 35px -5px rgba(59, 130, 246, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 0;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 40px;
+      position: sticky;
+      top: 16px;
+      z-index: 100;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      font-size: 20px;
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+    }
+
+    .brand-title {
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+    }
+
+    .btn-secondary {
+      background: var(--surface-elevated);
+      color: var(--text);
+      border-color: var(--surface-border);
+    }
+
+    .btn-secondary:hover {
+      background: #232d42;
+      border-color: #3b82f6;
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 40px 20px 60px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 50px;
+      color: var(--primary-light);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-size: 44px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
+    }
+
+    .hero-btns {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* Credentials Card Grid */
+    .credentials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 60px;
+    }
+
+    .cred-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .cred-card:hover {
+      transform: translateY(-2px);
+      border-color: #3b82f6;
+    }
+
+    .cred-card.featured {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.5);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .card-tag {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    .tag-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .tag-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tag-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .field-row {
+      margin-bottom: 12px;
+    }
+
+    .field-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-subtle);
+      margin-bottom: 4px;
+      display: block;
+      letter-spacing: 0.04em;
+    }
+
+    .field-value-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg);
+      border: 1px solid var(--surface-border);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #e2e8f0;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--surface-border);
+      color: var(--text-muted);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border-color: #3b82f6;
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border-color: #10b981;
+    }
+
+    /* Section Headings */
+    .section-header {
+      margin-bottom: 28px;
+      text-align: left;
+    }
+
+    .section-header h2 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Feature Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 60px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .feature-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .icon-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .icon-cyan { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+    .icon-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .icon-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .icon-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+    .icon-rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+
+    .feature-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .feature-list li {
+      font-size: 12px;
+      color: #cbd5e1;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .feature-list li::before {
+      content: "✓";
+      color: var(--primary-light);
+      font-weight: 700;
+    }
+
+    /* Workflow Runbook Steps */
+    .steps-container {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      margin-bottom: 60px;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 20px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 24px;
+    }
+
+    .step-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .step-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid #3b82f6;
+      color: #60a5fa;
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      shrink: 0;
+    }
+
+    .step-content h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .step-content p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .shortcut-pill {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Keyboard Shortcuts Table */
+    .shortcuts-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--surface-border);
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+      margin-top: 16px;
+    }
+
+    .shortcut-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    .key-badge {
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #60a5fa;
+      box-shadow: 0 2px 0 #1e293b;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      border-top: 1px solid var(--surface-border);
+      padding-top: 40px;
+      color: var(--text-subtle);
+      font-size: 13px;
+    }
+
+    footer a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 32px; }
+      header { flex-direction: column; gap: 16px; align-items: stretch; text-align: center; }
+      .logo-group { justify-content: center; }
+      .header-actions { justify-content: center; }
+      .credentials-grid, .features-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Top Header -->
+    <header>
+      <div class="logo-group">
+        <div class="logo-badge">👓</div>
+        <div>
+          <div class="brand-title">OptixOS</div>
+          <div class="brand-subtitle">
+            <span class="status-dot"></span> System Live & Test Ready
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="http://localhost:3000/pos/new-bill" target="_blank" class="btn btn-primary">
+          <span>Launch POS Counter</span> →
+        </a>
+        <a href="http://localhost:3000/auth/login" target="_blank" class="btn btn-secondary">
+          <span>Sign In</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="hero">
+      <div class="hero-badge">✦ Complete Optical Practice Cloud</div>
+      <h1>Designed for Fast Counters,<br>Clinicians & Optical Retailers</h1>
+      <p>
+        OptixOS is an enterprise-grade Optical Point of Sale and Practice Management System. It unites spectacle frame & lens pairing, dual-eye prescription management, workshop lab tracking, and GST tax invoicing into one lightning-fast system.
+      </p>
+      <div class="hero-btns">
+        <a href="http://localhost:3000/pos/new-bill" target="_blank" class="btn btn-primary" style="padding: 12px 24px; font-size: 15px;">
+          🚀 Open Live POS Billing Counter
+        </a>
+        <a href="#test-credentials" class="btn btn-secondary" style="padding: 12px 24px; font-size: 15px;">
+          🔑 View Login Credentials
+        </a>
+      </div>
+    </div>
+
+    <!-- Credentials & Testing Section -->
+    <div class="section-header" id="test-credentials">
+      <h2>Testing Accounts & Instant Access</h2>
+      <p>Use these credentials to sign in and experience the application from different roles:</p>
+    </div>
+
+    <div class="credentials-grid">
+      <!-- 1. Practice Owner Account -->
+      <div class="cred-card featured">
+        <span class="card-tag tag-blue">Recommended for Review</span>
+        <h3 class="card-title">Practice Owner & Dispenser</h3>
+        <p class="card-desc">Full administrative access to POS billing counter, store inventory, patient records, staff management, and financial ledgers.</p>
+
+        <div class="field-row">
+          <span class="field-label">Login URL</span>
+          <div class="field-value-box">
+            <span>http://localhost:3000/auth/login</span>
+            <button class="copy-btn" onclick="copyText('http://localhost:3000/auth/login', this)">Copy</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <span class="field-label">Email Address</span>
+          <div class="field-value-box">
+            <span>admin@optix.com</span>
+            <button class="copy-btn" onclick="copyText('admin@optix.com', this)">Copy</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <span class="field-label">Password</span>
+          <div class="field-value-box">
+            <span>AdminPass123!</span>
+            <button class="copy-btn" onclick="copyText('AdminPass123!', this)">Copy</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <span class="field-label">Practice Name / ID</span>
+          <div class="field-value-box">
+            <span>Admin Optix Practice (OPT-1)</span>
+            <button class="copy-btn" onclick="copyText('OPT-1', this)">Copy</button>
+          </div>
+        </div>
+
+        <div style="margin-top: 18px;">
+          <a href="http://localhost:3000/auth/login" target="_blank" class="btn btn-primary" style="width: 100%;">
+            Sign in as Practice Owner →
+          </a>
+        </div>
+      </div>
+
+      <!-- 2. Instant POS Counter -->
+      <div class="cred-card">
+        <span class="card-tag tag-green">Zero Setup · 1-Click</span>
+        <h3 class="card-title">Instant POS Counter Demo</h3>
+        <p class="card-desc">Want to jump straight into billing glasses? Open the POS billing screen directly. In local dev mode, authentication is pre-authorized.</p>
+
+        <div class="field-row">
+          <span class="field-label">Direct URL</span>
+          <div class="field-value-box">
+            <span>http://localhost:3000/pos/new-bill</span>
+            <button class="copy-btn" onclick="copyText('http://localhost:3000/pos/new-bill', this)">Copy</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <span class="field-label">Pre-seeded Test Customer</span>
+          <div class="field-value-box">
+            <span>9876543210 (Rajesh Sharma)</span>
+            <button class="copy-btn" onclick="copyText('9876543210', this)">Copy</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <span class="field-label">Pre-seeded Frame SKU</span>
+          <div class="field-value-box">
+            <span>FRM-RB-2140-BLK (Ray-Ban)</span>
+            <button class="copy-btn" onclick="copyText('FRM-RB-2140-BLK', this)">Copy</button>
+          </div>
+        </div>
+
+        <div style="margin-top: 50px;">
+          <a href="http://localhost:3000/pos/new-bill" target="_blank" class="btn btn-secondary" style="width: 100%;">
+            Open POS Counter Directly →
+          </a>
+        </div>
+      </div>
+
+      <!-- 3. Self Sign-Up / Practice Onboarding -->
+      <div class="cred-card">
+        <span class="card-tag tag-purple">Create Your Store</span>
+        <h3 class="card-title">Register Your Own Optical Store</h3>
+        <p class="card-desc">Experience how a new optical store signs up. In 10 seconds, provision an isolated multi-tenant practice with custom branch and inventory.</p>
+
+        <div class="field-row">
+          <span class="field-label">Sign Up URL</span>
+          <div class="field-value-box">
+            <span>http://localhost:3000/auth/login?mode=signup</span>
+            <button class="copy-btn" onclick="copyText('http://localhost:3000/auth/login?mode=signup', this)">Copy</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <span class="field-label">Required Information</span>
+          <div class="field-value-box" style="font-family: inherit; font-size: 12px; color: var(--text-muted);">
+            <span>Doctor/Owner Name, Practice Name, Email, Password</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <span class="field-label">Automated Provisioning</span>
+          <div class="field-value-box" style="font-family: inherit; font-size: 12px; color: var(--text-muted);">
+            <span>Assigns Practice ID (OPT-X), Main Branch & Default Rx Workflows</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 50px;">
+          <a href="http://localhost:3000/auth/login?mode=signup" target="_blank" class="btn btn-secondary" style="width: 100%;">
+            Try Practice Sign-Up Flow →
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Core Features Tour -->
+    <div class="section-header">
+      <h2>What Makes OptixOS Special?</h2>
+      <p>Engineered with optical domain knowledge that generic retail POS systems lack:</p>
+    </div>
+
+    <div class="features-grid">
+      <!-- 1. Spectacle Guided Wizard -->
+      <div class="feature-card">
+        <div class="feature-icon-box icon-blue">👓</div>
+        <h3 class="feature-title">Spectacle Pair Guided Wizard</h3>
+        <p class="feature-desc">Prevents costly lab dispensing mistakes through strict optical domain guardrails.</p>
+        <ul class="feature-list">
+          <li><strong>1:1 Lens-Frame Pairing:</strong> Exactly one frame pairs with one pair of lenses.</li>
+          <li><strong>Frame Zero-Power Invariant:</strong> Frames can never hold diopters accidentally.</li>
+          <li><strong>Sequential Steps:</strong> Pick Focus (Single Vision / Progressive) → Pick Material & Index → Pick Anti-Reflective Coatings.</li>
+        </ul>
+      </div>
+
+      <!-- 2. Dual-Eye Prescription Matrix -->
+      <div class="feature-card">
+        <div class="feature-icon-box icon-cyan">👁️</div>
+        <h3 class="feature-title">Clinical Refraction Powers (OD / OS)</h3>
+        <p class="feature-desc">Native support for ophthalmic diopters, cylinder axes, and contact lens conversions.</p>
+        <ul class="feature-list">
+          <li><strong>0.25 D Quarter Steps:</strong> Standard optical step increments for SPH, CYL, and ADD.</li>
+          <li><strong>Corneal Vertex Converter (BVD):</strong> 1-click vertex distance conversion for high powers when fitting contact lenses.</li>
+          <li><strong>Instant Prescription History:</strong> Automatically shows the patient's past powers during checkout.</li>
+        </ul>
+      </div>
+
+      <!-- 3. Multi-Member Family Billing -->
+      <div class="feature-card">
+        <div class="feature-icon-box icon-emerald">👨‍👩‍👧‍👦</div>
+        <h3 class="feature-title">Family Account Billing</h3>
+        <p class="feature-desc">Indian optical families often shop together under one primary phone number.</p>
+        <ul class="feature-list">
+          <li><strong>Single Invoice Checkout:</strong> Buy glasses for Father, Mother, and Child on one single bill.</li>
+          <li><strong>Distinct Rx Assignment:</strong> Each pair of glasses retains the specific family member's clinical prescription for the lab.</li>
+          <li><strong>Advance Credit Sharing:</strong> Share advance deposits across the entire household.</li>
+        </ul>
+      </div>
+
+      <!-- 4. Workshop Lab Orders Kanban -->
+      <div class="feature-card">
+        <div class="feature-icon-box icon-amber">🔬</div>
+        <h3 class="feature-title">Optical Workshop Kanban</h3>
+        <p class="feature-desc">Real-time status board tracking lenses sent for edging, glazing, and fitting.</p>
+        <ul class="feature-list">
+          <li><strong>Drag-and-Drop Stages:</strong> Pending Fitting → In Workshop → QC Passed → Ready for Pickup.</li>
+          <li><strong>Financial Redaction:</strong> Lab workshop slips omit pricing so technicians only see optical cut details.</li>
+          <li><strong>SLA Overdue Tracking:</strong> Automated alerts when a customer order is approaching promised delivery date.</li>
+        </ul>
+      </div>
+
+      <!-- 5. GST Compliant Hardware Invoicing -->
+      <div class="feature-card">
+        <div class="feature-icon-box icon-purple">🖨️</div>
+        <h3 class="feature-title">Thermal & Laser Print Engine</h3>
+        <p class="feature-desc">Compliant with Indian statutory GST rules, HSN codes, and retail hardware printers.</p>
+        <ul class="feature-list">
+          <li><strong>80mm Thermal Receipts:</strong> High-speed slips for receipt printers (EPSON, TVS, Star).</li>
+          <li><strong>A4 Laser Tax Invoices:</strong> Full 2-column compliance invoices with CGST/SGST itemized breakdown.</li>
+          <li><strong>Digital Receipt Links:</strong> Tamper-proof customer WhatsApp sharing links with cryptographic security.</li>
+        </ul>
+      </div>
+
+      <!-- 6. Multi-Store Isolation & Role Access -->
+      <div class="feature-card">
+        <div class="feature-icon-box icon-rose">🏢</div>
+        <h3 class="feature-title">Multi-Store & Role Security</h3>
+        <p class="feature-desc">Run a single dispensary or an eyewear chain across multiple branches.</p>
+        <ul class="feature-list">
+          <li><strong>Multi-Store Branch Switcher:</strong> Switch views between branches with stock isolation.</li>
+          <li><strong>Wholesale Cost Redaction:</strong> Cashiers cannot see wholesale inventory cost prices.</li>
+          <li><strong>Atomic Inventory Locks:</strong> Prevents double-selling frames or lenses under high counter traffic.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Quick Runbook / Test Drive -->
+    <div class="section-header">
+      <h2>5-Minute Interactive Test Runbook</h2>
+      <p>Follow these quick steps to test the full billing cycle in live mode:</p>
+    </div>
+
+    <div class="steps-container">
+      <div class="step-item">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h3>Open the POS Counter</h3>
+          <p>Navigate to <a href="http://localhost:3000/pos/new-bill" target="_blank" style="color: #60a5fa; font-weight: 600;">http://localhost:3000/pos/new-bill</a>. In the patient search box at top-left, enter phone <span class="shortcut-pill">9876543210</span> or search "Rajesh Sharma". Click to select.</p>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h3>Add a Spectacle Pair</h3>
+          <p>Press <span class="shortcut-pill">F2</span> or click <strong>"+ Add Product"</strong>. Click <strong>"Spectacle Lenses"</strong>. Choose your lens options (Single Vision → Blue-Cut Screen Defense) and select a frame (e.g. Ray-Ban Wayfarer). Click <strong>"Add to Cart"</strong>.</p>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h3>Verify Prescription & Discount</h3>
+          <p>The cart will automatically attach Rajesh's active clinical prescription. Try typing a discount in ₹ or % in the dual-box discount widget and observe real-time recalculation of GST.</p>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-number">4</div>
+        <div class="step-content">
+          <h3>Collect Payment & Complete Sale</h3>
+          <p>Press <span class="shortcut-pill">F10</span> or click <strong>"Proceed to Payment"</strong>. Select payment method (Cash, UPI / QR, Card, or Advance Deposit). Click <strong>"Complete & Print Invoice"</strong>.</p>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-number">5</div>
+        <div class="step-content">
+          <h3>View in Optical Lab & Financial Reports</h3>
+          <p>Go to <a href="http://localhost:3000/admin/lab-orders" target="_blank" style="color: #60a5fa; font-weight: 600;">Workshop Lab Orders</a> to see the job card in the Kanban queue. Check <a href="http://localhost:3000/admin/reports" target="_blank" style="color: #60a5fa; font-weight: 600;">Day-End Reports</a> to view your live cash drawer and GST totals.</p>
+        </div>
+      </div>
+
+      <!-- Quick Shortcuts Cheatsheet -->
+      <div style="margin-top: 28px;">
+        <span class="field-label">Retail Cashier Keyboard Shortcuts</span>
+        <div class="shortcuts-bar">
+          <div class="shortcut-item"><span class="key-badge">F1</span> New Bill</div>
+          <div class="shortcut-item"><span class="key-badge">F2</span> Add Product</div>
+          <div class="shortcut-item"><span class="key-badge">F3</span> Inventory</div>
+          <div class="shortcut-item"><span class="key-badge">F4</span> Viewport Layout Mode</div>
+          <div class="shortcut-item"><span class="key-badge">F5</span> Print Receipt</div>
+          <div class="shortcut-item"><span class="key-badge">F10</span> Settle Payment</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Navigation Links -->
+    <div class="section-header">
+      <h2>Direct Application Links</h2>
+      <p>Quick bookmarks to every core module in OptixOS:</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 60px;">
+      <a href="http://localhost:3000/pos/new-bill" target="_blank" class="btn btn-secondary" style="justify-content: flex-start;">
+        🛒 POS Billing Counter
+      </a>
+      <a href="http://localhost:3000/admin/patients" target="_blank" class="btn btn-secondary" style="justify-content: flex-start;">
+        👥 Patients & Prescriptions
+      </a>
+      <a href="http://localhost:3000/admin/inventory" target="_blank" class="btn btn-secondary" style="justify-content: flex-start;">
+        📦 Inventory & Stock
+      </a>
+      <a href="http://localhost:3000/admin/lab-orders" target="_blank" class="btn btn-secondary" style="justify-content: flex-start;">
+        🔬 Optical Lab Workshop
+      </a>
+      <a href="http://localhost:3000/admin/reports" target="_blank" class="btn btn-secondary" style="justify-content: flex-start;">
+        📊 Reports & Day Ledger
+      </a>
+      <a href="http://localhost:3000/admin/settings" target="_blank" class="btn btn-secondary" style="justify-content: flex-start;">
+        ⚙️ Settings & Hardware
+      </a>
+      <a href="http://localhost:3000/owner" target="_blank" class="btn btn-secondary" style="justify-content: flex-start;">
+        👑 Owner Portal Cockpit
+      </a>
+      <a href="http://localhost:3000/super-admin/login" target="_blank" class="btn btn-secondary" style="justify-content: flex-start;">
+        🛡️ Platform Super Admin
+      </a>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p>OptixOS — Optical Point of Sale & Clinical Practice Management System</p>
+      <p style="margin-top: 6px; font-size: 11px;">Built with Next.js 16 (Turbopack), React 19, PostgreSQL, Drizzle ORM, Better Auth & Upstash Redis.</p>
+    </footer>
+  </div>
+
+  <script>
+    function copyText(text, btnElement) {
+      navigator.clipboard.writeText(text).then(function() {
+        const originalText = btnElement.innerText;
+        btnElement.innerText = 'Copied!';
+        btnElement.classList.add('copied');
+        setTimeout(function() {
+          btnElement.innerText = originalText;
+          btnElement.classList.remove('copied');
+        }, 2000);
+      }).catch(function(err) {
+        console.error('Failed to copy text: ', err);
+      });
+    }
+  </script>
+</body>
+</html>
