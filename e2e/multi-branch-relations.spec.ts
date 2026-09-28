@@ -1,69 +1,53 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Multi-Branch Relations & Dynamic Multi-Select Data Loading E2E', () => {
-  test('BranchSwitcher supports single, multiple, and all branch selection modes', async ({ page }) => {
+test.describe('Single-Store Operation & Consolidated Multi-Store Reporting E2E', () => {
+  test('BranchSwitcher enforces active single-store selection with quick consolidated reports link', async ({ page }) => {
     await page.goto('/pos/new-bill');
 
     const branchBtn = page.getByTestId('branch-switcher-btn');
     await expect(branchBtn).toBeVisible();
 
-    // 1. Initial default is "All Branches"
-    await expect(branchBtn).toContainText('All Branches');
+    // 1. Initial selection shows an active store name (never 'All Branches')
+    await expect(branchBtn).not.toContainText('All Branches');
 
-    // 2. Open popover
+    // 2. Open store switcher popover
     await branchBtn.click();
     const popover = page.getByTestId('branch-switcher-popover');
     await expect(popover).toBeVisible();
 
-    // 3. Find individual branch options
-    const allOption = page.getByTestId('branch-option-all');
-    await expect(allOption).toBeVisible();
+    // 3. Verify physical store options and quick link to consolidated practice reports
+    const storeOptions = page.locator('[data-testid^="branch-option-"]');
+    expect(await storeOptions.count()).toBeGreaterThan(0);
 
-    // Find the first branch "Only" button to select a single store
-    const firstOnlyBtn = page.locator('[data-testid^="branch-only-"]').first();
-    await expect(firstOnlyBtn).toBeVisible();
-    await firstOnlyBtn.click();
+    const reportsLink = page.getByTestId('link-consolidated-reports');
+    await expect(reportsLink).toBeVisible();
 
-    // 4. Verify trigger updates to that specific store name (not "All Branches")
-    await expect(branchBtn).not.toContainText('All Branches');
+    // 4. Click a store option to switch active store
+    const secondOption = storeOptions.nth(1);
+    if (await secondOption.isVisible().catch(() => false)) {
+      const targetName = await secondOption.textContent();
+      await secondOption.click();
 
-    // 5. Open popover again and toggle a second branch to test multi-selection
-    await branchBtn.click();
-    await expect(popover).toBeVisible();
-
-    // Click the checkbox of another branch
-    const branchCheckboxes = page.locator('[data-testid^="branch-checkbox-"]');
-    const checkboxCount = await branchCheckboxes.count();
-    if (checkboxCount > 1) {
-      // Click the second branch checkbox
-      await branchCheckboxes.nth(1).click();
-
-      // Trigger should now show "2 Branches Selected"
-      await expect(branchBtn).toContainText('Branches Selected');
+      // Trigger updates immediately
+      if (targetName) {
+        await expect(branchBtn).toContainText(targetName.trim().slice(0, 10));
+      }
+    } else {
+      await storeOptions.first().click();
     }
-
-    // 6. Reset back to "All Branches" via "All" shortcut
-    const selectAllBtn = page.getByTestId('branch-btn-select-all');
-    if (!(await selectAllBtn.isVisible())) {
-      await branchBtn.click();
-    }
-    await expect(selectAllBtn).toBeVisible();
-    await selectAllBtn.click();
-
-    await expect(branchBtn).toContainText('All Branches');
   });
 
-  test('Inventory Management dynamically scopes by branch and provides branch location selector in modal', async ({ page }) => {
+  test('Inventory Management scopes by active store and pre-selects location in Add Product modal', async ({ page }) => {
     await page.goto('/admin/inventory');
 
     // 1. Verify Inventory Table renders Branch column
     const branchCol = page.locator('th', { hasText: 'Branch' });
     await expect(branchCol).toBeVisible();
 
-    // 2. Header displays active branch scope chip
+    // 2. Header displays active store scope badge
     const scopeBadge = page.getByTestId('inventory-scope-badge');
     await expect(scopeBadge).toBeVisible();
-    await expect(scopeBadge).toContainText('All Branches');
+    await expect(scopeBadge).not.toContainText('All Branches');
 
     // 3. Open Add Product modal and check Branch selection dropdown
     const addProductBtn = page.getByTestId('btn-add-product');
@@ -81,43 +65,44 @@ test.describe('Multi-Branch Relations & Dynamic Multi-Select Data Loading E2E', 
     await page.getByTestId('btn-cancel-add-inventory').click();
   });
 
-  test('Financial Reports & Audit Ledger dynamically reflects selected branch scope', async ({ page }) => {
+  test('Financial Reports & Audit Ledger provides dedicated store scope selector and multi-store performance breakdown', async ({ page }) => {
     await page.goto('/admin/reports');
 
-    // 1. Active branch scope badge in reports header
+    // 1. Reports header displays scope badge and dedicated Store Scope filter
     const scopeBadge = page.getByTestId('reports-scope-badge');
     await expect(scopeBadge).toBeVisible();
-    await expect(scopeBadge).toContainText('All Branches');
 
-    // 2. Audit Ledger Table includes Branch column
+    const storeScopeSelect = page.getByTestId('select-report-store-scope');
+    await expect(storeScopeSelect).toBeVisible();
+
+    // 2. Multi-Store Performance Breakdown section is rendered when data exists
+    const breakdownSection = page.getByTestId('multi-store-breakdown-section');
+    await expect(breakdownSection).toBeVisible();
+
+    // 3. Audit Ledger Table includes Branch column
     const ledgerTable = page.getByTestId('reports-ledger-table');
     await expect(ledgerTable).toBeVisible();
     const branchHeader = ledgerTable.locator('th', { hasText: 'Branch' });
     await expect(branchHeader).toBeVisible();
 
-    // 3. Switch branch in switcher and verify reports badge updates
-    const branchBtn = page.getByTestId('branch-switcher-btn');
-    await branchBtn.click();
-
-    const firstOnlyBtn = page.locator('[data-testid^="branch-only-"]').first();
-    await firstOnlyBtn.click();
-
-    // Scope badge in reports should no longer say "All Branches"
-    await expect(scopeBadge).not.toContainText('All Branches');
-
-    // Reset back to All Branches
-    await branchBtn.click();
-    await page.getByTestId('branch-btn-select-all').click();
-    await expect(scopeBadge).toContainText('All Branches');
+    // 4. Test selecting a single store in reports filter
+    const options = storeScopeSelect.locator('option');
+    if ((await options.count()) > 1) {
+      const secondVal = await options.nth(1).getAttribute('value');
+      if (secondVal) {
+        await storeScopeSelect.selectOption(secondVal);
+        await expect(scopeBadge).not.toContainText('All Branches');
+      }
+    }
   });
 
-  test('Lab Orders & Workshop Kanban displays branch scope badge and store location pills', async ({ page }) => {
+  test('Lab Orders & Workshop Kanban displays active store scope badge and location pills', async ({ page }) => {
     await page.goto('/admin/lab-orders');
 
     // 1. Active branch scope badge in header
     const scopeBadge = page.getByTestId('lab-orders-scope-badge');
     await expect(scopeBadge).toBeVisible();
-    await expect(scopeBadge).toContainText('All Branches');
+    await expect(scopeBadge).not.toContainText('All Branches');
 
     // 2. Switch to Table List view and check Branch column
     const tableToggle = page.getByTestId('view-toggle-table');
@@ -133,27 +118,13 @@ test.describe('Multi-Branch Relations & Dynamic Multi-Select Data Loading E2E', 
     await expect(page.getByTestId('kanban-column-action-required')).toBeVisible();
   });
 
-  test('Patients Directory re-scopes by branch and shows branch badges in history', async ({ page }) => {
+  test('Patients Directory scopes by active store', async ({ page }) => {
     await page.goto('/admin/patients');
 
     // 1. Active branch scope badge in header
     const scopeBadge = page.getByTestId('patients-scope-badge');
     await expect(scopeBadge).toBeVisible();
-    await expect(scopeBadge).toContainText('All Branches');
-
-    // 2. Switch branch and verify patient scope updates
-    const branchBtn = page.getByTestId('branch-switcher-btn');
-    await branchBtn.click();
-
-    const firstOnlyBtn = page.locator('[data-testid^="branch-only-"]').first();
-    await firstOnlyBtn.click();
-
     await expect(scopeBadge).not.toContainText('All Branches');
-
-    // Reset back to All Branches
-    await branchBtn.click();
-    await page.getByTestId('branch-btn-select-all').click();
-    await expect(scopeBadge).toContainText('All Branches');
   });
 
   test('POS billing counter renders store location indicator', async ({ page }) => {

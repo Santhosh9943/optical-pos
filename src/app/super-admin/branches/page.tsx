@@ -5,21 +5,26 @@ import {
   getUserTenancyContext,
   createBranchAction,
   toggleBranchStatusAction,
+  getStaffMembersAction,
   type TenancyContext,
+  type StaffMember,
 } from '@/actions/tenant-actions';
 import {
   Store,
   Building2,
+  Users,
   Plus,
   RefreshCw,
   CheckCircle2,
   XCircle,
   Loader2,
+  UserCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SuperAdminBranchesPage() {
   const [tenancy, setTenancy] = useState<TenancyContext | null>(null);
+  const [staffByBranch, setStaffByBranch] = useState<Map<string, StaffMember[]>>(new Map());
   const [loading, setLoading] = useState(true);
 
   // Add store modal
@@ -37,6 +42,24 @@ export default function SuperAdminBranchesPage() {
       if (ctx.organizations.length > 0 && !targetOrgId) {
         setTargetOrgId(ctx.organizations[0].id);
       }
+
+      // Load staff members for each organization to associate with branches
+      const staffMap = new Map<string, StaffMember[]>();
+      for (const org of ctx.organizations) {
+        try {
+          const res = await getStaffMembersAction(org.id);
+          if (res.success && res.staff) {
+            for (const s of res.staff) {
+              const list = staffMap.get(s.branchId) || [];
+              list.push(s);
+              staffMap.set(s.branchId, list);
+            }
+          }
+        } catch {
+          // ignore background staff fetch error
+        }
+      }
+      setStaffByBranch(staffMap);
     } catch {
       toast.error('Failed to load physical store directory');
     } finally {
@@ -87,7 +110,7 @@ export default function SuperAdminBranchesPage() {
     }
   };
 
-  const orgMap = new Map(tenancy?.organizations.map((o) => [o.id, o.name]));
+  const orgMap = new Map(tenancy?.organizations.map((o) => [o.id, { name: o.name, orgCode: o.orgCode }]));
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto w-full">
@@ -99,7 +122,7 @@ export default function SuperAdminBranchesPage() {
             <span>Physical Store Locations Directory</span>
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-400">
-            Global network of optical dispensary branches across all tenant practices
+            Global network of optical dispensary branches & assigned branch users
           </p>
         </div>
 
@@ -134,14 +157,31 @@ export default function SuperAdminBranchesPage() {
               <tr>
                 <th className="px-5 py-3.5 font-semibold">Store / Branch Name</th>
                 <th className="px-5 py-3.5 font-semibold">Owning Practice</th>
+                <th className="px-5 py-3.5 font-semibold">Assigned Branch Users</th>
                 <th className="px-5 py-3.5 font-semibold">Store Status</th>
                 <th className="px-5 py-3.5 font-semibold text-right">Status Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/80">
-              {tenancy?.branches.map((branch) => {
-                const orgName = orgMap.get(branch.organizationId) || 'Unknown Practice';
-                const isToggling = togglingId === branch.id;
+              {tenancy && tenancy.branches.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Store className="h-8 w-8 text-slate-600" />
+                      <p className="text-sm font-semibold text-slate-300">Zero Physical Stores</p>
+                      <p className="text-xs text-slate-500 max-w-sm">
+                        No physical store branches currently exist in the platform.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                tenancy?.branches.map((branch) => {
+                  const orgInfo = orgMap.get(branch.organizationId);
+                  const orgName = orgInfo?.name || 'Unknown Practice';
+                  const orgCode = orgInfo?.orgCode;
+                  const isToggling = togglingId === branch.id;
+                  const branchStaff = staffByBranch.get(branch.id) || [];
 
                 return (
                   <tr key={branch.id} className="hover:bg-slate-800/40 transition">
@@ -155,9 +195,39 @@ export default function SuperAdminBranchesPage() {
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-1.5 text-slate-300">
-                        <Building2 className="h-3.5 w-3.5 text-purple-400" />
-                        <span className="font-medium">{orgName}</span>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-slate-300">
+                          <Building2 className="h-3.5 w-3.5 text-purple-400" />
+                          <span className="font-medium">{orgName}</span>
+                        </div>
+                        {orgCode && (
+                          <span className="inline-flex items-center gap-1 rounded bg-purple-950/60 px-1.5 py-0.5 text-[10px] font-mono font-bold text-purple-300 border border-purple-800/40">
+                            Practice ID: {orgCode}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-slate-200">
+                          <Users className="h-3.5 w-3.5 text-blue-400" />
+                          <span className="font-semibold">{branchStaff.length > 0 ? branchStaff.length : 1} Users</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {branchStaff.length > 0 ? (
+                            branchStaff.map((s) => (
+                              <span
+                                key={s.id}
+                                className="inline-flex items-center gap-1 rounded bg-slate-800 px-1.5 py-0.5 text-[9px] font-medium text-slate-300 border border-slate-700"
+                              >
+                                <span>{s.name}</span>
+                                <span className="text-[8px] text-purple-300 uppercase">({s.role})</span>
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-slate-500 italic">Default Branch Staff Assigned</span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-5 py-4">
@@ -190,7 +260,7 @@ export default function SuperAdminBranchesPage() {
                     </td>
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>
@@ -219,7 +289,7 @@ export default function SuperAdminBranchesPage() {
                 >
                   {tenancy?.organizations.map((org) => (
                     <option key={org.id} value={org.id}>
-                      {org.name}
+                      {org.name} {org.orgCode ? `(${org.orgCode})` : ''}
                     </option>
                   ))}
                 </select>

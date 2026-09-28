@@ -11,6 +11,11 @@ You are an expert full-stack engineer building a high-performance, cloud-native 
 - [`docs/TASKS.md`](file:///f:/hobby-projects/optical-pos/docs/TASKS.md): Task Ledger, Roadmap, and Definition of Done.
 - [`docs/MEMORY.md`](file:///f:/hobby-projects/optical-pos/docs/MEMORY.md): Current Tech Stack, Test Pass Rates, and Developer Gotchas.
 - [`docs/VIBE_WORKFLOW.md`](file:///f:/hobby-projects/optical-pos/docs/VIBE_WORKFLOW.md): The 9-Step Vibe Coding Playbook and Quality Gates.
+- [`docs/agent-memory/SESSION_HANDOFF.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/SESSION_HANDOFF.md): Universal Active Session Ledger, In-Flight Work & Cross-Agent Handoff.
+- [`docs/agent-memory/BUG_FIX_LOG.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/BUG_FIX_LOG.md): Compact Bug Fix Memory Ledger (12+ historical bugs and invariants).
+- [`docs/agent-memory/SECURITY_LOG.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/SECURITY_LOG.md): Security Vulnerability & Technical Debt Registry (`SEC-XXX`).
+- [`docs/agent-memory/AGENT_HANDOFF_PROTOCOL.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/AGENT_HANDOFF_PROTOCOL.md): Universal Cross-Agent Operating Lifecycle.
+- [`specs/README.md`](file:///f:/hobby-projects/optical-pos/specs/README.md): Spec-Driven Vibe Coding Engine (`specs/TEMPLATE/`, `specs/024-gst-e-invoicing/`).
 - [`docs/archive/ARCHIVE_LOG.md`](file:///f:/hobby-projects/optical-pos/docs/archive/ARCHIVE_LOG.md): Archive ledger of superseded or retired documentation.
 
 ---
@@ -144,11 +149,64 @@ if (updated.length === 0) throw new InsufficientStockError(item.id);
 
 ---
 
-## 10. AI Agent Operational Constraints & CI Pipeline
+## 10. Automated AI Code Review, Security Auditing & Technical Debt Protocol
+
+- **8-Point AI Code Review Invariants**:
+  Every code change, Server Action, and schema update must strictly satisfy the 8 core domain invariants:
+  1. **Exact Monetary Math:** `decimal.js` for all financial logic (zero native JS floats).
+  2. **Optical Diopters:** 0.25 D step validation (`Math.round(val * 100) % 25 === 0`).
+  3. **Axis Invariant:** `[1, 180]` if CYL != 0, null if CYL == 0.
+  4. **Multi-Tenant Scoping:** All business queries MUST filter by `organization_id`.
+  5. **Atomic Stock Decrement:** `WHERE stock_quantity >= :qty RETURNING id` inside `db.transaction()`. Never pre-check in memory.
+  6. **Wholesale Cost Price Redaction:** Wholesale `cost_price` must be omitted in SQL projections for non-manager roles.
+  7. **Document / Print Redaction:** Zero financial/wholesale data in workshop lab slips or receipt DOM trees.
+  8. **Strict Input Validation:** Zod schemas for all client-facing Server Actions.
+
+- **Unresolved Vulnerability & Bug Protocol ("Zero Untracked Debt")**:
+  If an agent or engineer discovers a security vulnerability, code smell, or bug that **cannot be resolved immediately within the current task scope**, the agent MUST:
+  1. **Tag in code**: Add standardized annotation directly above the affected line(s):
+     - `// TODO(security-SEC-XXX): <description and remediation plan>`
+     - `// TODO(bug-BUG-XXX): <description and root cause>`
+  2. **Register in Registry**:
+     - For security vulnerabilities, add a formal entry to [`docs/agent-memory/SECURITY_LOG.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/SECURITY_LOG.md) (Severity, Location, CWE, Finding, Remediation, Status).
+     - For functional defects/bugs, add an entry to [`docs/agent-memory/BUG_FIX_LOG.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/BUG_FIX_LOG.md).
+  3. **Track in Backlog**: Add the item under the "Active Security & Technical Debt Backlog" in [`docs/TASKS.md`](file:///f:/hobby-projects/optical-pos/docs/TASKS.md).
+  4. **Hand Off**: Record the item in [`docs/agent-memory/SESSION_HANDOFF.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/SESSION_HANDOFF.md) under Pending Work.
+  5. **Verification**: Run `npm run audit:security` to confirm all tags are properly registered. Naked `TODO(security)` tags without an ID or with an unregistered ID will fail CI.
+
+---
+
+- **Spec-Driven Feature Execution (`specs/`)**:
+  - When implementing, expanding, or refactoring features, check `specs/{feature-id}/` for `spec.md`, `plan.md`, and `tasks.md`.
+  - For new features, duplicate `specs/TEMPLATE/` to `specs/{feature-id}-{name}/`.
+  - Execute tasks incrementally from `tasks.md`, updating checkboxes upon passing tests. Archive to `specs/archive/` upon completion.
+- **Universal In-Project Agent Memory Protocol:**
+  - Before starting any task, ALWAYS read [`docs/agent-memory/SESSION_HANDOFF.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/SESSION_HANDOFF.md) to ingest the latest session state, recent changes, and current goals.
+  - Review [`docs/agent-memory/BUG_FIX_LOG.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/BUG_FIX_LOG.md) to avoid repeating past solved bugs.
+  - When closing a task, if any bug was fixed, append a compact entry to `BUG_FIX_LOG.md`, and update `SESSION_HANDOFF.md` with your session summary and next steps.
+- **Pre-Implementation Root Cause & Blast Radius Analysis:**
+  - Before touching, modifying, or deleting code, diagnose the fundamental root cause. Never apply superficial monkey-patches.
+  - Trace callers, callees, and dependencies via `graphify explain "<Symbol>"`.
+  - Atomically update all tiers in the vertical slice (`Schema -> Validator -> Action -> Store -> UI -> Test`).
+- **Quality & Bug-Free Correctness Over Token Optimization ("Think & Verify Twice"):**
+  - Clean, robust, bug-free production code is the paramount priority over saving tokens. Never rush, truncate necessary research, or skip validation steps to minimize token count.
+  - Before writing code, take time to think through existing architecture, invariants, and edge cases twice. Inspect existing files, schemas, and actions using `graphify explain` and code reviews.
+- **Autonomous Official Documentation & MCP Protocol:**
+  - If a task lacks explicit technical documentation or specifications from the user, NEVER guess, hallucinate, or rely on outdated training memory.
+  - Proactively use MCP servers (e.g., Notion, Figma, Lovable, Chrome DevTools, database tools) and web search / URL reading tools (`search_web`, `read_url_content`, `browser_subagent`) to read the **latest official documentation** directly from official sources.
+  - Verify API signatures, breaking changes, and version parity before implementation.
+- **No Fresh Exploration From Scratch ("Graphify First"):** Never explore or re-learn the codebase blindly on every task. The project maintains an indexed knowledge graph in `graphify-out/`. Always consult `graphify` first:
+  - `graphify query "<topic or feature>"` to pinpoint relevant symbols and files without reading unnecessary code.
+  - `graphify explain "<Symbol>"` to view callers, callees, dependencies, and immediate neighborhood.
+  - `graphify path "<Source>" "<Target>" --undirected` to trace architectural connections.
+- **Write "Graphifyable" Code:** Before running graphify or completing tasks, ensure all code changes are easily graphifyable and self-explanatory:
+  - Provide complete JSDoc / TSDoc docstrings on all exported Server Actions, React components, Zod schemas, Drizzle models, and utility functions (`@description`, `@param`, `@returns`).
+  - Use clear, descriptive named exports (avoid anonymous functions/exports).
+  - Explicitly type all function signatures, arguments, and return types.
 - **The Validation Loop:** You are strictly forbidden from declaring a feature 'complete' without passing the local CI pipeline. Once you finish writing code for a task, you MUST run `npm run validate` (or `npm run check` for minor static updates).
-- **On Success (Token Optimization):** If the validation script passes with exit code 0, DO NOT ingest or analyze the terminal logs. Output a brief confirmation token (e.g., '✅ CI Passed') and stop. Wait for my manual UI verification. Do NOT run dev servers or open browsers yourself.
+- **Continuous Knowledge Graph Sync (`graphify update .`):** To keep the architectural knowledge graph in `graphify-out/` synced with the codebase, you MUST automatically run `graphify update .` at the end of every completed task or code modification, immediately after CI passes and before notifying the user.
+- **On Success & Deep Verification:** When validation passes with exit code 0, confirm with the user and provide a clear, structured summary with clickable file links. Do NOT run dev servers or open browsers unless requested.
 - **On Failure (Auto-Correction):** If the validation script fails, you are authorized to ingest the error logs. You must independently analyze the TypeScript, ESLint, or Playwright errors, apply the necessary code fixes, and re-run `npm run validate` until it passes completely.
-- **Continuous Graphify Updates:** To keep the architectural knowledge graph perfectly synced with the codebase, you MUST automatically run the `graphify .` command at the very end of every completed feature, task, or significant refactor. Execute this step immediately after the CI validation (`npm run validate`) passes, right before notifying the user that the task is complete.
 
 ---
 

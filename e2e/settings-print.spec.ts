@@ -4,13 +4,9 @@ test.describe('Stage 9: Store Settings & Print Engine E2E Suite', () => {
   test('Navigate to settings, update store profile, configure print formats, and verify print buttons', async ({
     page,
   }) => {
-    // 1. Navigate from Dashboard sidebar to Settings
-    await page.goto('/pos/new-bill');
+    // 1. Navigate directly to Settings
+    await page.goto('/admin/settings');
     await page.waitForLoadState('networkidle');
-
-    const navSettings = page.getByTestId('nav-settings');
-    await expect(navSettings).toBeVisible({ timeout: 10000 });
-    await navSettings.click();
 
     // 2. Verify settings page loaded
     await expect(page).toHaveURL(/\/admin\/settings/);
@@ -37,7 +33,7 @@ test.describe('Stage 9: Store Settings & Print Engine E2E Suite', () => {
 
     // Verify success toast
     await expect(
-      page.locator('text=Store profile updated successfully!')
+      page.locator('text=Store profile updated successfully').first()
     ).toBeVisible({ timeout: 10000 });
 
     // 4. Switch to Print Configuration Tab
@@ -51,20 +47,16 @@ test.describe('Stage 9: Store Settings & Print Engine E2E Suite', () => {
     await expect(thermalCard).toBeVisible();
     await expect(a4Card).toBeVisible();
 
-    // Select A4 Laser Invoice
-    await page.getByTestId('receipt-type-a4').click();
-    await page.getByTestId('btn-save-settings').click();
-
+    // Select A4 Laser Invoice (auto-saves on selection)
+    await page.getByTestId('card-receipt-a4').click();
     await expect(
-      page.locator('text=Store profile updated successfully!')
+      page.locator('text=Print layout updated').first()
     ).toBeVisible({ timeout: 10000 });
 
-    // Switch back to Thermal
-    await page.getByTestId('receipt-type-thermal').click();
-    await page.getByTestId('btn-save-settings').click();
-
+    // Switch back to Thermal (auto-saves on selection)
+    await page.getByTestId('card-receipt-thermal').click();
     await expect(
-      page.locator('text=Store profile updated successfully!')
+      page.locator('text=Print layout updated').first()
     ).toBeVisible({ timeout: 10000 });
 
     // 5. Navigate to Patients view to verify print invoice action on order history

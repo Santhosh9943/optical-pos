@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import Decimal from 'decimal.js';
 import { toast } from 'sonner';
 import { PatientSearch, type Patient } from '@/components/pos/patient-search';
@@ -47,7 +48,7 @@ import { CartItemEditModal } from '@/components/pos/cart-item-edit-modal';
 import { InvoiceDetailsModal } from '@/components/pos/invoice-details-modal';
 import { QuickAddPatientModal } from '@/components/pos/quick-add-patient-modal';
 import { CompactPatientStrip } from '@/components/pos/compact-patient-strip';
-import { DenseBottomBar } from '@/components/pos/dense-bottom-bar';
+import { EditInvoiceModal } from '@/components/admin/edit-invoice-modal';
 import { getStoreProfile } from '@/actions/settings-actions';
 import { getDynamicRelationship } from '@/lib/patient-relationship';
 import {
@@ -78,13 +79,24 @@ import {
   Maximize2,
   Columns2,
   LayoutGrid,
+  Share2,
+  ExternalLink,
+  Mail,
+  FileEdit,
+  Phone,
+  Copy,
+  Wallet,
+  X,
+  Settings,
 } from 'lucide-react';
+import { getWhatsAppShareUrl } from '@/lib/whatsapp-utils';
+import { useBarcodeScanner } from '@/hooks/use-barcode-scanner';
+import { searchBarcodeItemAction } from '@/actions/inventory-actions';
+import { sendReceiptEmailAction } from '@/actions/email-actions';
 
 export function PosView() {
   const {
-    posLayoutType,
     posAdaptiveMode,
-    setPosLayoutType,
     setPosAdaptiveMode,
     activePatients,
     selectedPatient,
@@ -130,10 +142,13 @@ export function PosView() {
 
   const {
     branches,
+    organizations,
     selectedBranchId,
-    selectedBranchIds,
     selectedOrganizationId,
+    setSelectedBranch,
   } = useTenantStore();
+
+  const activeOrg = organizations?.find((o) => o.id === selectedOrganizationId);
 
   const orgBranches = useMemo(() => {
     return branches.filter(
@@ -141,35 +156,19 @@ export function PosView() {
     );
   }, [branches, selectedOrganizationId]);
 
-  // Billing branch for POS operations
-  const [activeBillingBranchId, setActiveBillingBranchId] = useState<string>('');
+  // Billing branch for POS operations directly bound to active selected store
+  const activeBillingBranchId =
+    selectedBranchId || orgBranches[0]?.id || '00000000-0000-0000-0000-000000000002';
 
-  useEffect(() => {
-    if (selectedBranchIds && selectedBranchIds.length === 1 && selectedBranchIds[0] !== 'all') {
-      setActiveBillingBranchId(selectedBranchIds[0]);
-    } else if (!activeBillingBranchId && orgBranches.length > 0) {
-      setActiveBillingBranchId(orgBranches[0].id);
-    }
-  }, [selectedBranchIds, orgBranches, activeBillingBranchId]);
-
-  // Load default POS layout from localStorage or store settings
+  // Load default POS layout mode from localStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('optixos_pos_layout') as 'adaptive' | 'dense' | 'split' | null;
-      if (saved && ['adaptive', 'dense', 'split'].includes(saved)) {
-        setPosLayoutType(saved);
-        return;
+      const savedMode = localStorage.getItem('optixos_pos_mode') as 'split' | 'billing_focus' | 'rx_focus' | null;
+      if (savedMode && ['split', 'billing_focus', 'rx_focus'].includes(savedMode)) {
+        setPosAdaptiveMode(savedMode);
       }
     } catch {}
-
-    getStoreProfile()
-      .then((p) => {
-        if (p?.defaultPosLayout) {
-          setPosLayoutType(p.defaultPosLayout as 'adaptive' | 'dense' | 'split');
-        }
-      })
-      .catch(console.error);
-  }, [setPosLayoutType]);
+  }, [setPosAdaptiveMode]);
 
   const activeBranch = useMemo(() => {
     return orgBranches.find((b) => b.id === activeBillingBranchId) || orgBranches[0];
@@ -187,8 +186,45 @@ export function PosView() {
   // Clean family members cluster & purchase history states
   const [availableFamilyMembers, setAvailableFamilyMembers] = useState<POSPatient[]>([]);
   const [patientOrderHistories, setPatientOrderHistories] = useState<Record<string, PatientOrderHistoryItem[]>>({});
+  const [editingPastInvoiceId, setEditingPastInvoiceId] = useState<string | null>(null);
   const [activeLeftTab, setActiveLeftTab] = useState<'rx' | 'orders'>('rx');
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [isPosSendingEmail, setIsPosSendingEmail] = useState(false);
+
+  const handlePosEmailReceipt = async () => {
+    if (!completedOrder) return;
+    const invoiceKey = completedOrder.invoiceId || completedOrder.invoiceNumber;
+    let targetEmail = completedOrder.customer?.email?.trim();
+
+    if (!targetEmail) {
+      const prompted = window.prompt(
+        'Enter customer email address to send tax receipt & optical prescription:',
+        invoiceBillingDetails?.email || ''
+      );
+      if (!prompted || !prompted.includes('@')) {
+        if (prompted !== null) toast.error('Please enter a valid email address');
+        return;
+      }
+      targetEmail = prompted.trim();
+    }
+
+    setIsPosSendingEmail(true);
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : undefined;
+      const res = await sendReceiptEmailAction(invoiceKey, targetEmail, origin);
+      if (res.success) {
+        toast.success(`Receipt emailed to ${targetEmail}!`, {
+          description: 'GST tax invoice & optical prescription sent via Gmail SMTP.',
+        });
+      } else {
+        toast.error(res.error || 'Failed to dispatch email receipt');
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Error dispatching email receipt');
+    } finally {
+      setIsPosSendingEmail(false);
+    }
+  };
 
   // Dynamically resolved patient relations based on the currently selected account
   const dynamicActivePatients = useMemo(
@@ -588,9 +624,13 @@ export function PosView() {
         setIsAddProductModalOpen(true);
       } else if (e.key === 'F4') {
         e.preventDefault();
-        if (posLayoutType === 'adaptive') {
-          setPosAdaptiveMode(posAdaptiveMode === 'billing_focus' ? 'split' : 'billing_focus');
-        }
+        setPosAdaptiveMode(posAdaptiveMode === 'billing_focus' ? 'split' : 'billing_focus');
+        try {
+          localStorage.setItem(
+            'optixos_pos_mode',
+            posAdaptiveMode === 'billing_focus' ? 'split' : 'billing_focus'
+          );
+        } catch {}
       } else if (e.key === 'F5') {
         e.preventDefault();
         if (completedOrder) {
@@ -600,7 +640,33 @@ export function PosView() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [completedOrder, setPrintMode, posLayoutType, posAdaptiveMode, setPosAdaptiveMode]);
+  }, [completedOrder, setPrintMode, posAdaptiveMode, setPosAdaptiveMode]);
+
+  // Global Hardware HID Barcode Scanner Listener (<50ms timing detection)
+  useBarcodeScanner({
+    enabled: !completedOrder && !isAddProductModalOpen && !selectedFrameForWizard && !editingCartItem,
+    onScan: async (barcode) => {
+      try {
+        const res = await searchBarcodeItemAction(barcode, activeBillingBranchId);
+        if (res.success && res.item) {
+          if (res.item.stockQuantity <= 0) {
+            toast.error(`Out of stock: ${res.item.description || res.item.sku}`);
+            return;
+          }
+          addInventoryItem(res.item, selectedPatient?.id || null);
+          toast.success(`Scanned: ${res.item.brand ? res.item.brand + ' ' : ''}${res.item.description || res.item.sku}`, {
+            description: `SKU: ${res.item.sku} · ₹${res.item.sellingPrice}`,
+          });
+        } else {
+          toast.error(`Barcode not found: ${barcode}`, {
+            description: 'Item does not exist in inventory or is inactive.',
+          });
+        }
+      } catch (err) {
+        console.error('Barcode scan processing error:', err);
+      }
+    },
+  });
 
   const handleConfigureSpectaclePair = (config: SpectaclePairConfig) => {
     // 1. If prescription was entered/confirmed, save to store
@@ -650,6 +716,8 @@ export function PosView() {
         patientId: config.targetPatientId,
         isCustomerOwnFrame: false,
         fittingNote: '',
+        linkedFrameId: frameCartItem.id,
+        linkedFrameName: frameCartItem.description,
       };
       itemsToAdd.push(lensCartItem);
     }
@@ -772,7 +840,7 @@ export function PosView() {
                   data-testid="select-pos-branch"
                   aria-label="Select Billing Branch Counter"
                   value={activeBillingBranchId}
-                  onChange={(e) => setActiveBillingBranchId(e.target.value)}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
                   className="bg-transparent font-semibold text-foreground text-xs focus:outline-hidden cursor-pointer"
                 >
                   {orgBranches.map((b) => (
@@ -785,75 +853,65 @@ export function PosView() {
             </div>
           )}
 
-          {/* POS Layout & View Mode Switcher */}
+          {/* POS Viewport Mode Switcher (Rx, Split, Cart) */}
           <div
             data-testid="pos-layout-switcher"
-            className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/90 p-1 rounded-lg border border-slate-200 dark:border-slate-700/80 text-xs shadow-2xs"
+            className="flex items-center gap-0.5 bg-slate-100/90 dark:bg-slate-800/90 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/80 text-xs shadow-2xs"
           >
-            {/* Layout Architecture Selector */}
-            <select
-              data-testid="pos-layout-type-select"
-              value={posLayoutType}
-              onChange={(e) => {
-                const val = e.target.value as 'adaptive' | 'dense' | 'split';
-                setPosLayoutType(val);
+            <button
+              type="button"
+              data-testid="btn-mode-rx-focus"
+              onClick={() => {
+                setPosAdaptiveMode('rx_focus');
                 try {
-                  localStorage.setItem('optixos_pos_layout', val);
+                  localStorage.setItem('optixos_pos_mode', 'rx_focus');
                 } catch {}
-                toast.success(`POS Layout: ${val === 'adaptive' ? 'Adaptive Modes' : val === 'dense' ? 'Dense Split View' : 'Classic Split'}`);
               }}
-              className="bg-transparent text-[11px] font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer px-1.5 py-0.5"
-              title="Choose POS Workspace Layout"
+              className={`px-2 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
+                posAdaptiveMode === 'rx_focus'
+                  ? 'bg-blue-600 text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+              title="Rx Refraction Focus"
             >
-              <option value="adaptive">Adaptive Modes</option>
-              <option value="dense">Dense Split</option>
-              <option value="split">Classic Split</option>
-            </select>
-
-            {/* If in Adaptive Layout, show quick mode pills */}
-            {posLayoutType === 'adaptive' && (
-              <div data-testid="pos-adaptive-mode-pills" className="flex items-center gap-0.5 pl-1.5 border-l border-slate-300 dark:border-slate-700">
-                <button
-                  type="button"
-                  data-testid="btn-mode-rx-focus"
-                  onClick={() => setPosAdaptiveMode('rx_focus')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                    posAdaptiveMode === 'rx_focus'
-                      ? 'bg-blue-600 text-white shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-                  title="Rx Refraction Focus"
-                >
-                  👁️ Rx
-                </button>
-                <button
-                  type="button"
-                  data-testid="btn-mode-split"
-                  onClick={() => setPosAdaptiveMode('split')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                    posAdaptiveMode === 'split'
-                      ? 'bg-blue-600 text-white shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-                  title="Split View"
-                >
-                  ⚖️ Split
-                </button>
-                <button
-                  type="button"
-                  data-testid="btn-mode-billing-focus"
-                  onClick={() => setPosAdaptiveMode('billing_focus')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                    posAdaptiveMode === 'billing_focus'
-                      ? 'bg-blue-600 text-white shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-                  title="Billing & Cart Focus [F4]"
-                >
-                  🛒 Cart [F4]
-                </button>
-              </div>
-            )}
+              👁️ Rx
+            </button>
+            <button
+              type="button"
+              data-testid="btn-mode-split"
+              onClick={() => {
+                setPosAdaptiveMode('split');
+                try {
+                  localStorage.setItem('optixos_pos_mode', 'split');
+                } catch {}
+              }}
+              className={`px-2 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
+                posAdaptiveMode === 'split'
+                  ? 'bg-blue-600 text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+              title="Split View"
+            >
+              ⚖️ Split
+            </button>
+            <button
+              type="button"
+              data-testid="btn-mode-billing-focus"
+              onClick={() => {
+                setPosAdaptiveMode('billing_focus');
+                try {
+                  localStorage.setItem('optixos_pos_mode', 'billing_focus');
+                } catch {}
+              }}
+              className={`px-2 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
+                posAdaptiveMode === 'billing_focus'
+                  ? 'bg-blue-600 text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+              title="Billing & Cart Focus [F4]"
+            >
+              🛒 Cart [F4]
+            </button>
           </div>
 
           <button
@@ -864,6 +922,17 @@ export function PosView() {
             <PlusCircle className="h-3.5 w-3.5" />
             <span>New Order [F1]</span>
           </button>
+
+          {/* Quick Access to Categorized Store & POS Settings */}
+          <Link
+            href="/admin/settings"
+            data-testid="btn-pos-settings"
+            className="flex items-center gap-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 shadow-2xs transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 active:scale-95 cursor-pointer"
+            title="Configure Store, Layout, Print & Catalog Settings"
+          >
+            <Settings className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Settings</span>
+          </Link>
         </div>
       </div>
 
@@ -872,144 +941,213 @@ export function PosView() {
         // 1. Patient Clinical Workspace (Profile, Refraction Grid, Order History)
         const renderPatientClinicalWorkspace = (colSpanClass: string) => (
           <div className={`${colSpanClass} flex flex-col gap-4 overflow-y-auto`}>
-            {/* Patient Header / Card with Family Support */}
-            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                {selectedPatient ? (
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/80 px-2.5 py-1 text-xs">
-                      <Crown className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                        Invoice Account:
-                      </span>
-                      <span className="font-bold text-slate-900 dark:text-slate-100">
-                        {selectedPatient.fullName}
-                      </span>
-
-                      {activePatients.length > 1 ? (
-                        <select
-                          id="select-invoice-account"
-                          data-testid="select-invoice-account"
-                          value={selectedPatient.id}
-                          onChange={(e) => handleSwitchInvoiceAccount(e.target.value)}
-                          className="rounded-md border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-900 dark:text-slate-100 shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-emerald-500 cursor-pointer ml-1"
-                          title="Change invoice account"
-                        >
-                          {dynamicActivePatients.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.fullName} ({p.relationType})
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <select
-                          id="select-invoice-account"
-                          disabled
-                          data-testid="select-invoice-account"
-                          className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/60 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-300 cursor-not-allowed ml-1"
-                          title="Only 1 member on order. Add family members to change invoice account."
-                        >
-                          <option value="">(Only 1 Member)</option>
-                        </select>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-300">
-                    <UserCheck className="h-4 w-4" />
-                    <span>Search or enter phone to populate patient</span>
-                  </div>
-                )}
-
-                {selectedPatient && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      data-testid="add-family-member-btn"
-                      onClick={() => setIsAddFamilyModalOpen(true)}
-                      className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition active:scale-95 cursor-pointer"
-                    >
-                      <UserPlus className="h-3.5 w-3.5" />
-                      <span>+ Add Family Member</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
+            {/* Patient Clinical Profile Card */}
+            <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs">
               {selectedPatient ? (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                    <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                      <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
-                        Active Customer
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm truncate block">
-                        {selectedPatient.fullName}
-                      </span>
-                    </div>
-                    <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                      <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
-                        Contact Phone
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-slate-100 font-mono">
-                        {selectedPatient.phone}
-                      </span>
-                    </div>
-                    <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                      <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
-                        Demographics
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-slate-100">
-                        {selectedPatient.gender ?? '—'}
-                        {selectedPatient.age ? `, ${selectedPatient.age} yrs` : ''}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      data-testid="btn-patient-past-purchases"
-                      onClick={() => setActiveLeftTab('orders')}
-                      className="rounded-md bg-purple-50/80 dark:bg-purple-950/40 p-2 border border-purple-200 dark:border-purple-800/60 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 cursor-pointer"
-                      title="Click to view purchase order history"
-                    >
-                      <span className="text-[10px] uppercase font-medium text-purple-600 dark:text-purple-400 flex items-center justify-between">
-                        <span>Past Purchases</span>
-                        <Receipt className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                      </span>
-                      <span className="font-bold text-purple-800 dark:text-purple-200 font-mono text-sm block mt-0.5">
-                        {(patientOrderHistories[selectedPatient.id] || []).length} Orders
-                      </span>
-                    </button>
-                    {selectedPatient.city && (
-                      <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-700/60">
-                        <span className="text-[10px] uppercase font-medium text-slate-500 dark:text-slate-300 block">
-                          Location
+                  {/* Top Bar: Invoice Account Badge + Family Quick Switcher / Add Button */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 px-2.5 py-0.5 text-xs">
+                        <Crown className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+                          Billing To:
                         </span>
-                        <span className="font-medium text-slate-800 dark:text-slate-200">
-                          {selectedPatient.city}
+                        <span className="font-bold text-slate-900 dark:text-slate-100">
+                          {selectedPatient.fullName}
+                        </span>
+
+                        {activePatients.length > 1 ? (
+                          <select
+                            id="select-invoice-account"
+                            data-testid="select-invoice-account"
+                            value={selectedPatient.id}
+                            onChange={(e) => handleSwitchInvoiceAccount(e.target.value)}
+                            className="rounded-md border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-900 dark:text-slate-100 shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-emerald-500 cursor-pointer ml-1"
+                            title="Change invoice account"
+                          >
+                            {dynamicActivePatients.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.fullName} ({p.relationType})
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <select
+                            id="select-invoice-account"
+                            disabled
+                            data-testid="select-invoice-account"
+                            className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/60 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-300 cursor-not-allowed ml-1"
+                            title="Only 1 member on order. Add family members to change invoice account."
+                          >
+                            <option value="">(Only 1 Member)</option>
+                          </select>
+                        )}
+                      </div>
+
+                      {/* Active Family Members on Order with Quick Remove (×) Button */}
+                      {dynamicActivePatients && dynamicActivePatients.length > 1 && (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {dynamicActivePatients.map((member) => {
+                            const isPayer = member.id === selectedPatient.id;
+                            return (
+                              <span
+                                key={member.id}
+                                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold border ${
+                                  isPayer
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                }`}
+                              >
+                                <span className="truncate max-w-[120px]">
+                                  {member.fullName} ({member.relationType || 'Family'})
+                                </span>
+                                <button
+                                  type="button"
+                                  aria-label={`Remove ${member.fullName} from order`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeFamilyMember(member.id);
+                                  }}
+                                  className="rounded-full p-0.5 text-slate-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-950/50 transition cursor-pointer ml-0.5"
+                                  title={`Remove ${member.fullName} from billing session`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        data-testid="add-family-member-btn"
+                        onClick={() => setIsAddFamilyModalOpen(true)}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/80 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition active:scale-95 cursor-pointer"
+                        title="Link family member to this account"
+                      >
+                        <UserPlus className="h-3.5 w-3.5" />
+                        <span>+ Add Family</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Patient Details: Avatar + Core Info + Metrics Badges */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
+                    <div className="flex items-center gap-3.5">
+                      {/* Avatar with Initials */}
+                      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold text-base shadow-sm">
+                        {selectedPatient.fullName.charAt(0).toUpperCase()}
+                        <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900">
+                          <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
                         </span>
                       </div>
-                    )}
-                    {selectedPatient.advanceBalance && (
-                      <div className="rounded-md bg-emerald-50/60 dark:bg-emerald-950/40 p-2 border border-emerald-100 dark:border-emerald-800/60">
-                        <span className="text-[10px] uppercase font-medium text-emerald-600 dark:text-emerald-400 block">
-                          Available Credit
-                        </span>
-                        <span className="font-bold text-emerald-700 dark:text-emerald-400 font-mono">
-                          ₹{selectedPatient.advanceBalance}
-                        </span>
+
+                      {/* Name & Demographics Meta */}
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                            {selectedPatient.fullName}
+                          </h4>
+                          <span className="rounded-md bg-blue-50 dark:bg-blue-950/80 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 uppercase tracking-wider">
+                            {selectedPatient.relationType || (selectedPatient.primaryCustomerId ? 'Dependent' : 'Primary')}
+                          </span>
+                          {(selectedPatient.gender || selectedPatient.age) && (
+                            <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                              {selectedPatient.gender || ''}
+                              {selectedPatient.gender && selectedPatient.age ? ' • ' : ''}
+                              {selectedPatient.age ? `${selectedPatient.age}y` : ''}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
+                          {/* Phone with 1-click copy */}
+                          <div className="flex items-center gap-1 font-mono font-medium text-slate-800 dark:text-slate-200">
+                            <Phone className="h-3 w-3 text-slate-400 dark:text-slate-500" />
+                            <span>{selectedPatient.phone}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(selectedPatient.phone);
+                                toast.success('Phone copied to clipboard');
+                              }}
+                              className="p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                              title="Copy Phone Number"
+                            >
+                              <Copy className="h-2.5 w-2.5" />
+                            </button>
+                          </div>
+
+                          {selectedPatient.city && (
+                            <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
+                              <MapPin className="h-3 w-3 text-slate-400 dark:text-slate-500" />
+                              <span>{selectedPatient.city}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    </div>
+
+                    {/* Right Meta Chips: Advance Credit + Orders Quick Button */}
+                    <div className="flex flex-wrap sm:flex-col items-end gap-2 w-full sm:w-auto shrink-0">
+                      {selectedPatient.advanceBalance && Number(selectedPatient.advanceBalance) > 0 ? (
+                        <div className="flex items-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 text-xs text-emerald-800 dark:text-emerald-300 font-semibold shadow-2xs">
+                          <Wallet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Advance Credit:</span>
+                          <span className="font-mono font-bold">₹{selectedPatient.advanceBalance}</span>
+                        </div>
+                      ) : null}
+
+                      <button
+                        type="button"
+                        data-testid="btn-patient-past-purchases"
+                        onClick={() => setActiveLeftTab('orders')}
+                        className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition active:scale-95 cursor-pointer ${
+                          activeLeftTab === 'orders'
+                            ? 'border-purple-400 dark:border-purple-600 bg-purple-100 dark:bg-purple-950/80 text-purple-900 dark:text-purple-200 shadow-2xs'
+                            : 'border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                        }`}
+                        title="Click to view purchase order history"
+                      >
+                        <Receipt className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                        <span>Past Orders:</span>
+                        <span className="font-mono font-bold text-purple-700 dark:text-purple-300">
+                          {(patientOrderHistories[selectedPatient.id] || []).length}
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="mt-4 flex flex-col items-center justify-center rounded-md border border-dashed border-slate-200 dark:border-slate-800 py-6 text-center text-slate-500 dark:text-slate-300">
-                  <UserCheck className="h-8 w-8 text-slate-300 dark:text-slate-600" />
-                  <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-                    No patient selected
-                  </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-300">
-                    Search above or type phone to lookup previous prescriptions & orders
-                  </p>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-3 px-2 text-center sm:text-left">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
+                      <UserCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                        No Patient Selected
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Search by name or phone [F2] above, or register a new walk-in patient.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuickAddPrefill('');
+                      setIsQuickAddPatientOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white shadow-2xs transition active:scale-95"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    <span>Register Walk-in</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -1068,6 +1206,7 @@ export function PosView() {
                 patients={dynamicActivePatients}
                 activePatientId={activePrescriptionPatientId || selectedPatient?.id}
                 onSelectPatientTab={(pId) => setActivePrescriptionPatientId(pId)}
+                onRemovePatientTab={removeFamilyMember}
                 prescriptionsMap={prescriptions}
                 patientPrescriptionHistory={
                   currentActivePatient?.id
@@ -1243,6 +1382,19 @@ export function PosView() {
                               </span>
                             </span>
                           </div>
+
+                          {/* Post-Order Invoice Edit Button */}
+                          <div className="flex items-center justify-end pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                            <button
+                              type="button"
+                              onClick={() => setEditingPastInvoiceId(order.id)}
+                              className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 transition cursor-pointer"
+                              title="Edit invoice recipient, notes, or GST status"
+                            >
+                              <FileEdit className="h-3 w-3 text-blue-600" />
+                              <span>Edit Invoice & GST</span>
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -1367,6 +1519,7 @@ export function PosView() {
                   reference={paymentReference}
                   onReferenceChange={setPaymentReference}
                   disabled={isSubmitting || cartItems.length === 0}
+                  customerAdvanceBalance={selectedPatient?.advanceBalance}
                 />
               </div>
 
@@ -1472,7 +1625,7 @@ export function PosView() {
                     className="flex items-center gap-1 rounded-md bg-blue-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition active:scale-95 cursor-pointer"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    <span>+ Add Product [F2]</span>
+                    <span>Add Product [F2]</span>
                   </button>
                   {cartItems.length > 0 && (
                     <button
@@ -1500,9 +1653,19 @@ export function PosView() {
                 <BillingCart
                   items={cartItems}
                   activePatients={dynamicActivePatients}
+                  availablePrescriptions={prescriptions}
+                  patientPrescriptionHistories={patientPrescriptionHistories}
                   onUpdateQuantity={updateQuantity}
                   onUpdateDiscount={updateDiscount}
                   onUpdatePatient={updateCartItemPatient}
+                  onUpdateCartItem={updateCartItem}
+                  onUpdateCartItemRx={(id, rx, title) => {
+                    updateCartItem(id, {
+                      prescriptionSnapshot: rx,
+                      prescriptionTitle: title || (rx ? 'Attached Power' : null),
+                    });
+                    toast.success('Prescription power updated for item');
+                  }}
                   onUpdateOwnFrame={updateCartItemOwnFrame}
                   onEditItem={(item) => setEditingCartItem(item)}
                   onRemoveItem={removeItem}
@@ -1603,89 +1766,47 @@ export function PosView() {
           </div>
         );
 
-        // ── Layout Switcher Resolution ──
-        if (posLayoutType === 'adaptive') {
-          if (posAdaptiveMode === 'billing_focus') {
-            return (
-              <div className="flex flex-col flex-1 gap-3 overflow-hidden min-h-0 w-full">
-                <CompactPatientStrip
-                  selectedPatient={selectedPatient}
-                  activePatients={activePatients}
-                  dynamicActivePatients={dynamicActivePatients}
-                  currentRx={
-                    activePrescriptionPatientId && prescriptions[activePrescriptionPatientId]
-                      ? prescriptions[activePrescriptionPatientId]
-                      : prescription
-                  }
-                  orderCount={(selectedPatient && (patientOrderHistories[selectedPatient.id] || []).length) || 0}
-                  onSwitchInvoiceAccount={handleSwitchInvoiceAccount}
-                  onOpenAddFamilyModal={() => setIsAddFamilyModalOpen(true)}
-                  onExpandRx={() => setPosAdaptiveMode('split')}
-                  onViewOrders={() => {
-                    setActiveLeftTab('orders');
-                    setPosAdaptiveMode('split');
-                  }}
-                />
-                <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full">
-                  {renderCartWorkspace('col-span-8', false, false)}
-                  {renderCheckoutLedgerPane('col-span-4')}
-                </div>
-              </div>
-            );
-          }
-
-          if (posAdaptiveMode === 'rx_focus') {
-            return (
+        // ── Layout Mode Resolution (Rx Focus, Split, Billing Focus) ──
+        if (posAdaptiveMode === 'billing_focus') {
+          return (
+            <div className="flex flex-col flex-1 gap-3 overflow-hidden min-h-0 w-full">
+              <CompactPatientStrip
+                selectedPatient={selectedPatient}
+                activePatients={activePatients}
+                dynamicActivePatients={dynamicActivePatients}
+                currentRx={
+                  activePrescriptionPatientId && prescriptions[activePrescriptionPatientId]
+                    ? prescriptions[activePrescriptionPatientId]
+                    : prescription
+                }
+                orderCount={(selectedPatient && (patientOrderHistories[selectedPatient.id] || []).length) || 0}
+                onSwitchInvoiceAccount={handleSwitchInvoiceAccount}
+                onRemoveFamilyMember={removeFamilyMember}
+                onOpenAddFamilyModal={() => setIsAddFamilyModalOpen(true)}
+                onExpandRx={() => setPosAdaptiveMode('split')}
+                onViewOrders={() => {
+                  setActiveLeftTab('orders');
+                  setPosAdaptiveMode('split');
+                }}
+              />
               <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full">
-                {renderPatientClinicalWorkspace('col-span-9 lg:col-span-10')}
-                {renderRxFocusMiniCart('col-span-3 lg:col-span-2')}
+                {renderCartWorkspace('col-span-8', false, false)}
+                {renderCheckoutLedgerPane('col-span-4')}
               </div>
-            );
-          }
+            </div>
+          );
+        }
 
-          // Adaptive Split Mode (Balanced)
+        if (posAdaptiveMode === 'rx_focus') {
           return (
             <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full">
-              {renderPatientClinicalWorkspace('col-span-7')}
-              {renderCartWorkspace('col-span-5', false, true)}
+              {renderPatientClinicalWorkspace('col-span-9 lg:col-span-10')}
+              {renderRxFocusMiniCart('col-span-3 lg:col-span-2')}
             </div>
           );
         }
 
-        if (posLayoutType === 'dense') {
-          return (
-            <div className="flex flex-col flex-1 gap-3 overflow-hidden min-h-0 w-full relative">
-              <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full pb-1">
-                {renderPatientClinicalWorkspace('col-span-6')}
-                {renderCartWorkspace('col-span-6', true, false)}
-              </div>
-              <DenseBottomBar
-                totalItems={totals.totalItems}
-                subtotal={totals.subtotal}
-                totalDiscount={totals.totalDiscount}
-                totalTax={totals.totalTax}
-                grandTotal={totals.grandTotal}
-                advancePaid={advancePaid}
-                onAdvancePaidChange={setAdvancePaid}
-                paymentMode={paymentMode}
-                onPaymentModeChange={setPaymentMode}
-                reference={paymentReference}
-                onReferenceChange={setPaymentReference}
-                balanceDue={totals.grandTotal.minus(new Decimal(advancePaid || '0'))}
-                isSubmitting={isSubmitting}
-                canCheckout={cartItems.length > 0 && !!selectedPatient && !isSubmitting}
-                onCheckout={handleCheckout}
-                completedOrder={completedOrder}
-                onPrintThermal={() => setPrintMode('thermal')}
-                onPrintA4={() => setPrintMode('a4')}
-                onPrintWorkshop={() => setPrintMode('workshop')}
-                onResetOrder={resetOrder}
-              />
-            </div>
-          );
-        }
-
-        // Classic Split Layout (Preserved 7:5 Original)
+        // Split Mode (Balanced Clinical + Cart)
         return (
           <div className="grid flex-1 grid-cols-12 gap-4 md:gap-6 overflow-hidden min-h-0 w-full">
             {renderPatientClinicalWorkspace('col-span-7')}
@@ -1779,6 +1900,60 @@ export function PosView() {
                 <ClipboardList className="h-4 w-4 text-indigo-500" />
                 <span>Print Lab Slip</span>
               </button>
+
+              {/* ── WhatsApp, Email & Mobile Digital Receipt Sharing ── */}
+              <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  data-testid="btn-whatsapp-receipt"
+                  onClick={() => {
+                    const url = getWhatsAppShareUrl(completedOrder, activeOrg?.name || 'Optix Vision Care');
+                    window.open(url, '_blank');
+                  }}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 py-2 px-2 text-[11px] font-bold text-white shadow-xs transition active:scale-[0.98] cursor-pointer"
+                  title="Share invoice link via WhatsApp"
+                >
+                  <Share2 className="h-3.5 w-3.5" />
+                  <span>WhatsApp</span>
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="btn-email-receipt-pos"
+                  onClick={handlePosEmailReceipt}
+                  disabled={isPosSendingEmail}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 py-2 px-2 text-[11px] font-bold text-white shadow-xs transition active:scale-[0.98] cursor-pointer disabled:opacity-60"
+                  title="Send invoice via Gmail SMTP"
+                >
+                  {isPosSendingEmail ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Mail className="h-3.5 w-3.5" />
+                  )}
+                  <span>Email</span>
+                </button>
+
+                <a
+                  href={`/receipt/${completedOrder.invoiceId || completedOrder.invoiceNumber}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="link-digital-receipt"
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-card hover:bg-muted py-2 px-2 text-[11px] font-bold text-foreground transition active:scale-[0.98] cursor-pointer text-center"
+                >
+                  <ExternalLink className="h-3.5 w-3.5 text-blue-500" />
+                  <span>Digital</span>
+                </a>
+
+                <button
+                  type="button"
+                  data-testid="btn-edit-completed-invoice"
+                  onClick={() => setEditingPastInvoiceId(completedOrder.invoiceId || completedOrder.invoiceNumber)}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-card hover:bg-muted py-2 px-2 text-[11px] font-bold text-foreground transition active:scale-[0.98] cursor-pointer text-center"
+                >
+                  <Edit3 className="h-3.5 w-3.5 text-amber-500" />
+                  <span>Edit Invoice</span>
+                </button>
+              </div>
             </div>
 
             <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
@@ -1827,6 +2002,8 @@ export function PosView() {
         activePatients={dynamicActivePatients}
         selectedPatient={selectedPatient}
         currentPrescriptions={prescriptions}
+        patientPrescriptionHistories={patientPrescriptionHistories}
+        cartItems={cartItems}
         onAddCartItem={(item) => setCartItems((prev) => [...prev, item])}
         onAddInventoryItem={(item, pId) => addInventoryItem(item, pId)}
         onConfigureSpectaclePair={handleConfigureSpectaclePair}
@@ -1876,6 +2053,19 @@ export function PosView() {
           setActiveLeftTab('rx');
         }}
       />
+
+      {/* ── Edit Invoice Modal (Post-Order GST & Metadata Editor) ── */}
+      {editingPastInvoiceId && (
+        <EditInvoiceModal
+          isOpen={!!editingPastInvoiceId}
+          invoiceId={editingPastInvoiceId}
+          onClose={() => setEditingPastInvoiceId(null)}
+          onSuccess={() => {
+            setEditingPastInvoiceId(null);
+            toast.success('Invoice updated successfully');
+          }}
+        />
+      )}
 
       {/* ── MOUNTED PRINT TEMPLATES (Hidden on screen via @media screen, active on print) ── */}
       {completedOrder && (

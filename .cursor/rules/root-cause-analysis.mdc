@@ -1,0 +1,26 @@
+---
+description: Root cause analysis and blast radius dependency mapping before touching, adding, or modifying code.
+globs: ["src/**/*", "e2e/**/*", "docs/**/*"]
+alwaysApply: true
+---
+
+# Pre-Implementation Root Cause & Blast Radius Analysis Rules
+
+## 1. Root Cause Diagnosis Before Code Modification
+- **No Shallow Monkey-Patching**: Never apply temporary wrappers, superficial try/catch masks, or quick workaround hacks.
+- **Identify Fundamental Cause**: Diagnose why a bug or requirement exists at the architectural or schema level before touching a single line of code.
+
+## 2. Blast Radius & Ripple Effect Mapping
+- Before modifying or removing code:
+  1. **Map Dependencies**: Run `graphify explain "<Symbol>"` to inspect all callers, callees, and the 2-hop radius.
+  2. **Audit Vertical Slices**: Trace the impact across the complete application stack:
+     `Drizzle Schema -> Zod Validator -> Server Action -> Zustand Store -> React UI -> Print Layout / E2E Test`
+  3. **Anticipate Invariants**: Verify that proposed changes will not violate:
+     - Optical 0.25 D quarter steps or axis bounds (`src/lib/validators/prescription.ts`)
+     - Exact `decimal.js` monetary calculations with `.toFixed(2)` string persistence
+     - Multi-tenant `organization_id` scoping on database operations
+     - Atomic stock decrements in SQL transactions
+     - Redaction of wholesale cost prices from non-admin views
+
+## 3. Atomic Multi-Tier Alignment
+- When altering an interface or data structure, update all connected files atomically in the same task. Never leave dangling, partially updated implementations across the codebase.

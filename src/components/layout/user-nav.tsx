@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Loader2,
   Check,
+  Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,13 +24,21 @@ export function UserNav() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const {
     actualRole,
     activeRoleMode,
     branches,
     selectedBranchId,
+    organizations,
+    selectedOrganizationId,
+    activeOrgCode,
     setTenancyData,
   } = useTenantStore();
 
@@ -43,9 +52,9 @@ export function UserNav() {
 
   // Load tenancy context and user profile
   useEffect(() => {
-    let mounted = true;
+    let active = true;
     getUserTenancyContext().then((ctx) => {
-      if (!mounted) return;
+      if (!active) return;
       if (ctx.user) {
         setUserProfile({
           name: ctx.user.name || 'Staff User',
@@ -58,11 +67,11 @@ export function UserNav() {
         organizations: ctx.organizations,
         branches: ctx.branches,
         selectedOrganizationId: ctx.activeOrganizationId,
-        selectedBranchId: 'all',
+        activeOrgCode: ctx.activeOrgCode,
       });
     });
     return () => {
-      mounted = false;
+      active = false;
     };
   }, [setTenancyData]);
 
@@ -107,14 +116,29 @@ export function UserNav() {
 
   const roleLabels: Record<string, { label: string; badgeClass: string }> = {
     super_admin: {
-      label: 'Super Admin',
+      label: 'Root Super Admin',
       badgeClass:
         'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800',
     },
+    super_moderator: {
+      label: 'Platform Moderator',
+      badgeClass:
+        'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    },
+    super_viewer: {
+      label: 'Platform Viewer',
+      badgeClass:
+        'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800',
+    },
     organizer: {
-      label: 'Org Owner',
+      label: 'Practice Admin',
       badgeClass:
         'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+    },
+    moderator: {
+      label: 'Store Moderator',
+      badgeClass:
+        'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
     },
     admin: {
       label: 'Store Admin',
@@ -126,14 +150,17 @@ export function UserNav() {
       badgeClass:
         'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
     },
+    viewer: {
+      label: 'Read-Only Viewer',
+      badgeClass:
+        'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+    },
   };
 
   const currentRoleInfo = roleLabels[activeRoleMode] || roleLabels.user;
 
   const currentBranchName =
-    selectedBranchId === 'all'
-      ? 'All Stores'
-      : branches.find((b) => b.id === selectedBranchId)?.name || 'Main Branch';
+    branches.find((b) => b.id === selectedBranchId)?.name || 'Main Branch';
 
   const userInitials = userProfile.name
     ? userProfile.name
@@ -144,26 +171,36 @@ export function UserNav() {
         .toUpperCase()
     : 'OP';
 
+  // Deterministic rendering during SSR and initial hydration frame 0
+  const displayName = mounted ? userProfile.name : 'Administrator';
+  const displayRoleLabel = mounted ? currentRoleInfo.label : 'Active User';
+  const displayRoleBadge = mounted
+    ? currentRoleInfo.badgeClass
+    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+  const displayInitials = mounted ? userInitials : 'OP';
+
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
       {/* Profile Button */}
       <button
         type="button"
         data-testid="user-profile-btn"
+        suppressHydrationWarning
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition active:scale-[0.98] cursor-pointer"
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white font-bold text-[11px] shadow-xs">
-          {userInitials}
+        <div suppressHydrationWarning className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white font-bold text-[11px] shadow-xs">
+          {displayInitials}
         </div>
         <div className="hidden md:flex flex-col items-start text-left">
-          <span className="leading-tight font-medium truncate max-w-[120px]">
-            {userProfile.name}
+          <span suppressHydrationWarning className="leading-tight font-medium truncate max-w-[120px]">
+            {displayName}
           </span>
           <span
-            className={`text-[9px] px-1 py-0.2 rounded border font-semibold ${currentRoleInfo.badgeClass}`}
+            suppressHydrationWarning
+            className={`text-[9px] px-1 py-0.2 rounded border font-semibold ${displayRoleBadge}`}
           >
-            {currentRoleInfo.label}
+            {displayRoleLabel}
           </span>
         </div>
         <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
@@ -178,36 +215,57 @@ export function UserNav() {
           {/* User Details Header */}
           <div className="border-b border-slate-100 dark:border-slate-800 px-2.5 py-2">
             <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-              {userProfile.name}
+              {displayName}
             </p>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-              {userProfile.email}
+              {mounted ? userProfile.email : 'admin@optix.com'}
             </p>
+            {activeOrgCode && (
+              <div className="mt-2 flex items-center justify-between rounded-md bg-purple-50 dark:bg-purple-950/40 px-2 py-1 border border-purple-200 dark:border-purple-800/50">
+                <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">Practice ID</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono font-bold text-purple-600 dark:text-purple-300 text-[11px]">
+                    {activeOrgCode}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigator.clipboard.writeText(activeOrgCode);
+                      toast.success(`Copied Practice ID (${activeOrgCode}) to clipboard`);
+                    }}
+                    className="p-0.5 text-slate-400 hover:text-foreground transition cursor-pointer"
+                    title="Copy Practice ID"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="mt-2 flex items-center justify-between">
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold ${currentRoleInfo.badgeClass}`}
+                suppressHydrationWarning
+                className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold ${displayRoleBadge}`}
               >
-                {currentRoleInfo.label}
+                {displayRoleLabel}
               </span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+              <span suppressHydrationWarning className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                 <Store className="h-3 w-3" />
-                {currentBranchName}
+                {mounted ? currentBranchName : 'Store Location'}
               </span>
             </div>
           </div>
 
           {/* Action Links */}
           <div className="py-1.5 space-y-0.5">
-            {/* Super Admin Console Link (shown for super_admin or simulated super_admin) */}
-            {(actualRole === 'super_admin' || activeRoleMode === 'super_admin') && (
+            {(activeRoleMode === 'organizer' || activeRoleMode === 'super_admin') && (
               <Link
-                href="/super-admin/dashboard"
-                data-testid="link-super-admin-console"
+                href="/owner"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition"
+                className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-primary hover:bg-primary/10 transition"
               >
-                <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                <span>Super Admin Console</span>
+                <Building className="h-4 w-4 text-primary" />
+                <span>Owner Portal (HQ)</span>
               </Link>
             )}
 

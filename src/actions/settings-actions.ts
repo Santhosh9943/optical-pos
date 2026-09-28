@@ -2,11 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
-import { storeProfile, type StoreProfile, type ReceiptType } from '@/db/schema';
+import { storeProfile, branches, type StoreProfile, type ReceiptType } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import Decimal from 'decimal.js';
 import { cacheGet, cacheSet, cacheDel } from '@/lib/redis';
+import { getCurrentSession, requireManagerOrAdmin, isManagerOrAdmin } from '@/lib/auth-utils';
+import { encryptSecret } from '@/lib/crypto-utils';
 
 const STORE_PROFILE_CACHE_KEY = 'store_profile';
 const STORE_PROFILE_CACHE_TTL = 86400; // 24 hours
@@ -23,6 +25,14 @@ const storeProfileSchema = z.object({
     }),
   receiptType: z.enum(['THERMAL_80MM', 'A4_INVOICE']),
   defaultPosLayout: z.enum(['adaptive', 'dense', 'split']).optional().default('adaptive'),
+  enableGst: z.boolean().optional().default(true),
+  smtpHost: z.string().optional().nullable(),
+  smtpPort: z.number().int().optional().nullable(),
+  smtpSecure: z.boolean().optional().nullable(),
+  smtpUser: z.string().optional().nullable(),
+  smtpPass: z.string().optional().nullable(),
+  smtpFromEmail: z.string().optional().nullable(),
+  smtpFromName: z.string().optional().nullable(),
 });
 
 export type StoreProfileInput = z.infer<typeof storeProfileSchema>;
@@ -50,17 +60,38 @@ export async function getStoreProfile(): Promise<StoreProfile> {
     }
 
     // 2. Cache miss: Query database
+    // TODO(security-SEC-004): Add organizationId foreign key to storeProfile table for multi-tenant isolation
     const existing = await db.select().from(storeProfile).limit(1);
+
 
     if (existing && existing.length > 0) {
       const profile = existing[0];
       await cacheSet(STORE_PROFILE_CACHE_KEY, profile, STORE_PROFILE_CACHE_TTL);
-      return profile;
+      const isManager = await isManagerOrAdmin(await getCurrentSession());
+      return {
+        ...profile,
+        smtpPass: profile.smtpPass ? (isManager ? '••••••••' : null) : null,
+      };
     }
 
     // Initialize default profile row if table is empty
-    const { getCurrentSession } = await import('@/lib/auth-utils');
     const session = await getCurrentSession();
+
+    let validBranchId: string | null = null;
+    if (session.branchId) {
+      try {
+        const [foundBranch] = await db
+          .select({ id: branches.id })
+          .from(branches)
+          .where(eq(branches.id, session.branchId))
+          .limit(1);
+        if (foundBranch) {
+          validBranchId = foundBranch.id;
+        }
+      } catch {
+        validBranchId = null;
+      }
+    }
 
     const [newProfile] = await db
       .insert(storeProfile)
@@ -72,7 +103,9 @@ export async function getStoreProfile(): Promise<StoreProfile> {
         defaultTaxRate: '18.00',
         receiptType: 'THERMAL_80MM',
         defaultPosLayout: 'adaptive',
-        branchId: session.branchId,
+        enableGst: true,
+        allowNegativeStock: false,
+        branchId: validBranchId,
       })
       .returning();
 
@@ -90,6 +123,15 @@ export async function getStoreProfile(): Promise<StoreProfile> {
       defaultTaxRate: '18.00',
       receiptType: 'THERMAL_80MM' as ReceiptType,
       defaultPosLayout: 'adaptive',
+      enableGst: true,
+      allowNegativeStock: false,
+      smtpHost: 'smtp.gmail.com',
+      smtpPort: 587,
+      smtpSecure: false,
+      smtpUser: 'msanthosh9943@gmail.com',
+      smtpPass: null,
+      smtpFromEmail: 'msanthosh9943@gmail.com',
+      smtpFromName: 'OptixOS Eyecare',
       branchId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -105,24 +147,38 @@ export async function updateStoreProfile(
   input: StoreProfileInput
 ): Promise<StoreProfileResult> {
   try {
+    await requireManagerOrAdmin();
     const validated = storeProfileSchema.parse(input);
 
     const currentProfile = await getStoreProfile();
 
     const formattedTaxRate = new Decimal(validated.defaultTaxRate).toFixed(2);
 
+    const updateSet: Partial<typeof storeProfile.$inferInsert> = {
+      storeName: validated.storeName.trim(),
+      gstin: validated.gstin?.trim() || null,
+      phone: validated.phone.trim(),
+      address: validated.address.trim(),
+      defaultTaxRate: formattedTaxRate,
+      receiptType: validated.receiptType,
+      defaultPosLayout: validated.defaultPosLayout || 'adaptive',
+      enableGst: validated.enableGst ?? true,
+      updatedAt: new Date(),
+    };
+
+    if (validated.smtpHost !== undefined) updateSet.smtpHost = validated.smtpHost?.trim() || 'smtp.gmail.com';
+    if (validated.smtpPort !== undefined) updateSet.smtpPort = validated.smtpPort || 587;
+    if (validated.smtpSecure !== undefined) updateSet.smtpSecure = Boolean(validated.smtpSecure);
+    if (validated.smtpUser !== undefined) updateSet.smtpUser = validated.smtpUser?.trim() || null;
+    if (validated.smtpFromEmail !== undefined) updateSet.smtpFromEmail = validated.smtpFromEmail?.trim() || null;
+    if (validated.smtpFromName !== undefined) updateSet.smtpFromName = validated.smtpFromName?.trim() || null;
+    if (validated.smtpPass && validated.smtpPass.trim() && !validated.smtpPass.includes('•••')) {
+      updateSet.smtpPass = encryptSecret(validated.smtpPass.trim());
+    }
+
     const [updated] = await db
       .update(storeProfile)
-      .set({
-        storeName: validated.storeName.trim(),
-        gstin: validated.gstin?.trim() || null,
-        phone: validated.phone.trim(),
-        address: validated.address.trim(),
-        defaultTaxRate: formattedTaxRate,
-        receiptType: validated.receiptType,
-        defaultPosLayout: validated.defaultPosLayout || 'adaptive',
-        updatedAt: new Date(),
-      })
+      .set(updateSet)
       .where(eq(storeProfile.id, currentProfile.id))
       .returning();
 
@@ -164,6 +220,7 @@ export async function getInvoicePrintData(
   error?: string;
 }> {
   try {
+    const session = await getCurrentSession();
     const profile = await getStoreProfile();
 
     const inv = await db.query.invoices.findFirst({
@@ -184,6 +241,10 @@ export async function getInvoicePrintData(
 
     if (!inv) {
       return { success: false, error: 'Invoice not found' };
+    }
+
+    if (session.organizationId && inv.organizationId && inv.organizationId !== session.organizationId) {
+      return { success: false, error: 'Unauthorized: Access to invoice denied' };
     }
 
     const itemsList = (inv.items || []).map((item) => ({
@@ -295,6 +356,25 @@ export async function getInvoicePrintData(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get print data',
+    };
+  }
+}
+
+/**
+ * Purges all server and Redis cache entries across namespaces.
+ */
+export async function clearApplicationCacheAction(): Promise<{ success: boolean; message: string }> {
+  try {
+    await requireManagerOrAdmin();
+    const { cacheFlush } = await import('@/lib/cache');
+    await cacheFlush();
+    revalidatePath('/', 'layout');
+    return { success: true, message: 'All server and memory caches flushed successfully.' };
+  } catch (error) {
+    console.error('Failed to clear application cache:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to clear cache',
     };
   }
 }

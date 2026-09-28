@@ -7,8 +7,15 @@ import {
   invoices,
   invoiceItems,
   payments,
+  organizations,
+  branches,
+  organization,
 } from '@/db/schema';
 import { sql } from 'drizzle-orm';
+import { redis } from '@/lib/redis';
+import Decimal from 'decimal.js';
+import { DEFAULT_ORG_ID, DEFAULT_BRANCH_ID } from '@/lib/auth-utils';
+import { seedDefaultProductTypesForOrganization } from '@/lib/default-product-types';
 
 // ─────────────────────────────────────────────────────────────
 // Seed data
@@ -267,6 +274,15 @@ const seedPrescriptions = [
 export async function seedDatabase() {
   console.log('🌱 Seeding database…');
 
+  if (redis) {
+    try {
+      await redis.flushdb();
+      console.log('  ✓ Redis cache flushed');
+    } catch (e) {
+      console.warn('Could not flush Redis:', e);
+    }
+  }
+
   // Clean existing data (dev only — reverse FK order)
   await db.delete(payments);
   await db.delete(invoiceItems);
@@ -275,13 +291,56 @@ export async function seedDatabase() {
   await db.delete(inventoryItems);
   await db.delete(customers);
 
+  // Ensure default organization & branches exist for multi-tenant FK integrity
+  const defaultOrgId = DEFAULT_ORG_ID;
+  const defaultBranchId = DEFAULT_BRANCH_ID;
+
+  await db
+    .insert(organizations)
+    .values({
+      id: defaultOrgId,
+      name: 'Santhosh Optical Center',
+    })
+    .onConflictDoNothing();
+
+  await db
+    .insert(organization)
+    .values({
+      id: defaultOrgId,
+      name: 'Santhosh Optical Center',
+      slug: 'santhosh-optical-center',
+      createdAt: new Date(),
+    })
+    .onConflictDoNothing();
+
+  await db
+    .insert(branches)
+    .values([
+      {
+        id: defaultOrgId,
+        organizationId: defaultOrgId,
+        name: 'Main Flagship Store',
+        isActive: true,
+      },
+      {
+        id: defaultBranchId,
+        organizationId: defaultOrgId,
+        name: 'Downtown Clinic Branch',
+        isActive: true,
+      },
+    ])
+    .onConflictDoNothing();
+
+  // Ensure default product types & sequential workflows exist
+  await seedDefaultProductTypesForOrganization(defaultOrgId);
+
   // Insert customers
   const insertedCustomers = await db
     .insert(customers)
     .values(
       seedCustomers.map((c) => ({
         ...c,
-        organizationId: '00000000-0000-0000-0000-000000000001',
+        organizationId: defaultOrgId,
       }))
     )
     .returning({ id: customers.id, fullName: customers.fullName });
@@ -294,7 +353,8 @@ export async function seedDatabase() {
     .values(
       seedInventory.map((item) => ({
         ...item,
-        organizationId: '00000000-0000-0000-0000-000000000001',
+        organizationId: defaultOrgId,
+        branchId: defaultBranchId,
       }))
     )
     .returning({ id: inventoryItems.id, sku: inventoryItems.sku });
@@ -324,75 +384,478 @@ export async function seedDatabase() {
 
   console.log(`  ✓ ${insertedRx.length} prescriptions`);
 
-  // Create a sample invoice
-  const [sampleInvoice] = await db
-    .insert(invoices)
-    .values({
+  // 12 Diverse Sample Invoices spanning all 4 Kanban Columns and Audit Ledger
+  const now = new Date();
+  const daysFromNow = (days: number) => {
+    return new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  };
+
+  interface SeedInvoiceItemDef {
+    inventoryIndex: number;
+    description: string;
+    hsnCode: string;
+    quantity: number;
+    unitPrice: string;
+    taxRate: string;
+    lensType?: 'SINGLE_VISION' | 'PROGRESSIVE' | 'BIFOCAL';
+    coating?: 'ANTI_REFLECTIVE' | 'BLUE_FILTER';
+    lensMaterial?: 'CR39' | 'POLYCARBONATE' | 'HIGH_INDEX_167';
+  }
+
+  interface SeedPaymentDef {
+    amount: string;
+    paymentMode: 'UPI' | 'CASH' | 'CARD';
+    transactionReference?: string;
+  }
+
+  interface SeedInvoiceDef {
+    invoiceNumber: string;
+    customerIndex: number;
+    prescriptionIndex?: number;
+    orderStatus:
+      | 'ORDERED'
+      | 'SENT_TO_LAB'
+      | 'IN_FITTING'
+      | 'READY_FOR_COLLECTION'
+      | 'DELIVERED_AND_CLOSED';
+    paymentStatus: 'UNPAID' | 'PARTIAL' | 'PAID';
+    promisedDeliveryDate: Date | null;
+    notes: string;
+    items: SeedInvoiceItemDef[];
+    payments: SeedPaymentDef[];
+  }
+
+  const sampleInvoicesDef: SeedInvoiceDef[] = [
+    {
       invoiceNumber: 'INV-25-000001',
-      customerId: insertedCustomers[0].id,
-      prescriptionId: insertedRx[0].id,
+      customerIndex: 0,
+      prescriptionIndex: 0,
       orderStatus: 'DELIVERED_AND_CLOSED',
       paymentStatus: 'PAID',
-      subtotal: '3700.00',
-      discountAmount: '0.00',
-      taxableValue: '3700.00',
-      cgstAmount: '113.50',
-      sgstAmount: '113.50',
-      igstAmount: '0.00',
-      totalTax: '227.00',
-      grandTotal: '3927.00',
-      advancePaid: '1000.00',
-      balanceDue: '2927.00',
-    })
-    .returning({ id: invoices.id });
+      promisedDeliveryDate: null,
+      notes: 'Initial consultation pair — Delivered & fully settled',
+      items: [
+        {
+          inventoryIndex: 0,
+          description: 'Ray-Ban RB 2140 Wayfarer — Black',
+          hsnCode: '9003',
+          quantity: 1,
+          unitPrice: '2500.00',
+          taxRate: '18.00',
+        },
+        {
+          inventoryIndex: 3,
+          description: 'Essilor Crizal Easy Pro — Single Vision',
+          hsnCode: '9001',
+          quantity: 1,
+          unitPrice: '1200.00',
+          taxRate: '5.00',
+          lensType: 'SINGLE_VISION',
+          coating: 'ANTI_REFLECTIVE',
+          lensMaterial: 'CR39',
+        },
+      ],
+      payments: [
+        { amount: '1000.00', paymentMode: 'UPI', transactionReference: 'UPI-20250615-001' },
+      ],
+    },
+    {
+      invoiceNumber: 'INV-25-000002',
+      customerIndex: 1,
+      prescriptionIndex: 1,
+      orderStatus: 'ORDERED',
+      paymentStatus: 'PARTIAL',
+      promisedDeliveryDate: daysFromNow(2),
+      notes: 'Customer requested anti-glare coating',
+      items: [
+        {
+          inventoryIndex: 1,
+          description: 'Titan TI 5001 — Gold',
+          hsnCode: '9003',
+          quantity: 1,
+          unitPrice: '1800.00',
+          taxRate: '18.00',
+        },
+        {
+          inventoryIndex: 3,
+          description: 'Essilor Crizal Easy Pro — Single Vision',
+          hsnCode: '9001',
+          quantity: 1,
+          unitPrice: '1200.00',
+          taxRate: '5.00',
+          lensType: 'SINGLE_VISION',
+          coating: 'ANTI_REFLECTIVE',
+          lensMaterial: 'CR39',
+        },
+      ],
+      payments: [
+        { amount: '1000.00', paymentMode: 'UPI', transactionReference: 'UPI-20250616-002' },
+      ],
+    },
+    {
+      invoiceNumber: 'INV-25-000003',
+      customerIndex: 2,
+      prescriptionIndex: 2,
+      orderStatus: 'SENT_TO_LAB',
+      paymentStatus: 'PARTIAL',
+      promisedDeliveryDate: daysFromNow(3),
+      notes: 'Progressive lenses sent to Zeiss optical lab',
+      items: [
+        {
+          inventoryIndex: 2,
+          description: 'Vogue VO 7721 — Brown Tortoise',
+          hsnCode: '9003',
+          quantity: 1,
+          unitPrice: '2200.00',
+          taxRate: '18.00',
+        },
+        {
+          inventoryIndex: 4,
+          description: 'Zeiss Progressive Individual — Blue-Guard',
+          hsnCode: '9001',
+          quantity: 1,
+          unitPrice: '5500.00',
+          taxRate: '5.00',
+          lensType: 'PROGRESSIVE',
+          coating: 'BLUE_FILTER',
+          lensMaterial: 'POLYCARBONATE',
+        },
+      ],
+      payments: [
+        { amount: '3000.00', paymentMode: 'CARD', transactionReference: 'TXN-CC-9943' },
+      ],
+    },
+    {
+      invoiceNumber: 'INV-25-000004',
+      customerIndex: 3,
+      orderStatus: 'IN_FITTING',
+      paymentStatus: 'PAID',
+      promisedDeliveryDate: daysFromNow(1),
+      notes: 'Frame fitting in progress',
+      items: [
+        {
+          inventoryIndex: 0,
+          description: 'Ray-Ban RB 2140 Wayfarer — Black',
+          hsnCode: '9003',
+          quantity: 1,
+          unitPrice: '2500.00',
+          taxRate: '18.00',
+        },
+      ],
+      payments: [],
+    },
+    {
+      invoiceNumber: 'INV-25-000005',
+      customerIndex: 4,
+      orderStatus: 'READY_FOR_COLLECTION',
+      paymentStatus: 'PARTIAL',
+      promisedDeliveryDate: daysFromNow(-2), // OVERDUE!
+      notes: 'Awaiting customer pickup and balance collection',
+      items: [
+        {
+          inventoryIndex: 7,
+          description: 'Ray-Ban RB 3025 Aviator — Gold',
+          hsnCode: '9004',
+          quantity: 1,
+          unitPrice: '4500.00',
+          taxRate: '18.00',
+        },
+        {
+          inventoryIndex: 8,
+          description: 'Hard Case — Protective Shell',
+          hsnCode: '4202',
+          quantity: 1,
+          unitPrice: '250.00',
+          taxRate: '18.00',
+        },
+      ],
+      payments: [
+        { amount: '2000.00', paymentMode: 'CASH' },
+      ],
+    },
+    {
+      invoiceNumber: 'INV-25-000006',
+      customerIndex: 0,
+      prescriptionIndex: 0,
+      orderStatus: 'ORDERED',
+      paymentStatus: 'PAID',
+      promisedDeliveryDate: daysFromNow(0), // Due today
+      notes: 'Spare reading frame pair',
+      items: [
+        {
+          inventoryIndex: 1,
+          description: 'Titan TI 5001 — Gold',
+          hsnCode: '9003',
+          quantity: 1,
+          unitPrice: '1800.00',
+          taxRate: '18.00',
+        },
+      ],
+      payments: [],
+    },
+    {
+      invoiceNumber: 'INV-25-000007',
+      customerIndex: 1,
+      orderStatus: 'SENT_TO_LAB',
+      paymentStatus: 'PARTIAL',
+      promisedDeliveryDate: daysFromNow(4),
+      notes: 'High-index 1.67 edging at lab',
+      items: [
+        {
+          inventoryIndex: 5,
+          description: 'Hoya Nulux EP — High-Index 1.67',
+          hsnCode: '9001',
+          quantity: 1,
+          unitPrice: '3200.00',
+          taxRate: '5.00',
+          lensType: 'SINGLE_VISION',
+          coating: 'ANTI_REFLECTIVE',
+          lensMaterial: 'HIGH_INDEX_167',
+        },
+      ],
+      payments: [
+        { amount: '1500.00', paymentMode: 'UPI', transactionReference: 'UPI-20250621-007' },
+      ],
+    },
+    {
+      invoiceNumber: 'INV-25-000008',
+      customerIndex: 2,
+      orderStatus: 'IN_FITTING',
+      paymentStatus: 'PARTIAL',
+      promisedDeliveryDate: daysFromNow(2),
+      notes: 'Workshop assembling lenses into frame',
+      items: [
+        {
+          inventoryIndex: 2,
+          description: 'Vogue VO 7721 — Brown',
+          hsnCode: '9003',
+          quantity: 1,
+          unitPrice: '2200.00',
+          taxRate: '18.00',
+        },
+        {
+          inventoryIndex: 5,
+          description: 'Hoya Nulux EP — High-Index 1.67',
+          hsnCode: '9001',
+          quantity: 1,
+          unitPrice: '3200.00',
+          taxRate: '5.00',
+          lensType: 'SINGLE_VISION',
+          coating: 'ANTI_REFLECTIVE',
+          lensMaterial: 'HIGH_INDEX_167',
+        },
+      ],
+      payments: [
+        { amount: '2500.00', paymentMode: 'CASH' },
+      ],
+    },
+    {
+      invoiceNumber: 'INV-25-000009',
+      customerIndex: 3,
+      orderStatus: 'READY_FOR_COLLECTION',
+      paymentStatus: 'PAID',
+      promisedDeliveryDate: daysFromNow(1),
+      notes: 'Contact lenses packed and ready',
+      items: [
+        {
+          inventoryIndex: 6,
+          description: 'Acuvue Oasys 2-Week — 6 Pack',
+          hsnCode: '9004',
+          quantity: 1,
+          unitPrice: '1950.00',
+          taxRate: '18.00',
+        },
+      ],
+      payments: [],
+    },
+    {
+      invoiceNumber: 'INV-25-000010',
+      customerIndex: 4,
+      orderStatus: 'DELIVERED_AND_CLOSED',
+      paymentStatus: 'PAID',
+      promisedDeliveryDate: null,
+      notes: 'Direct sunglass purchase delivered',
+      items: [
+        {
+          inventoryIndex: 7,
+          description: 'Ray-Ban RB 3025 Aviator — Gold',
+          hsnCode: '9004',
+          quantity: 1,
+          unitPrice: '4500.00',
+          taxRate: '18.00',
+        },
+      ],
+      payments: [],
+    },
+    {
+      invoiceNumber: 'INV-25-000011',
+      customerIndex: 0,
+      orderStatus: 'DELIVERED_AND_CLOSED',
+      paymentStatus: 'PAID',
+      promisedDeliveryDate: null,
+      notes: 'Bi-weekly replenishment delivered',
+      items: [
+        {
+          inventoryIndex: 6,
+          description: 'Acuvue Oasys 2-Week — 6 Pack',
+          hsnCode: '9004',
+          quantity: 1,
+          unitPrice: '1950.00',
+          taxRate: '18.00',
+        },
+      ],
+      payments: [],
+    },
+    {
+      invoiceNumber: 'INV-25-000012',
+      customerIndex: 1,
+      orderStatus: 'DELIVERED_AND_CLOSED',
+      paymentStatus: 'PAID',
+      promisedDeliveryDate: null,
+      notes: 'Accessory walk-in purchase',
+      items: [
+        {
+          inventoryIndex: 8,
+          description: 'Hard Case — Protective Shell',
+          hsnCode: '4202',
+          quantity: 1,
+          unitPrice: '250.00',
+          taxRate: '18.00',
+        },
+      ],
+      payments: [],
+    },
+  ];
 
-  await db.insert(invoiceItems).values([
-    {
-      invoiceId: sampleInvoice.id,
-      inventoryItemId: insertedInventory[0].id, // Frame
-      description: 'Ray-Ban RB 2140 Wayfarer — Black',
-      hsnCode: '9003',
-      quantity: 1,
-      unitPrice: '2500.00',
-      discountPerUnit: '0.00',
-      lineTotal: '2500.00',
-      taxRate: '18.00',
-      taxAmount: '450.00',
-    },
-    {
-      invoiceId: sampleInvoice.id,
-      inventoryItemId: insertedInventory[3].id, // Single Vision Lens
-      description: 'Essilor Crizal Easy Pro — Single Vision',
-      hsnCode: '9001',
-      quantity: 1,
-      unitPrice: '1200.00',
-      discountPerUnit: '0.00',
-      lineTotal: '1200.00',
-      taxRate: '5.00',
-      taxAmount: '60.00',
-      lensType: 'SINGLE_VISION',
-      coating: 'ANTI_REFLECTIVE',
-      lensMaterial: 'CR39',
-    },
-  ]);
+  for (const invDef of sampleInvoicesDef) {
+    let subtotalDec = new Decimal(0);
+    let taxableDec = new Decimal(0);
+    let totalTaxDec = new Decimal(0);
+    let cgstDec = new Decimal(0);
+    let sgstDec = new Decimal(0);
 
-  await db.insert(payments).values([
-    {
-      invoiceId: sampleInvoice.id,
-      amount: '1000.00',
-      paymentMode: 'UPI',
-      transactionReference: 'UPI-20250615-001',
-    },
-    {
-      invoiceId: sampleInvoice.id,
-      amount: '2927.00',
-      paymentMode: 'CASH',
-    },
-  ]);
+    const calculatedItems = invDef.items.map((item) => {
+      const lineTotalDec = new Decimal(item.unitPrice).times(item.quantity);
+      const taxAmountDec = lineTotalDec.times(new Decimal(item.taxRate).dividedBy(100));
+      const halfTax = taxAmountDec.dividedBy(2);
 
-  console.log(`  ✓ 1 sample invoice with 2 line items and 2 payments`);
+      subtotalDec = subtotalDec.plus(lineTotalDec);
+      taxableDec = taxableDec.plus(lineTotalDec);
+      totalTaxDec = totalTaxDec.plus(taxAmountDec);
+      cgstDec = cgstDec.plus(halfTax);
+      sgstDec = sgstDec.plus(halfTax);
+
+      return {
+        inventoryItemId: insertedInventory[item.inventoryIndex].id,
+        description: item.description,
+        hsnCode: item.hsnCode,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        discountPerUnit: '0.00',
+        lineTotal: lineTotalDec.toFixed(2),
+        taxRate: item.taxRate,
+        taxAmount: taxAmountDec.toFixed(2),
+        lensType: item.lensType,
+        coating: item.coating,
+        lensMaterial: item.lensMaterial,
+      };
+    });
+
+    const grandTotalDec = taxableDec.plus(totalTaxDec);
+    let advancePaidDec = new Decimal(0);
+    const invoicePaymentsList: Array<{
+      amount: string;
+      paymentMode: 'UPI' | 'CASH' | 'CARD';
+      transactionReference?: string;
+    }> = [];
+
+    if (invDef.paymentStatus === 'PAID') {
+      if (invDef.payments.length > 0) {
+        for (const p of invDef.payments) {
+          advancePaidDec = advancePaidDec.plus(new Decimal(p.amount));
+          invoicePaymentsList.push(p);
+        }
+        const remainder = grandTotalDec.minus(advancePaidDec);
+        if (remainder.greaterThan(0)) {
+          invoicePaymentsList.push({
+            amount: remainder.toFixed(2),
+            paymentMode: 'CASH',
+            transactionReference: 'AUTO-SETTLE-CASH',
+          });
+          advancePaidDec = advancePaidDec.plus(remainder);
+        }
+      } else {
+        invoicePaymentsList.push({
+          amount: grandTotalDec.toFixed(2),
+          paymentMode: 'UPI',
+          transactionReference: `UPI-SETTLE-${invDef.invoiceNumber}`,
+        });
+        advancePaidDec = grandTotalDec;
+      }
+    } else {
+      for (const p of invDef.payments) {
+        advancePaidDec = advancePaidDec.plus(new Decimal(p.amount));
+        invoicePaymentsList.push(p);
+      }
+    }
+
+    const balanceDueDec = grandTotalDec.minus(advancePaidDec);
+
+    const [createdInv] = await db
+      .insert(invoices)
+      .values({
+        invoiceNumber: invDef.invoiceNumber,
+        customerId: insertedCustomers[invDef.customerIndex].id,
+        prescriptionId:
+          invDef.prescriptionIndex !== undefined
+            ? insertedRx[invDef.prescriptionIndex]?.id ?? null
+            : null,
+        orderStatus: invDef.orderStatus,
+        paymentStatus: invDef.paymentStatus,
+        subtotal: subtotalDec.toFixed(2),
+        discountAmount: '0.00',
+        taxableValue: taxableDec.toFixed(2),
+        cgstAmount: cgstDec.toFixed(2),
+        sgstAmount: sgstDec.toFixed(2),
+        igstAmount: '0.00',
+        totalTax: totalTaxDec.toFixed(2),
+        grandTotal: grandTotalDec.toFixed(2),
+        advancePaid: advancePaidDec.toFixed(2),
+        balanceDue: balanceDueDec.toFixed(2),
+        promisedDeliveryDate: invDef.promisedDeliveryDate,
+        notes: invDef.notes,
+        organizationId: defaultOrgId,
+        branchId: defaultBranchId,
+      })
+      .returning({ id: invoices.id });
+
+    if (calculatedItems.length > 0) {
+      await db.insert(invoiceItems).values(
+        calculatedItems.map((ci) => ({
+          ...ci,
+          invoiceId: createdInv.id,
+        }))
+      );
+    }
+
+    if (invoicePaymentsList.length > 0) {
+      await db.insert(payments).values(
+        invoicePaymentsList.map((p) => ({
+          invoiceId: createdInv.id,
+          amount: p.amount,
+          paymentMode: p.paymentMode,
+          transactionReference: p.transactionReference ?? null,
+          organizationId: defaultOrgId,
+          branchId: defaultBranchId,
+        }))
+      );
+    }
+  }
+
+  console.log(`  ✓ ${sampleInvoicesDef.length} sample invoices created across all workflow stages`);
   console.log('✅ Seeding complete.');
 }
+
 
 // Run directly: npx tsx src/db/seed.ts
 const isDirectRun =

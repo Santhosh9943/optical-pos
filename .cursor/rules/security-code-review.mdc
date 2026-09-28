@@ -1,0 +1,30 @@
+---
+description: Automated code review, security vulnerability audit, and unresolved security debt tracking protocol.
+globs: ["src/**/*", "e2e/**/*", "docs/**/*"]
+alwaysApply: true
+---
+
+# Automated Code Review & Security Vulnerability Protocol
+
+## 1. Automated Security Review Gate
+Every task or pull request must pass this 8-point automated security review before merging:
+1. **Multi-Tenant Scoping**: All database queries must enforce `WHERE organization_id = session.organizationId`.
+2. **Wholesale Cost Masking**: `costPrice` must be omitted or SQL-projected as `NULL` for non-admin/staff roles.
+3. **Secret Redaction**: Never return plaintext credentials (`smtpPass`, API secrets) to client callers.
+4. **Rate-Limiting**: Enforce sliding window limits on authentication, password resets, and checkout mutations.
+5. **Exact Monetary Math**: Use `decimal.js` with `.toFixed(2)` string serialization exclusively.
+6. **Diopter Precision**: Validate SPH, CYL, and ADD using integer scaling (`Math.round(val * 100) % 25 === 0`).
+7. **Document Redaction**: Workshop job tickets must completely omit financial/pricing data from the DOM tree.
+8. **SQL Parameterization**: Use Drizzle ORM and SQL templates without raw string interpolation.
+
+## 2. Unresolved Risk & Security Debt Protocol
+If an AI agent discovers a vulnerability, code smell, or architectural defect that **cannot be resolved immediately within the current task scope**:
+- **Strict Invariant**: NEVER silently ignore, drop, or forget a security finding.
+- **Action 1 (In-Code Tag)**: Immediately annotate the code with:
+  `// TODO(security-SEC-XXX): [Clear description of finding and required remediation]`
+- **Action 2 (Register in SECURITY_LOG.md)**: Add a structured entry into `docs/agent-memory/SECURITY_LOG.md` specifying Severity, Location, CWE, Finding, and Remediation Plan.
+- **Action 3 (Backlog Tracking)**: Add the task to `docs/TASKS.md` under pending security tasks.
+- **Action 4 (Session Handoff)**: Highlight the finding in `docs/agent-memory/SESSION_HANDOFF.md` under `Active Security Findings & Pending Technical Debt`.
+
+## 3. Verification Command
+- Run `npm run audit:security` to audit the codebase for active security tags and review registry health.

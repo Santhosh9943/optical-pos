@@ -14,6 +14,7 @@ This document records the key architectural and technical decisions made for **O
 - [ADR-006: Dual POS Counter Layout Architecture (Adaptive Modes & Dense Split)](#adr-006-dual-pos-counter-layout-architecture-adaptive-modes--dense-split)
 - [ADR-007: Perspective Simulator & Persistent Simulation Banner for Super Admins](#adr-007-perspective-simulator--persistent-simulation-banner-for-super-admins)
 - [ADR-008: Hardware Print Rendering via CSS @media print Engine](#adr-008-hardware-print-rendering-via-css-media-print-engine)
+- [ADR-009: Razorpay Standard Checkout vs Hosted Page for SaaS Subscriptions](#adr-009-razorpay-standard-checkout-vs-hosted-page-for-saas-subscriptions)
 
 ---
 
@@ -243,3 +244,42 @@ Print layouts are rendered directly into the DOM inside an off-screen container.
 ### Consequences
 - **Positive**: Instantaneous print popup (<50ms); zero server memory overhead; zero third-party rendering fees; pixel-perfect rendering using standard Tailwind CSS classes.
 - **Negative**: Cashiers must configure their browser print dialog margins to "None" once during initial setup. Thermal printers must be set to 80mm roll width.
+
+---
+
+## ADR-009: Razorpay Standard Checkout vs Hosted Page for SaaS Subscriptions
+
+### Status
+Accepted
+
+### Context
+OptixOS requires an enterprise-grade SaaS billing and subscription engine for optical retail chains upgrading from Starter to Growth Plus or Enterprise tiers. We evaluated the two official integration paradigms provided by Razorpay:
+1. **Razorpay Standard Checkout (`checkout.js` modal)**: An in-app client-side modal loaded over HTTPS that renders an embedded PCI-DSS compliant iframe overlay directly on `optixos.app`.
+2. **Razorpay Hosted Checkout Page / Payment Links (`api.razorpay.com/v1/payment_links`)**: A server-side generated external redirect URL that navigates the user away from OptixOS to Razorpay's external domain (`rzp.io`), returning via callback URL upon completion.
+
+### Options Considered
+1. **Hosted Checkout Page / Payment Links Only**:
+   - *Pros*: Zero client-side JavaScript bundle; straightforward server redirect (`window.location.href = link.short_url`).
+   - *Cons*: High context switching; forces user to leave the app; 20-30% drop-off in conversion rate; difficult to display immediate contextual failure reasons or auto-retry in modal; jarring mobile app/PWA experience.
+2. **Custom / Server-to-Server Direct Card Integration**:
+   - *Pros*: Completely headless UI.
+   - *Cons*: Severe PCI-DSS compliance scope (SAQ D requirement); complex tokenization logic; unsupported for UPI intents without deep SDKs.
+3. **Razorpay Standard Checkout (`checkout.js`) with Payment Links Server Fallback (Hybrid)**:
+   - *Pros*: Keeps the user strictly within OptixOS; zero context loss; instantaneous payment popup; automatic native support for UPI (Google Pay, PhonePe, Paytm QR/Intent), Netbanking, and Cards; zero PCI scope (card data handled inside secure sandboxed iframe); immediate in-app failure capture (`modal.ondismiss`, `payment.failed` handler) allowing 1-click retry. Payment Links API remains available as an asynchronous invoice fallback.
+   - *Cons*: Requires loading external `https://checkout.razorpay.com/v1/checkout.js` script in the browser.
+
+### Decision
+Adopt **Razorpay Standard Checkout (`checkout.js`)** as the primary interactive subscription checkout experience, backed by the **Payment Links API** as an asynchronous fallback.
+- **Workflow**:
+  1. Frontend invokes `createRazorpaySubscriptionOrderAction` Server Action with target `planId` and `billingPeriod`.
+  2. Server verifies caller session, computes exact INR price using `decimal.js`, converts to integer paise, and creates an order on Razorpay (`orders.create`).
+  3. Client hook `useRazorpayCheckout` loads `checkout.js` and opens the modal with the generated `order_id`, store branding, and prefilled tenant info.
+  4. On completion, `verifyRazorpayPaymentAction` cryptographically validates the HMAC-SHA256 signature (`razorpay_order_id + "|" + razorpay_payment_id` against `RAZORPAY_KEY_SECRET`) using `crypto.timingSafeEqual`.
+  5. The organization's plan, period, and status are atomically activated in Neon PostgreSQL, an immutable row is appended to `subscriptions`, and a 4-step onboarding demo walkthrough is triggered.
+  6. On failure or cancellation, `handlePaymentFailureAction` logs the incident with decline reason without navigating away, enabling immediate retry.
+  7. Asynchronous webhooks (`order.paid`, `payment.captured`, `payment.failed`) provide background state synchronization.
+
+### Consequences
+- **Positive**: Maximum checkout conversion rate; seamless desktop and mobile UX; zero PCI-DSS compliance overhead; cryptographic security with zero trust in client payloads; instant guided onboarding upon first successful payment.
+- **Negative**: Script loading dependency on `checkout.razorpay.com`; must handle ad-blocker or network script loading failures gracefully with clear user guidance.
+

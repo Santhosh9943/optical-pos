@@ -1,17 +1,24 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('POS Adaptive & Dense View Modes E2E Suite', () => {
-  test('Layout Switcher, Adaptive Modes (Rx, Split, Billing Focus), F4 Hotkey, and Admin Settings Persistence', async ({ page }) => {
+test.describe('POS Viewport Modes E2E Suite', () => {
+  test('Direct Viewport Switcher (Rx, Split, Cart), F4 Hotkey, and Persistence', async ({ page }) => {
     // 1. Navigate to POS new billing view
     await page.goto('/pos/new-bill');
     await page.waitForLoadState('networkidle');
 
-    // Layout switcher select must be mounted in header
-    const layoutSelect = page.getByTestId('pos-layout-type-select');
-    await expect(layoutSelect).toBeVisible({ timeout: 15000 });
+    // Layout switcher must be mounted in header with direct buttons (no select dropdown or adaptive tag)
+    const layoutSwitcher = page.getByTestId('pos-layout-switcher');
+    await expect(layoutSwitcher).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('pos-layout-type-select')).not.toBeVisible();
 
-    // Ensure we are in Adaptive Modes layout
-    await layoutSelect.selectOption('adaptive');
+    // Verify the 3 direct buttons are visible
+    const rxFocusBtn = page.getByTestId('btn-mode-rx-focus');
+    const splitBtn = page.getByTestId('btn-mode-split');
+    const billingFocusBtn = page.getByTestId('btn-mode-billing-focus');
+
+    await expect(rxFocusBtn).toBeVisible();
+    await expect(splitBtn).toBeVisible();
+    await expect(billingFocusBtn).toBeVisible();
 
     // 2. Select a patient (Rajesh Kumar)
     const patientSearch = page.getByTestId('patient-search-input');
@@ -35,10 +42,8 @@ test.describe('POS Adaptive & Dense View Modes E2E Suite', () => {
     // Assert item is in cart
     await expect(page.locator('text=FRM-RB-2140-BLK').first()).toBeVisible();
 
-    // 3. Test Adaptive Mode Toggles: Rx Focus ↔ Billing Focus ↔ Split
+    // 3. Test Viewport Mode Toggles: Rx Focus ↔ Billing Focus ↔ Split
     // Click "Rx Focus" button
-    const rxFocusBtn = page.getByTestId('btn-mode-rx-focus');
-    await expect(rxFocusBtn).toBeVisible({ timeout: 5000 });
     await rxFocusBtn.click();
 
     // In Rx focus, clinical refraction matrix is prominent and mini-cart drawer shows items count
@@ -46,8 +51,6 @@ test.describe('POS Adaptive & Dense View Modes E2E Suite', () => {
     await expect(page.locator('text=Cart (1)').first()).toBeVisible();
 
     // Click "Billing Focus" (Cart Focus) button
-    const billingFocusBtn = page.getByTestId('btn-mode-billing-focus');
-    await expect(billingFocusBtn).toBeVisible();
     await billingFocusBtn.click();
 
     // In Billing Focus, compact patient strip is visible
@@ -64,60 +67,17 @@ test.describe('POS Adaptive & Dense View Modes E2E Suite', () => {
     // In Split mode, compact strip is hidden and balanced patient workspace is shown
     await expect(compactStrip).not.toBeVisible();
 
-    // 4. Test Switching to Dense Split Layout
-    await layoutSelect.selectOption('dense');
-    // Verify Dense Bottom Bar is visible
-    const denseBottomBar = page.getByTestId('dense-bottom-bar');
-    await expect(denseBottomBar).toBeVisible({ timeout: 5000 });
-    await expect(denseBottomBar.locator('text=1 Item').first()).toBeVisible();
-    await expect(denseBottomBar.getByTestId('btn-complete-order')).toBeVisible();
+    // 4. Verify Viewport Mode persistence via localStorage
+    await billingFocusBtn.click();
+    await expect(compactStrip).toBeVisible();
 
-    // 5. Test Switching to Classic Split Layout
-    await layoutSelect.selectOption('split');
-    // Dense bottom bar should no longer be rendered
-    await expect(denseBottomBar).not.toBeVisible();
-
-    // 6. Test Settings Persistence in /admin/settings
-    await page.goto('/admin/settings');
+    // Reload page and verify billing focus persists
+    await page.reload();
     await page.waitForLoadState('networkidle');
+    await expect(page.getByTestId('btn-mode-billing-focus')).toHaveClass(/bg-blue-600/);
 
-    // Click the POS Counter Layout tab
-    const posLayoutTab = page.getByTestId('tab-pos-layout');
-    await expect(posLayoutTab).toBeVisible({ timeout: 10000 });
-    await posLayoutTab.click();
-
-    // Select the "Dense Split" card
-    const denseCard = page.getByTestId('pos-layout-dense-card');
-    await expect(denseCard).toBeVisible();
-    await denseCard.click();
-
-    // Save preferences
-    const saveBtn = page.getByTestId('btn-save-settings');
-    await expect(saveBtn).toBeVisible();
-    await saveBtn.click();
-
-    // Verify success toast appears
-    await expect(page.locator('text=Store profile updated successfully').first()).toBeVisible({ timeout: 5000 });
-
-    // Clear local storage layout override if any, so database default takes effect
-    await page.evaluate(() => localStorage.removeItem('optixos_pos_layout'));
-
-    // 7. Re-open /pos/new-bill and verify Dense Split is active by default from DB
-    await page.goto('/pos/new-bill');
-    await page.waitForLoadState('networkidle');
-
-    // Layout switcher value should be 'dense'
-    await expect(page.getByTestId('pos-layout-type-select')).toHaveValue('dense');
-    // Dense bottom bar should be mounted
-    await expect(page.getByTestId('dense-bottom-bar')).toBeVisible();
-
-    // 8. Clean up: Restore default layout in settings to 'adaptive'
-    await page.goto('/admin/settings');
-    await page.waitForLoadState('networkidle');
-    await page.getByTestId('tab-pos-layout').click();
-    await page.getByTestId('pos-layout-adaptive-card').click();
-    await page.getByTestId('btn-save-settings').click();
-    await expect(page.locator('text=Store profile updated successfully').first()).toBeVisible({ timeout: 5000 });
-    await page.evaluate(() => localStorage.removeItem('optixos_pos_layout'));
+    // Restore to split mode
+    await page.getByTestId('btn-mode-split').click();
+    await page.evaluate(() => localStorage.removeItem('optixos_pos_mode'));
   });
 });

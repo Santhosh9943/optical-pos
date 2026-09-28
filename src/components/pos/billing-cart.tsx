@@ -2,8 +2,27 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import Decimal from 'decimal.js';
-import { ShoppingBag, Trash2, Plus, Minus, Tag, AlertCircle, Edit3 } from 'lucide-react';
+import {
+  ShoppingBag,
+  Trash2,
+  Plus,
+  Minus,
+  Tag,
+  AlertCircle,
+  Edit3,
+  Eye,
+  Glasses,
+  Link2,
+  Unlink,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  RotateCcw,
+  X,
+  Users,
+} from 'lucide-react';
 import type { InventoryItem } from './inventory-search';
+import type { PrescriptionValues } from './prescription-grid';
 
 export interface CartItem {
   id: string; // unique row key
@@ -22,6 +41,10 @@ export interface CartItem {
   lensMaterial?: string | null;
   patientId?: string | null;
   prescriptionId?: string | null;
+  prescriptionSnapshot?: PrescriptionValues | null;
+  prescriptionTitle?: string | null;
+  linkedFrameId?: string | null;
+  linkedFrameName?: string | null;
   isCustomerOwnFrame?: boolean;
   fittingNote?: string | null;
 }
@@ -56,9 +79,17 @@ interface BillingCartProps {
     fullName: string;
     relationType?: string;
   }>;
+  availablePrescriptions?: Record<string, PrescriptionValues>;
+  patientPrescriptionHistories?: Record<string, any[]>;
   onUpdateQuantity: (id: string, qty: number) => void;
   onUpdateDiscount: (id: string, discount: string) => void;
   onUpdatePatient?: (id: string, patientId: string | null) => void;
+  onUpdateCartItem?: (id: string, updates: Partial<CartItem>) => void;
+  onUpdateCartItemRx?: (
+    id: string,
+    rx: PrescriptionValues | null,
+    title?: string | null
+  ) => void;
   onUpdateOwnFrame?: (
     id: string,
     isOwnFrame: boolean,
@@ -295,9 +326,13 @@ function DiscountCell({
 export function BillingCart({
   items,
   activePatients,
+  availablePrescriptions,
+  patientPrescriptionHistories,
   onUpdateQuantity,
   onUpdateDiscount,
   onUpdatePatient,
+  onUpdateCartItem,
+  onUpdateCartItemRx,
   onUpdateOwnFrame,
   onEditItem,
   onRemoveItem,
@@ -305,6 +340,18 @@ export function BillingCart({
   showSummary = false,
   isCompact = false,
 }: BillingCartProps) {
+  const [inspectingRxItem, setInspectingRxItem] = useState<CartItem | null>(null);
+
+  const candidateFrames = useMemo(() => {
+    return items.filter(
+      (i: CartItem) =>
+        i.category === 'FRAME' ||
+        i.category === 'SUNGLASS' ||
+        i.category === 'SUNGLASSES' ||
+        (!i.lensType && i.category !== 'OPHTHALMIC_LENS' && i.category !== 'LENS')
+    );
+  }, [items]);
+
   const { lines, totals } = useMemo(() => calculateCartMetrics(items), [items]);
 
   return (
@@ -350,8 +397,17 @@ export function BillingCart({
                     subtotalDec,
                     discountDec,
                     lineTotalDec,
-                  }) => (
-                    <tr key={item.id} className="group hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition">
+                  }) => {
+                    const isOphthalmicLens = item.category === 'OPHTHALMIC_LENS' || item.category === 'LENS' || !!item.lensType;
+                    const isContactLens = item.category === 'CONTACT_LENS';
+                    const isFrame = item.category === 'FRAME' || item.category === 'SUNGLASS' || item.category === 'SUNGLASSES' || item.isCustomerOwnFrame;
+                    const hasPower = isOphthalmicLens || isContactLens;
+                    const availableCandidateFrames = candidateFrames.filter(
+                      (cf) => !items.some((other) => other.id !== item.id && other.linkedFrameId === cf.id)
+                    );
+
+                    return (
+                      <tr key={item.id} className="group hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition">
                       {/* Description & SKU */}
                       <td className="py-2 pl-1 pr-2 align-top">
                         <div className="font-semibold text-slate-900 dark:text-slate-100 leading-tight">
@@ -362,19 +418,48 @@ export function BillingCart({
                           {item.hsnCode && <span>• HSN {item.hsnCode}</span>}
                         </div>
 
-                        {/* Compact vs Full Family & Own Frame Assignment */}
+                        {/* Compact vs Full Family & Own Frame & Power Assignment */}
                         {isCompact ? (
                           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
-                            {item.patientId && (
+                            {item.patientId && activePatients && activePatients.length > 1 && (
                               <span className="rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 px-1.5 py-0.5 font-semibold">
                                 👤 {activePatients?.find((p) => p.id === item.patientId)?.fullName || 'Patient'}
                               </span>
                             )}
-                            {item.isCustomerOwnFrame && (
+                            {item.linkedFrameId ? (
+                              <span className="rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 px-1.5 py-0.5 font-medium flex items-center gap-1">
+                                <Link2 className="h-3 w-3" />
+                                <span>Paired: {item.linkedFrameName || 'Frame'}</span>
+                              </span>
+                            ) : item.isCustomerOwnFrame ? (
                               <span className="rounded bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 px-1.5 py-0.5 font-medium">
                                 👓 Own Frame{item.fittingNote ? `: ${item.fittingNote}` : ''}
                               </span>
+                            ) : (item.category === 'OPHTHALMIC_LENS' || item.category === 'LENS' || item.lensType) ? (
+                              <span className="rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-1.5 py-0.5 font-semibold flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3 text-amber-500" />
+                                <span>⚠️ Unpaired Lens</span>
+                              </span>
+                            ) : isFrame ? (
+                              <span className="rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 font-medium flex items-center gap-1">
+                                <Glasses className="h-3 w-3 text-slate-500" />
+                                <span>No Power (Frame)</span>
+                              </span>
+                            ) : null}
+
+                            {/* View / Change Power button strictly for lenses and contact lenses */}
+                            {hasPower && (
+                              <button
+                                type="button"
+                                onClick={() => setInspectingRxItem(item)}
+                                className="rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 px-1.5 py-0.5 font-medium flex items-center gap-1 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition cursor-pointer"
+                                title="Inspect or choose power without leaving cart"
+                              >
+                                <Eye className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
+                                <span>{item.prescriptionTitle || (item.prescriptionSnapshot ? 'View Power' : 'Select Power')}</span>
+                              </button>
                             )}
+
                             {onEditItem && (
                               <button
                                 type="button"
@@ -386,69 +471,163 @@ export function BillingCart({
                             )}
                           </div>
                         ) : (
-                          activePatients && activePatients.length > 0 && (
-                            <div className="mt-1.5 space-y-1">
-                              <div className="flex items-center gap-1 text-[11px]">
-                                <span className="text-slate-600 dark:text-slate-300 font-medium">
-                                  Assign to Patient:
-                                </span>
-                                <select
-                                  aria-label="Assign to Patient"
-                                  value={item.patientId || ''}
-                                  onChange={(e) =>
-                                    onUpdatePatient?.(item.id, e.target.value || null)
-                                  }
-                                  className="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 py-0.5 text-[11px] font-semibold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                                >
-                                  <option value="">Primary Customer</option>
-                                  {activePatients.map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                      {p.fullName} ({p.relationType || 'Current'})
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              {/* Own Frame Toggle on Lenses */}
-                              {(item.category === 'OPHTHALMIC_LENS' ||
-                                item.category === 'LENS' ||
-                                item.lensType) && (
-                                <div className="pt-0.5 space-y-1">
-                                  <label className="inline-flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                                    <input
-                                      type="checkbox"
-                                      checked={!!item.isCustomerOwnFrame}
-                                      onChange={(e) =>
-                                        onUpdateOwnFrame?.(
-                                          item.id,
-                                          e.target.checked,
-                                          item.fittingNote
-                                        )
-                                      }
-                                      className="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 h-3 w-3"
-                                    />
-                                    <span>Fit to Customer&apos;s Own Frame</span>
-                                  </label>
-
-                                  {item.isCustomerOwnFrame && (
-                                    <input
-                                      type="text"
-                                      placeholder="Fitting note (e.g., Old brown rimless frame)"
-                                      value={item.fittingNote || ''}
-                                      onChange={(e) =>
-                                        onUpdateOwnFrame?.(
-                                          item.id,
-                                          true,
-                                          e.target.value
-                                        )
-                                      }
-                                      className="w-full rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-2 py-0.5 text-[10px] text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-                                    />
-                                  )}
+                          <div className="mt-1.5 space-y-1.5">
+                            {/* Patient & Power Quick Selection Row */}
+                            <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                              {activePatients && activePatients.length > 1 && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-slate-500 dark:text-slate-400 font-medium">
+                                    Assign to Patient:
+                                  </span>
+                                  <select
+                                    aria-label="Assign to Patient"
+                                    value={item.patientId || ''}
+                                    onChange={(e) =>
+                                      onUpdatePatient?.(item.id, e.target.value || null)
+                                    }
+                                    className="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 py-0.5 text-[11px] font-semibold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                  >
+                                    <option value="">Primary Customer</option>
+                                    {activePatients.map((p) => (
+                                      <option key={p.id} value={p.id}>
+                                        {p.fullName} ({p.relationType || 'Current'})
+                                      </option>
+                                    ))}
+                                  </select>
                                 </div>
                               )}
+
+                              {/* Power button strictly for lenses and contact lenses - NEVER for frames */}
+                              {hasPower ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setInspectingRxItem(item)}
+                                  className="inline-flex items-center gap-1 rounded bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 text-[11px] font-medium transition cursor-pointer"
+                                  title="Inspect or change prescription power right in cart"
+                                >
+                                  <Eye className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
+                                  <span>
+                                    {item.prescriptionTitle
+                                      ? `Power: ${item.prescriptionTitle}`
+                                      : item.prescriptionSnapshot
+                                      ? 'Power: Assigned'
+                                      : 'Choose Power'}
+                                  </span>
+                                </button>
+                              ) : isFrame ? (
+                                <span className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] font-medium">
+                                  <Glasses className="h-3 w-3 text-slate-500" />
+                                  <span>Frame (Zero Power Invariant)</span>
+                                </span>
+                              ) : null}
                             </div>
-                          )
+
+                            {/* Lens Frame Pairing Architecture */}
+                            {(item.category === 'OPHTHALMIC_LENS' ||
+                              item.category === 'LENS' ||
+                              item.lensType) && (
+                              <div className="pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-1">
+                                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                                  {item.linkedFrameId ? (
+                                    <div className="flex items-center gap-1.5 rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 font-medium">
+                                      <Link2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                      <span>Paired Frame: <strong>{item.linkedFrameName || 'Cart Frame'}</strong></span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          onUpdateCartItem?.(item.id, {
+                                            linkedFrameId: null,
+                                            linkedFrameName: null,
+                                          });
+                                        }}
+                                        className="ml-1 text-emerald-700 dark:text-emerald-300 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+                                        title="Unlink frame"
+                                      >
+                                        <Unlink className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  ) : item.isCustomerOwnFrame ? (
+                                    <div className="flex items-center gap-1.5 rounded bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 font-medium">
+                                      <Glasses className="h-3 w-3 text-amber-600" />
+                                      <span>Customer&apos;s Own Frame</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => onUpdateOwnFrame?.(item.id, false)}
+                                        className="ml-1 text-amber-700 hover:text-red-600 cursor-pointer"
+                                        title="Change pairing"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <span className="inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-1.5 py-0.5 font-semibold text-[10px]">
+                                        <AlertCircle className="h-3 w-3 text-amber-500" />
+                                        <span>⚠️ Unpaired Lens</span>
+                                      </span>
+
+                                      {/* Dropdown to link existing in-cart frame with strict 1:1 enforcement */}
+                                      {availableCandidateFrames.length > 0 ? (
+                                        <select
+                                          aria-label="Pair with Cart Frame"
+                                          defaultValue=""
+                                          onChange={(e) => {
+                                            const frameId = e.target.value;
+                                            if (frameId === '__own__') {
+                                              onUpdateOwnFrame?.(item.id, true);
+                                            } else if (frameId) {
+                                              const fr = availableCandidateFrames.find((f) => f.id === frameId);
+                                              onUpdateCartItem?.(item.id, {
+                                                linkedFrameId: frameId,
+                                                linkedFrameName: fr ? fr.description : 'Frame',
+                                                isCustomerOwnFrame: false,
+                                              });
+                                            }
+                                          }}
+                                          className="rounded border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 text-[10px] font-semibold cursor-pointer"
+                                        >
+                                          <option value="">+ Link with Frame (1:1)...</option>
+                                          {availableCandidateFrames.map((cf) => (
+                                            <option key={cf.id} value={cf.id}>
+                                              {cf.description} ({cf.sku})
+                                            </option>
+                                          ))}
+                                          <option value="__own__">👓 Customer&apos;s Own Frame</option>
+                                        </select>
+                                      ) : (
+                                        <div className="flex items-center gap-1.5">
+                                          <button
+                                            type="button"
+                                            onClick={() => onUpdateOwnFrame?.(item.id, true)}
+                                            className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-medium cursor-pointer"
+                                          >
+                                            + Use Customer&apos;s Own Frame
+                                          </button>
+                                          {candidateFrames.length > 0 && (
+                                            <span className="text-[10px] text-slate-500">
+                                              (All frames in cart already paired 1:1)
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {item.isCustomerOwnFrame && (
+                                  <input
+                                    type="text"
+                                    placeholder="Enter frame details (e.g. Ray-Ban Matte Black, Half Rim)"
+                                    value={item.fittingNote || ''}
+                                    onChange={(e) =>
+                                      onUpdateOwnFrame?.(item.id, true, e.target.value)
+                                    }
+                                    className="w-full rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-2 py-0.5 text-[10px] text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                                  />
+                                )}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </td>
 
@@ -547,8 +726,8 @@ export function BillingCart({
                         </div>
                       </td>
                     </tr>
-                  )
-                )}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -627,6 +806,561 @@ export function BillingCart({
           </div>
         </div>
       )}
+
+      {/* ── Inline Prescription Power Inspector & Power Switcher Modal ── */}
+      {inspectingRxItem && (
+        <CartRxInspectorModal
+          isOpen={!!inspectingRxItem}
+          item={inspectingRxItem}
+          patientName={
+            activePatients?.find((p) => p.id === inspectingRxItem.patientId)?.fullName ||
+            'Primary Customer'
+          }
+          currentAttachedRx={inspectingRxItem.prescriptionSnapshot || null}
+          sessionRx={
+            (inspectingRxItem.patientId && availablePrescriptions?.[inspectingRxItem.patientId]) ||
+            (availablePrescriptions ? Object.values(availablePrescriptions)[0] : null)
+          }
+          historyRecords={
+            (inspectingRxItem.patientId && patientPrescriptionHistories?.[inspectingRxItem.patientId]) ||
+            []
+          }
+          activePatients={activePatients}
+          availablePrescriptions={availablePrescriptions}
+          patientPrescriptionHistories={patientPrescriptionHistories}
+          onClose={() => setInspectingRxItem(null)}
+          onSave={(rx, title, assignedPatientId) => {
+            onUpdateCartItemRx?.(inspectingRxItem.id, rx, title);
+            const updates: Partial<CartItem> = {
+              prescriptionSnapshot: rx,
+              prescriptionTitle: title,
+              ...(assignedPatientId ? { patientId: assignedPatientId } : {}),
+            };
+            onUpdateCartItem?.(inspectingRxItem.id, updates);
+            if (assignedPatientId && onUpdatePatient) {
+              onUpdatePatient(inspectingRxItem.id, assignedPatientId);
+            }
+            setInspectingRxItem(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+interface CartRxInspectorModalProps {
+  isOpen: boolean;
+  item: CartItem;
+  patientName: string;
+  currentAttachedRx: PrescriptionValues | null;
+  sessionRx: PrescriptionValues | null;
+  historyRecords: any[];
+  activePatients?: Array<{
+    id: string;
+    fullName: string;
+    relationType?: string;
+  }>;
+  availablePrescriptions?: Record<string, PrescriptionValues>;
+  patientPrescriptionHistories?: Record<string, any[]>;
+  onClose: () => void;
+  onSave: (
+    rx: PrescriptionValues,
+    title: string,
+    assignedPatientId?: string | null
+  ) => void;
+}
+
+function CartRxInspectorModal({
+  isOpen,
+  item,
+  patientName,
+  currentAttachedRx,
+  sessionRx,
+  historyRecords,
+  activePatients,
+  availablePrescriptions,
+  patientPrescriptionHistories,
+  onClose,
+  onSave,
+}: CartRxInspectorModalProps) {
+  const [assignedPatientId, setAssignedPatientId] = useState<string | null>(
+    item.patientId || (activePatients && activePatients.length > 0 ? activePatients[0].id : null)
+  );
+
+  const initialRx: PrescriptionValues =
+    currentAttachedRx ||
+    (assignedPatientId && availablePrescriptions?.[assignedPatientId]) ||
+    sessionRx || {
+      odSphere: null,
+      odCylinder: null,
+      odAxis: null,
+      odAdd: null,
+      odPd: null,
+      osSphere: null,
+      osCylinder: null,
+      osAxis: null,
+      osAdd: null,
+      osPd: null,
+      binocularPd: null,
+    };
+
+  const [activeRx, setActiveRx] = useState<PrescriptionValues>(initialRx);
+  const [selectedTitle, setSelectedTitle] = useState<string>(
+    item.prescriptionTitle || 'Prescription Power'
+  );
+  const [isEditingCustom, setIsEditingCustom] = useState<boolean>(false);
+
+  if (!isOpen) return null;
+
+  const handleApplyPreset = (rx: PrescriptionValues, label: string) => {
+    setActiveRx(rx);
+    setSelectedTitle(label);
+    setIsEditingCustom(false);
+  };
+
+  const formatEyePower = (
+    sph?: number | null,
+    cyl?: number | null,
+    axis?: number | null,
+    add?: number | null
+  ) => {
+    const parts: string[] = [];
+    if (sph !== null && sph !== undefined) {
+      parts.push(`SPH: ${sph > 0 ? `+${sph.toFixed(2)}` : sph.toFixed(2)}`);
+    } else {
+      parts.push('SPH: Plano');
+    }
+    if (cyl !== null && cyl !== undefined && cyl !== 0) {
+      parts.push(`CYL: ${cyl > 0 ? `+${cyl.toFixed(2)}` : cyl.toFixed(2)}`);
+      if (axis !== null && axis !== undefined) parts.push(`AXIS: ${axis}°`);
+    }
+    if (add !== null && add !== undefined && add !== 0) {
+      parts.push(`ADD: +${add.toFixed(2)}`);
+    }
+    return parts.join(' | ');
+  };
+
+  const activeCustomerHistories =
+    (assignedPatientId && patientPrescriptionHistories?.[assignedPatientId]) ||
+    historyRecords;
+
+  const currentPatientObj = activePatients?.find((p) => p.id === assignedPatientId);
+  const displayPatientName = currentPatientObj?.fullName || patientName;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="relative w-full max-w-2xl flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl overflow-hidden max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 bg-slate-50/70 dark:bg-slate-950/60">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
+              <Eye className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Prescription Power Inspector & Selector
+              </h2>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Item: <span className="font-semibold text-slate-700 dark:text-slate-200">{item.description}</span> · Patient: <span className="font-semibold text-blue-600 dark:text-blue-400">{displayPatientName}</span>
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-100 transition cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+          {/* Active Added Customers on Order & Their Powers */}
+          {activePatients && activePatients.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>Active Added Customers on Order & Their Powers</span>
+                </h3>
+                <span className="text-[10px] text-slate-500 font-medium">
+                  Click to select customer & apply power
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {activePatients.map((customer) => {
+                  const customerRx = availablePrescriptions?.[customer.id];
+                  const isAssigned = assignedPatientId === customer.id;
+                  const hasPowersEntered =
+                    customerRx &&
+                    (customerRx.odSphere !== null ||
+                      customerRx.osSphere !== null ||
+                      customerRx.odCylinder !== null ||
+                      customerRx.osCylinder !== null);
+
+                  return (
+                    <div
+                      key={customer.id}
+                      data-testid={`customer-power-card-${customer.id}`}
+                      onClick={() => {
+                        if (customerRx) {
+                          setActiveRx(customerRx);
+                          setSelectedTitle(`${customer.fullName}'s Rx Matrix`);
+                        }
+                        setAssignedPatientId(customer.id);
+                        setIsEditingCustom(false);
+                      }}
+                      className={`p-2.5 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between gap-2 ${
+                        isAssigned
+                          ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 ring-1 ring-blue-500'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-[10px] font-bold text-blue-700 dark:text-blue-300">
+                              {customer.fullName.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
+                              {customer.fullName}
+                            </span>
+                            <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[9px] font-semibold text-slate-600 dark:text-slate-300 shrink-0">
+                              {customer.relationType || 'Current'}
+                            </span>
+                          </div>
+                          {isAssigned && (
+                            <span className="rounded-full bg-blue-600 text-white p-0.5 shrink-0">
+                              <Check className="h-3 w-3" />
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Power details OD / OS */}
+                        {hasPowersEntered && customerRx ? (
+                          <div className="space-y-0.5 text-[10px] font-mono text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/60 p-1.5 rounded border border-slate-100 dark:border-slate-800">
+                            <div className="flex justify-between">
+                              <span className="font-bold text-blue-600 dark:text-blue-400">OD:</span>
+                              <span className="truncate ml-1">{formatEyePower(customerRx.odSphere, customerRx.odCylinder, customerRx.odAxis, customerRx.odAdd)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400">OS:</span>
+                              <span className="truncate ml-1">{formatEyePower(customerRx.osSphere, customerRx.osCylinder, customerRx.osAxis, customerRx.osAdd)}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 italic bg-slate-50 dark:bg-slate-900/40 p-1.5 rounded">
+                            No refraction entered yet (Plano)
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-medium text-slate-500">
+                          {isAssigned ? 'Assigned to item' : 'Click to select'}
+                        </span>
+                        <button
+                          type="button"
+                          className={`rounded px-2 py-0.5 text-[10px] font-bold transition ${
+                            isAssigned
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          {isAssigned ? 'Selected' : 'Use Power'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Active Power Preview Box */}
+          <div className="rounded-lg border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/30 p-3.5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-bold text-indigo-900 dark:text-indigo-300 text-xs">
+                Active Power for this Line Item ({selectedTitle})
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsEditingCustom(!isEditingCustom)}
+                className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold hover:underline cursor-pointer"
+              >
+                {isEditingCustom ? '← Use Preset Matrix' : '✏️ Fine-tune Custom Diopters'}
+              </button>
+            </div>
+
+            {/* Read-Only or Editable Matrix Table */}
+            <div className="overflow-x-auto rounded border border-indigo-200/70 dark:border-indigo-900/40 bg-white dark:bg-slate-900">
+              <table className="w-full text-center text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-100/80 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+                    <th className="py-1.5 px-2 text-left">Eye</th>
+                    <th className="py-1.5 px-2">SPH</th>
+                    <th className="py-1.5 px-2">CYL</th>
+                    <th className="py-1.5 px-2">AXIS</th>
+                    <th className="py-1.5 px-2">ADD</th>
+                    <th className="py-1.5 px-2">PD</th>
+                  </tr>
+                </thead>
+                <tbody className="font-mono divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200 font-semibold">
+                  {/* Right Eye (OD) */}
+                  <tr>
+                    <td className="py-2 px-2 text-left font-sans font-bold text-blue-700 dark:text-blue-400">
+                      OD (Right)
+                    </td>
+                    <td className="py-2 px-2">
+                      {isEditingCustom ? (
+                        <input
+                          type="number"
+                          step="0.25"
+                          value={activeRx.odSphere ?? ''}
+                          onChange={(e) => setActiveRx({ ...activeRx, odSphere: e.target.value ? parseFloat(e.target.value) : null })}
+                          className="w-16 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
+                        />
+                      ) : (
+                        activeRx.odSphere !== null ? (activeRx.odSphere > 0 ? `+${activeRx.odSphere.toFixed(2)}` : activeRx.odSphere.toFixed(2)) : 'Plano'
+                      )}
+                    </td>
+                    <td className="py-2 px-2">
+                      {isEditingCustom ? (
+                        <input
+                          type="number"
+                          step="0.25"
+                          value={activeRx.odCylinder ?? ''}
+                          onChange={(e) => setActiveRx({ ...activeRx, odCylinder: e.target.value ? parseFloat(e.target.value) : null })}
+                          className="w-16 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
+                        />
+                      ) : (
+                        activeRx.odCylinder ? (activeRx.odCylinder > 0 ? `+${activeRx.odCylinder.toFixed(2)}` : activeRx.odCylinder.toFixed(2)) : '0.00'
+                      )}
+                    </td>
+                    <td className="py-2 px-2">
+                      {isEditingCustom ? (
+                        <input
+                          type="number"
+                          min="1"
+                          max="180"
+                          value={activeRx.odAxis ?? ''}
+                          onChange={(e) => setActiveRx({ ...activeRx, odAxis: e.target.value ? parseInt(e.target.value, 10) : null })}
+                          className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
+                        />
+                      ) : (
+                        activeRx.odAxis ? `${activeRx.odAxis}°` : '-'
+                      )}
+                    </td>
+                    <td className="py-2 px-2">
+                      {isEditingCustom ? (
+                        <input
+                          type="number"
+                          step="0.25"
+                          value={activeRx.odAdd ?? ''}
+                          onChange={(e) => setActiveRx({ ...activeRx, odAdd: e.target.value ? parseFloat(e.target.value) : null })}
+                          className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
+                        />
+                      ) : (
+                        activeRx.odAdd ? `+${activeRx.odAdd.toFixed(2)}` : '-'
+                      )}
+                    </td>
+                    <td className="py-2 px-2">
+                      {isEditingCustom ? (
+                        <input
+                          type="number"
+                          value={activeRx.odPd ?? ''}
+                          onChange={(e) => setActiveRx({ ...activeRx, odPd: e.target.value ? parseFloat(e.target.value) : null })}
+                          className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
+                        />
+                      ) : (
+                        activeRx.odPd ? `${activeRx.odPd} mm` : '-'
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* Left Eye (OS) */}
+                  <tr>
+                    <td className="py-2 px-2 text-left font-sans font-bold text-emerald-700 dark:text-emerald-400">
+                      OS (Left)
+                    </td>
+                    <td className="py-2 px-2">
+                      {isEditingCustom ? (
+                        <input
+                          type="number"
+                          step="0.25"
+                          value={activeRx.osSphere ?? ''}
+                          onChange={(e) => setActiveRx({ ...activeRx, osSphere: e.target.value ? parseFloat(e.target.value) : null })}
+                          className="w-16 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
+                        />
+                      ) : (
+                        activeRx.osSphere !== null ? (activeRx.osSphere > 0 ? `+${activeRx.osSphere.toFixed(2)}` : activeRx.osSphere.toFixed(2)) : 'Plano'
+                      )}
+                    </td>
+                    <td className="py-2 px-2">
+                      {isEditingCustom ? (
+                        <input
+                          type="number"
+                          step="0.25"
+                          value={activeRx.osCylinder ?? ''}
+                          onChange={(e) => setActiveRx({ ...activeRx, osCylinder: e.target.value ? parseFloat(e.target.value) : null })}
+                          className="w-16 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
+                        />
+                      ) : (
+                        activeRx.osCylinder ? (activeRx.osCylinder > 0 ? `+${activeRx.osCylinder.toFixed(2)}` : activeRx.osCylinder.toFixed(2)) : '0.00'
+                      )}
+                    </td>
+                    <td className="py-2 px-2">
+                      {isEditingCustom ? (
+                        <input
+                          type="number"
+                          min="1"
+                          max="180"
+                          value={activeRx.osAxis ?? ''}
+                          onChange={(e) => setActiveRx({ ...activeRx, osAxis: e.target.value ? parseInt(e.target.value, 10) : null })}
+                          className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
+                        />
+                      ) : (
+                        activeRx.osAxis ? `${activeRx.osAxis}°` : '-'
+                      )}
+                    </td>
+                    <td className="py-2 px-2">
+                      {isEditingCustom ? (
+                        <input
+                          type="number"
+                          step="0.25"
+                          value={activeRx.osAdd ?? ''}
+                          onChange={(e) => setActiveRx({ ...activeRx, osAdd: e.target.value ? parseFloat(e.target.value) : null })}
+                          className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
+                        />
+                      ) : (
+                        activeRx.osAdd ? `+${activeRx.osAdd.toFixed(2)}` : '-'
+                      )}
+                    </td>
+                    <td className="py-2 px-2">
+                      {isEditingCustom ? (
+                        <input
+                          type="number"
+                          value={activeRx.osPd ?? ''}
+                          onChange={(e) => setActiveRx({ ...activeRx, osPd: e.target.value ? parseFloat(e.target.value) : null })}
+                          className="w-14 rounded border border-slate-300 dark:border-slate-700 text-center py-0.5 bg-slate-50 dark:bg-slate-800"
+                        />
+                      ) : (
+                        activeRx.osPd ? `${activeRx.osPd} mm` : '-'
+                      )}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Quick Preset Selector: Prescriptions on File */}
+          <div className="space-y-2">
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-xs">
+              Available Prescriptions on File for {displayPatientName}
+            </h3>
+
+            {/* Session Current Rx */}
+            {sessionRx && (
+              <div
+                onClick={() => handleApplyPreset(sessionRx, 'Current Session Rx')}
+                className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:border-blue-500 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 cursor-pointer transition"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-blue-700 dark:text-blue-400">Current Session Rx</span>
+                    <span className="rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 text-[10px] px-1.5 py-0.2 font-semibold">Active Matrix</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                    OD: {formatEyePower(sessionRx.odSphere, sessionRx.odCylinder, sessionRx.odAxis, sessionRx.odAdd)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded bg-blue-600 text-white px-2 py-1 text-[11px] font-semibold hover:bg-blue-700 transition"
+                >
+                  Choose
+                </button>
+              </div>
+            )}
+
+            {/* Past Prescription Records */}
+            {activeCustomerHistories.length > 0 ? (
+              <div className="space-y-1.5 max-h-44 overflow-y-auto">
+                {activeCustomerHistories.map((rec: any, idx: number) => {
+                  const dateStr = rec.prescribedAt ? new Date(rec.prescribedAt).toLocaleDateString('en-IN') : 'Past Rx';
+                  const title = `Historical Rx (${dateStr})`;
+                  const converted: PrescriptionValues = {
+                    odSphere: rec.odSphere ? parseFloat(rec.odSphere) : null,
+                    odCylinder: rec.odCylinder ? parseFloat(rec.odCylinder) : null,
+                    odAxis: rec.odAxis ?? null,
+                    odAdd: rec.odAdd ? parseFloat(rec.odAdd) : null,
+                    odPd: rec.odPd ? parseFloat(rec.odPd) : null,
+                    osSphere: rec.osSphere ? parseFloat(rec.osSphere) : null,
+                    osCylinder: rec.osCylinder ? parseFloat(rec.osCylinder) : null,
+                    osAxis: rec.osAxis ?? null,
+                    osAdd: rec.osAdd ? parseFloat(rec.osAdd) : null,
+                    osPd: rec.osPd ? parseFloat(rec.osPd) : null,
+                    binocularPd: rec.binocularPd ? parseFloat(rec.binocularPd) : null,
+                  };
+
+                  return (
+                    <div
+                      key={rec.id || idx}
+                      onClick={() => handleApplyPreset(converted, title)}
+                      className="flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/20 cursor-pointer transition"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{title}</span>
+                          {rec.prescribedByName && (
+                            <span className="text-[10px] text-slate-500">Dr. {rec.prescribedByName}</span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                          OD: {formatEyePower(converted.odSphere, converted.odCylinder, converted.odAxis, converted.odAdd)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-700 transition"
+                      >
+                        Choose
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              !sessionRx && (
+                <div className="rounded border border-dashed border-slate-200 dark:border-slate-800 p-3 text-center text-slate-500 text-xs">
+                  No prior prescriptions on file. You can enter diopters directly above.
+                </div>
+              )
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 px-5 py-3 bg-slate-50/80 dark:bg-slate-950/80">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => onSave(activeRx, selectedTitle, assignedPatientId)}
+            className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 text-xs font-semibold shadow-sm transition cursor-pointer"
+          >
+            Attach Power to Item
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

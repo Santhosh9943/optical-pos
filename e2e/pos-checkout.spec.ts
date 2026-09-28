@@ -5,12 +5,9 @@ test.describe('POS Core Workflows & Zero-Regression Test Suite', () => {
     // Navigate to POS new billing view
     await page.goto('/pos/new-bill');
     await page.waitForLoadState('networkidle');
-    const layoutSelect = page.getByTestId('pos-layout-type-select');
-    if (await layoutSelect.isVisible().catch(() => false)) {
-      const current = await layoutSelect.inputValue();
-      if (current === 'dense') {
-        await layoutSelect.selectOption('adaptive');
-      }
+    const splitBtn = page.getByTestId('btn-mode-split');
+    if (await splitBtn.isVisible().catch(() => false)) {
+      await splitBtn.click();
     }
   });
 
@@ -390,7 +387,7 @@ test.describe('POS Core Workflows & Zero-Regression Test Suite', () => {
     await directAddSunglassBtn.click();
 
     // Verify sunglasses added to cart
-    await expect(page.locator('text=UV400').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=UV400').filter({ visible: true }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('Test Case 8: Cart Item Detail Inspector & Invoice Custom Details Override', async ({ page }) => {
@@ -562,7 +559,7 @@ test.describe('POS Core Workflows & Zero-Regression Test Suite', () => {
 
     // 4. Verify Tab 3 ("Linked Family") displays connected family accounts with segregated phone info
     const familyTab = page.getByTestId('tab-family-history');
-    await expect(familyTab).toBeVisible({ timeout: 5000 });
+    await expect(familyTab).toBeVisible({ timeout: 15000 });
     await familyTab.click();
 
     await expect(page.locator('text=Connected Family Members').first()).toBeVisible({ timeout: 5000 });

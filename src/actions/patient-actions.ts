@@ -1,7 +1,7 @@
 'use server';
 
 import Decimal from 'decimal.js';
-import { and, desc, eq, inArray, isNull, or } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, or, gt, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import {
@@ -11,7 +11,9 @@ import {
   opticalPrescriptions,
   branches,
 } from '@/db/schema';
-import { getCurrentSession } from '@/lib/auth-utils';
+import { getCurrentSession, isManagerOrAdmin } from '@/lib/auth-utils';
+import { createStoreApprovalRequestAction } from '@/actions/approval-actions';
+import { withCache, invalidateCache } from '@/lib/cache';
 import type { POSPatient } from '@/store/pos-store';
 
 export interface CreatePatientInput {
@@ -80,6 +82,7 @@ export async function createPatientAction(input: CreatePatientInput): Promise<{
 
     revalidatePath('/admin/patients');
     revalidatePath('/pos/new-bill');
+    await invalidateCache({ orgId: session.organizationId, namespace: 'patients' });
 
     return { success: true, patient: newCustomer };
   } catch (err: unknown) {
@@ -148,6 +151,7 @@ export async function updatePatientAction(
 
     revalidatePath('/admin/patients');
     revalidatePath('/pos/new-bill');
+    await invalidateCache({ orgId: session.organizationId, namespace: 'patients' });
 
     return { success: true, patient: updated };
   } catch (err: unknown) {
@@ -159,14 +163,23 @@ export async function updatePatientAction(
   }
 }
 
-export async function deletePatientAction(id: string): Promise<{
+export async function deletePatientAction(
+  id: string,
+  reason?: string
+): Promise<{
   success: boolean;
+  requiresApproval?: boolean;
+  requestId?: string;
+  message?: string;
   error?: string;
 }> {
   try {
     const session = await getCurrentSession();
+    if (!session?.organizationId) {
+      return { success: false, error: 'Unauthorized: Session required' };
+    }
 
-    // Check if customer exists under tenant
+    // 1. Check if customer exists under tenant
     const [customer] = await db
       .select()
       .from(customers)
@@ -182,7 +195,75 @@ export async function deletePatientAction(id: string): Promise<{
       return { success: false, error: 'Patient not found' };
     }
 
-    // Soft-delete the customer to safeguard historical orders and prescriptions
+    // 2. Safety Invariant: Check for active, unclosed optical orders
+    const activeInvoices = await db
+      .select({ invoiceNumber: invoices.invoiceNumber })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.customerId, id),
+          eq(invoices.organizationId, session.organizationId),
+          inArray(invoices.orderStatus, [
+            'ORDERED',
+            'SENT_TO_LAB',
+            'IN_FITTING',
+            'READY_FOR_COLLECTION',
+          ])
+        )
+      );
+
+    if (activeInvoices.length > 0) {
+      return {
+        success: false,
+        error: `Cannot delete or archive patient. Patient has ${activeInvoices.length} active unclosed order(s) (e.g. #${activeInvoices[0].invoiceNumber}). Please deliver or close active orders first.`,
+      };
+    }
+
+    // 3. Safety Invariant: Check for pending balance due on any invoice
+    const pendingBalanceInvoices = await db
+      .select({
+        invoiceNumber: invoices.invoiceNumber,
+        balanceDue: invoices.balanceDue,
+      })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.customerId, id),
+          eq(invoices.organizationId, session.organizationId),
+          gt(sql`CAST(${invoices.balanceDue} AS NUMERIC)`, 0)
+        )
+      );
+
+    if (pendingBalanceInvoices.length > 0) {
+      return {
+        success: false,
+        error: `Cannot delete or archive patient. Patient has outstanding unpaid balance of ₹${pendingBalanceInvoices[0].balanceDue} on invoice #${pendingBalanceInvoices[0].invoiceNumber}. All balances must be settled before deletion.`,
+      };
+    }
+
+    // 4. RBAC Check: If non-admin, route to Maker-Checker Approval Request
+    const isAdmin = await isManagerOrAdmin(session);
+    if (!isAdmin) {
+      const approvalResult = await createStoreApprovalRequestAction({
+        type: 'delete_customer',
+        targetId: id,
+        targetName: customer.fullName,
+        reason: reason?.trim() || 'Staff requested patient record deletion / archive',
+      });
+
+      if (!approvalResult.success) {
+        return { success: false, error: approvalResult.error || 'Failed to submit approval request' };
+      }
+
+      return {
+        success: true,
+        requiresApproval: true,
+        requestId: approvalResult.requestId,
+        message: 'Approval request submitted to store administrator. Record will be archived once approved.',
+      };
+    }
+
+    // 5. Admin execution: Soft-delete the customer (preserves historical orders & prescriptions)
     await db
       .update(customers)
       .set({
@@ -198,6 +279,7 @@ export async function deletePatientAction(id: string): Promise<{
 
     revalidatePath('/admin/patients');
     revalidatePath('/pos/new-bill');
+    await invalidateCache({ orgId: session.organizationId, namespace: 'patients' });
 
     return { success: true };
   } catch (err: unknown) {
@@ -319,83 +401,94 @@ export async function getPatients(branchIds?: string[]): Promise<{
 }> {
   try {
     const session = await getCurrentSession();
+    const branchKey = branchIds && branchIds.length > 0 ? branchIds.slice().sort().join(',') : 'all';
 
-    const allCustomers = await db
-      .select()
-      .from(customers)
-      .where(
-        and(
-          eq(customers.organizationId, session.organizationId),
-          isNull(customers.deletedAt)
-        )
-      )
-      .orderBy(desc(customers.createdAt));
+    return await withCache(
+      {
+        orgId: session.organizationId,
+        namespace: 'patients',
+        key: `list:${branchKey}`,
+        ttl: 300,
+      },
+      async () => {
+        const allCustomers = await db
+          .select()
+          .from(customers)
+          .where(
+            and(
+              eq(customers.organizationId, session.organizationId),
+              isNull(customers.deletedAt)
+            )
+          )
+          .orderBy(desc(customers.createdAt));
 
-    const invoiceConditions = [eq(invoices.organizationId, session.organizationId)];
-    if (branchIds && branchIds.length > 0 && !branchIds.includes('all')) {
-      invoiceConditions.push(inArray(invoices.branchId, branchIds));
-    }
+        const invoiceConditions = [eq(invoices.organizationId, session.organizationId)];
+        if (branchIds && branchIds.length > 0 && !branchIds.includes('all')) {
+          invoiceConditions.push(inArray(invoices.branchId, branchIds));
+        }
 
-    const allInvoices = await db
-      .select({
-        id: invoices.id,
-        customerId: invoices.customerId,
-        grandTotal: invoices.grandTotal,
-        createdAt: invoices.createdAt,
-      })
-      .from(invoices)
-      .where(and(...invoiceConditions))
-      .orderBy(desc(invoices.createdAt));
+        const allInvoices = await db
+          .select({
+            id: invoices.id,
+            customerId: invoices.customerId,
+            grandTotal: invoices.grandTotal,
+            createdAt: invoices.createdAt,
+          })
+          .from(invoices)
+          .where(and(...invoiceConditions))
+          .orderBy(desc(invoices.createdAt));
 
-    // Group invoices by customer
-    const invoicesByCustomer = new Map<
-      string,
-      { totalOrders: number; lastVisit: Date | null; totalLtv: Decimal }
-    >();
+        // Group invoices by customer
+        const invoicesByCustomer = new Map<
+          string,
+          { totalOrders: number; lastVisit: Date | null; totalLtv: Decimal }
+        >();
 
-    for (const inv of allInvoices) {
-      const existing = invoicesByCustomer.get(inv.customerId) || {
-        totalOrders: 0,
-        lastVisit: null,
-        totalLtv: new Decimal(0),
-      };
+        for (const inv of allInvoices) {
+          const existing = invoicesByCustomer.get(inv.customerId) || {
+            totalOrders: 0,
+            lastVisit: null,
+            totalLtv: new Decimal(0),
+          };
 
-      existing.totalOrders += 1;
-      if (!existing.lastVisit || inv.createdAt > existing.lastVisit) {
-        existing.lastVisit = inv.createdAt;
+          existing.totalOrders += 1;
+          if (!existing.lastVisit || inv.createdAt > existing.lastVisit) {
+            existing.lastVisit = inv.createdAt;
+          }
+          existing.totalLtv = existing.totalLtv.plus(
+            new Decimal(inv.grandTotal || '0.00')
+          );
+          invoicesByCustomer.set(inv.customerId, existing);
+        }
+
+        const patients: PatientSummary[] = allCustomers.map((c) => {
+          const stats = invoicesByCustomer.get(c.id);
+          return {
+            id: c.id,
+            fullName: c.fullName,
+            phone: c.phone,
+            age: c.age,
+            gender: c.gender,
+            city: c.city,
+            advanceBalance: c.advanceBalance || '0.00',
+            totalOrders: stats?.totalOrders || 0,
+            lastVisitDate: stats?.lastVisit ? stats.lastVisit.toISOString() : null,
+            lifetimeValue: stats ? stats.totalLtv.toFixed(2) : '0.00',
+            relationType: c.relationType || 'Self',
+            primaryCustomerId: c.primaryCustomerId,
+          };
+        });
+
+        // Sort by last visit date descending (or customer creation date)
+        patients.sort((a, b) => {
+          const dateA = a.lastVisitDate ? new Date(a.lastVisitDate).getTime() : 0;
+          const dateB = b.lastVisitDate ? new Date(b.lastVisitDate).getTime() : 0;
+          return dateB - dateA;
+        });
+
+        return { success: true, patients };
       }
-      existing.totalLtv = existing.totalLtv.plus(
-        new Decimal(inv.grandTotal || '0.00')
-      );
-      invoicesByCustomer.set(inv.customerId, existing);
-    }
-
-    const patients: PatientSummary[] = allCustomers.map((c) => {
-      const stats = invoicesByCustomer.get(c.id);
-      return {
-        id: c.id,
-        fullName: c.fullName,
-        phone: c.phone,
-        age: c.age,
-        gender: c.gender,
-        city: c.city,
-        advanceBalance: c.advanceBalance || '0.00',
-        totalOrders: stats?.totalOrders || 0,
-        lastVisitDate: stats?.lastVisit ? stats.lastVisit.toISOString() : null,
-        lifetimeValue: stats ? stats.totalLtv.toFixed(2) : '0.00',
-        relationType: c.relationType || 'Self',
-        primaryCustomerId: c.primaryCustomerId,
-      };
-    });
-
-    // Sort by last visit date descending (or customer creation date)
-    patients.sort((a, b) => {
-      const dateA = a.lastVisitDate ? new Date(a.lastVisitDate).getTime() : 0;
-      const dateB = b.lastVisitDate ? new Date(b.lastVisitDate).getTime() : 0;
-      return dateB - dateA;
-    });
-
-    return { success: true, patients };
+    );
   } catch (err: unknown) {
     console.error('[getPatients] Error:', err);
     return {

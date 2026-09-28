@@ -201,3 +201,32 @@ Optical workshop technicians require optical specifications to cut lenses and mo
 **Design Rule**:
 - The Workshop Job Slip template (`print-workshop.css` / `WorkshopJobSlip.tsx`) completely omits unit prices, discounts, taxes, and total paid amounts from the DOM structure.
 - Only patient name, prescription details (OD/OS SPH, CYL, AXIS, ADD, PD), frame model, and lens material are printed.
+
+---
+
+## 9. Automated AI Code Review & Vulnerability Audit Protocol
+
+OptixOS enforces an automated security code review on every code change to detect vulnerabilities early:
+
+### 9.1 The 8-Point Security Review Gate
+1. **Multi-Tenant Scoping**: All queries must enforce `WHERE organization_id = session.organizationId`.
+2. **Wholesale Cost Masking**: `costPrice` must be omitted or SQL-projected as `NULL` for non-admin/staff roles.
+3. **Secret Redaction**: Never return plaintext credentials (`smtpPass`, API secrets) to client callers.
+4. **Rate-Limiting**: Enforce sliding window limits on authentication, password resets, and checkout mutations.
+5. **Exact Monetary Math**: Use `decimal.js` with `.toFixed(2)` string serialization exclusively.
+6. **Diopter Precision**: Validate SPH, CYL, and ADD using integer scaling (`Math.round(val * 100) % 25 === 0`).
+7. **Document Redaction**: Workshop job tickets must completely omit financial/pricing data from the DOM tree.
+8. **SQL Parameterization**: Use Drizzle ORM and SQL templates without raw string interpolation.
+
+### 9.2 Protocol for Unresolved Security Findings & Technical Debt
+If an AI agent discovers a vulnerability, code smell, or architectural defect that **cannot be resolved immediately in the current task**:
+1. **Never Drop Findings**: It is strictly forbidden to ignore or leave a known vulnerability undocumented.
+2. **In-Code Tagging**: Annotate the code location immediately:
+   ```typescript
+   // TODO(security-SEC-XXX): [Finding description and required remediation]
+   ```
+3. **Registry Logging**: Append a structured entry into [`docs/agent-memory/SECURITY_LOG.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/SECURITY_LOG.md) detailing Severity, Location, CWE, Finding, and Remediation Plan.
+4. **Backlog Tracking**: Add a corresponding task to `docs/TASKS.md` under pending security tasks.
+5. **Session Handoff**: Record the item in [`docs/agent-memory/SESSION_HANDOFF.md`](file:///f:/hobby-projects/optical-pos/docs/agent-memory/SESSION_HANDOFF.md) under `Active Security Findings & Pending Technical Debt`.
+6. **Continuous Scanner**: Run `npm run audit:security` to audit active security tags across the project.
+

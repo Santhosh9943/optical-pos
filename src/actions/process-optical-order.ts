@@ -9,6 +9,7 @@ import {
   invoiceItems,
   inventoryItems,
   payments,
+  storeProfile,
 } from '@/db/schema';
 import { eq, sql, and, inArray } from 'drizzle-orm';
 import {
@@ -20,7 +21,9 @@ import {
   NegativeBalanceError,
 } from '@/lib/errors';
 import Decimal from 'decimal.js';
-import { getCurrentSession } from '@/lib/auth-utils';
+import { getCurrentSession, requireAuthSession } from '@/lib/auth-utils';
+import { checkRateLimit } from '@/lib/ratelimit';
+import { generateReceiptToken } from '@/lib/crypto-utils';
 
 // ─────────────────────────────────────────────────────────────
 // Typed response
@@ -33,6 +36,7 @@ export type ProcessOrderResult =
       invoiceNumber: string;
       grandTotal: string;
       balanceDue: string;
+      receiptToken?: string;
     }
   | {
       success: false;
@@ -83,7 +87,15 @@ export async function processOpticalOrder(
   }
 
   const input: CreateOrderInput = parsed.data;
-  const session = await getCurrentSession();
+  const session = await requireAuthSession();
+  const rateLimitResult = await checkRateLimit(`checkout:${session.organizationId || session.user.id}`, 30, 60);
+  if (!rateLimitResult.success) {
+    return {
+      success: false,
+      error: 'VALIDATION_ERROR',
+      message: 'Too many order submissions. Please wait a moment and try again.',
+    };
+  }
 
   // ── Step 2: Pre-transaction validation ──
 
@@ -123,7 +135,12 @@ export async function processOpticalOrder(
     const existingItems = await db
       .select({ id: inventoryItems.id })
       .from(inventoryItems)
-      .where(inArray(inventoryItems.id, inventoryItemIds));
+      .where(
+        and(
+          inArray(inventoryItems.id, inventoryItemIds),
+          eq(inventoryItems.organizationId, session.organizationId)
+        )
+      );
 
     const existingIds = new Set(existingItems.map((i) => i.id));
     const missingIds = inventoryItemIds.filter((id) => !existingIds.has(id));
@@ -142,42 +159,71 @@ export async function processOpticalOrder(
   try {
     const result = await db.transaction(async (tx) => {
       // ── 3a. Check inventory levels and decrement atomically ──
-      // For each physical SKU, use a conditional UPDATE with RETURNING
-      // to prevent race conditions under concurrent clerks.
+      // Invariant #5: Strict atomic decrement requiring stockQuantity >= quantity unless allowNegativeStock is explicitly enabled in storeProfile.
+      let allowNegativeStock = false;
+      try {
+        const [profile] = await tx
+          .select({ allowNegativeStock: storeProfile.allowNegativeStock })
+          .from(storeProfile)
+          .limit(1);
+
+        if (profile && profile.allowNegativeStock === true) {
+          allowNegativeStock = true;
+        }
+      } catch {
+        allowNegativeStock = false;
+      }
 
       for (const item of input.items) {
         if (!item.inventoryItemId) continue; // service line, no stock
 
-        const updated = await tx
-          .update(inventoryItems)
-          .set({
-            stockQuantity: sql`${inventoryItems.stockQuantity} - ${item.quantity}`,
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(inventoryItems.id, item.inventoryItemId),
-              sql`${inventoryItems.stockQuantity} >= ${item.quantity}`
-            )
-          )
-          .returning({ id: inventoryItems.id });
-
-        if (updated.length === 0) {
-          // No row was updated → insufficient stock
-          const [current] = await tx
-            .select({
-              sku: inventoryItems.sku,
-              stockQuantity: inventoryItems.stockQuantity,
+        if (allowNegativeStock) {
+          // Allow negative stock decrement directly without blocking checkout
+          await tx
+            .update(inventoryItems)
+            .set({
+              stockQuantity: sql`${inventoryItems.stockQuantity} - ${item.quantity}`,
+              updatedAt: new Date(),
             })
-            .from(inventoryItems)
-            .where(eq(inventoryItems.id, item.inventoryItemId));
+            .where(
+              and(
+                eq(inventoryItems.id, item.inventoryItemId),
+                eq(inventoryItems.organizationId, session.organizationId)
+              )
+            );
+        } else {
+          const updated = await tx
+            .update(inventoryItems)
+            .set({
+              stockQuantity: sql`${inventoryItems.stockQuantity} - ${item.quantity}`,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(inventoryItems.id, item.inventoryItemId),
+                eq(inventoryItems.organizationId, session.organizationId),
+                sql`${inventoryItems.stockQuantity} >= ${item.quantity}`
+              )
+            )
+            .returning({ id: inventoryItems.id });
 
-          throw new InsufficientStockError(
-            item.inventoryItemId,
-            current?.sku ?? 'UNKNOWN',
-            current?.stockQuantity ?? 0,
-            item.quantity
-          );
+          if (updated.length === 0) {
+            // No row was updated → insufficient stock
+            const [current] = await tx
+              .select({
+                sku: inventoryItems.sku,
+                stockQuantity: inventoryItems.stockQuantity,
+              })
+              .from(inventoryItems)
+              .where(eq(inventoryItems.id, item.inventoryItemId));
+
+            throw new InsufficientStockError(
+              item.inventoryItemId,
+              current?.sku ?? 'UNKNOWN',
+              current?.stockQuantity ?? 0,
+              item.quantity
+            );
+          }
         }
       }
 
@@ -420,7 +466,11 @@ export async function processOpticalOrder(
           organizationId: session.organizationId,
           branchId: input.branchId || session.branchId,
         })
-        .returning({ id: invoices.id, invoiceNumber: invoices.invoiceNumber });
+        .returning({
+          id: invoices.id,
+          invoiceNumber: invoices.invoiceNumber,
+          createdAt: invoices.createdAt,
+        });
 
       // ── 3g. Insert invoice items ──
       await tx.insert(invoiceItems).values(
@@ -455,6 +505,17 @@ export async function processOpticalOrder(
           organizationId: session.organizationId,
           branchId: input.branchId || session.branchId,
         });
+
+        // If payment mode is CREDIT (Store Credit / Wallet), atomically debit customer's advance balance
+        if (input.advancePayment.mode === 'CREDIT') {
+          await tx
+            .update(customers)
+            .set({
+              advanceBalance: sql`GREATEST(0, CAST(${customers.advanceBalance} AS NUMERIC) - CAST(${advancePaid.toFixed(2)} AS NUMERIC))`,
+              updatedAt: new Date(),
+            })
+            .where(eq(customers.id, finalInvoiceCustomerId));
+        }
       }
 
       return {
@@ -462,6 +523,7 @@ export async function processOpticalOrder(
         invoiceNumber: invoice.invoiceNumber,
         grandTotal: grandTotal.toFixed(2),
         balanceDue: balanceDue.toFixed(2),
+        receiptToken: generateReceiptToken(invoice.id, invoice.createdAt),
       };
     });
 

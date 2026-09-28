@@ -12,6 +12,7 @@ import {
   Loader2,
   Trash2,
   Building2,
+  Store,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -23,63 +24,57 @@ import { InventoryTable } from '@/components/admin/inventory-table';
 import { AddInventoryForm } from '@/components/admin/add-inventory-form';
 import { EditInventoryModal } from '@/components/admin/edit-inventory-modal';
 import { useTenantStore } from '@/store/tenant-store';
+import { useCachedResource } from '@/hooks/use-cached-resource';
 
 export interface InventoryViewProps {
   onNavigateToPos?: () => void;
 }
 
 export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
-  const selectedBranchIds = useTenantStore((s) => s.selectedBranchIds);
+  const selectedBranchId = useTenantStore((s) => s.selectedBranchId);
   const branches = useTenantStore((s) => s.branches);
+  const activeBranch = branches.find((b) => b.id === selectedBranchId) || branches[0];
+  const branchKey = selectedBranchId || 'default';
 
-  const [items, setItems] = useState<InventoryRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    data: cachedItems,
+    isLoading,
+    isRevalidating,
+    refresh,
+    mutate,
+  } = useCachedResource<InventoryRow[]>({
+    cacheKey: `inventory_list:${branchKey}`,
+    fetcher: async () => {
+      const result = await getInventoryList(selectedBranchId ? [selectedBranchId] : undefined);
+      if (result.success && result.items) {
+        return result.items;
+      }
+      throw new Error(result.error || 'Failed to fetch inventory catalog');
+    },
+    refreshInterval: 60000,
+  });
+
+  const items = useMemo(() => cachedItems || [], [cachedItems]);
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryRow | null>(null);
   const [deletingItem, setDeletingItem] = useState<InventoryRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const fetchItems = async (branchIds?: string[]) => {
-    try {
-      setIsLoading(true);
-      const activeIds = branchIds ?? selectedBranchIds;
-      const result = await getInventoryList(activeIds);
-      if (result.success && result.items) {
-        setItems(result.items);
-      } else {
-        toast.error('Failed to load inventory', {
-          description: result.error || 'Could not fetch catalog.',
-        });
-      }
-    } catch (err) {
-      console.error('[InventoryView] fetch error:', err);
-      toast.error('Connection error', {
-        description: 'Failed to connect to inventory service.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchItems(selectedBranchIds);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBranchIds]);
-
   const handleRefresh = () => {
     startTransition(async () => {
-      await fetchItems(selectedBranchIds);
+      await refresh();
       toast.info('Inventory refreshed', { duration: 2000 });
     });
   };
 
   const handleItemAdded = (newItem: InventoryRow) => {
-    setItems((prev) => [newItem, ...prev.filter((i) => i.id !== newItem.id)]);
+    mutate((prev) => [newItem, ...(prev || []).filter((i) => i.id !== newItem.id)]);
   };
 
   const handleItemUpdated = (updated: InventoryRow) => {
-    setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+    mutate((prev) => (prev || []).map((i) => (i.id === updated.id ? updated : i)));
   };
 
   const handleConfirmDelete = async () => {
@@ -88,7 +83,14 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
       setIsDeleting(true);
       const res = await deleteInventoryItem(deletingItem.id);
       if (res.success) {
-        setItems((prev) => prev.filter((i) => i.id !== deletingItem.id));
+        if ('requiresApproval' in res && res.requiresApproval) {
+          toast.info('Approval Request Submitted', {
+            description: res.message || 'Inventory deletion request submitted to administrator for approval.',
+          });
+          setDeletingItem(null);
+          return;
+        }
+        mutate((prev) => (prev || []).filter((i) => i.id !== deletingItem.id));
         toast.success('Item Removed', {
           description: `${deletingItem.sku} has been removed from the active catalog.`,
         });
@@ -152,12 +154,8 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
               data-testid="inventory-scope-badge"
               className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
             >
-              <Building2 className="h-3 w-3" />
-              {selectedBranchIds.includes('all')
-                ? `All Branches (${branches.length > 0 ? `${branches.length} Stores` : 'Consolidated'})`
-                : selectedBranchIds.length === 1
-                  ? branches.find((b) => b.id === selectedBranchIds[0])?.name || 'Single Store'
-                  : `${selectedBranchIds.length} Stores Selected`}
+              <Store className="h-3 w-3" />
+              <span>Store: {activeBranch?.name || 'Main Branch'}</span>
             </span>
           </div>
         </div>
@@ -285,23 +283,34 @@ export function InventoryView({ onNavigateToPos }: InventoryViewProps) {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
               Inventory Catalog
             </h2>
-            {isLoading && (
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-300">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Loading catalog...</span>
+            {isRevalidating && (
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+                <span>Syncing live...</span>
               </div>
             )}
           </div>
 
           {isLoading && items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center shadow-sm">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Loading inventory items...
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
-                Connecting to PostgreSQL database
-              </p>
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+              </div>
+              <div className="p-6 space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center justify-between gap-4 py-2 border-b border-slate-50 dark:border-slate-800/60 last:border-0">
+                    <div className="h-4 w-28 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                    <div className="h-4 w-20 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                    <div className="h-4 w-36 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                    <div className="h-4 w-16 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                    <div className="h-4 w-20 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <InventoryTable

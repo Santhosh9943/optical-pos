@@ -17,10 +17,10 @@ test.describe('Phase 12: Better Auth & Route Protection E2E', () => {
     await expect(page).toHaveURL(/\/auth\/login.*callbackUrl=%2Fpos%2Fnew-bill/);
 
     // Verify login page elements
-    await expect(page.getByRole('heading', { name: 'Optix OS' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /OptixOS/i })).toBeVisible();
     await expect(page.getByLabel(/Email Address/i)).toBeVisible();
     await expect(page.getByLabel(/Password/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /Sign In to Practice/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Sign In to Workspace/i })).toBeVisible();
 
     await unauthContext.close();
   });
@@ -39,30 +39,31 @@ test.describe('Phase 12: Better Auth & Route Protection E2E', () => {
     await unauthContext.close();
   });
 
-  test('renders login UI, toggles mode to Create Account and supports demo quick fill', async ({ page }) => {
+  test('renders login UI, toggles mode to Create Account and supports filling credentials', async ({ page }) => {
     await page.goto('/auth/login');
 
     // Check heading
-    await expect(page.getByRole('heading', { name: 'Optix OS' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /OptixOS/i })).toBeVisible();
 
     // Verify initial Sign In mode
-    await expect(page.getByRole('button', { name: 'Sign In to Practice' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Sign In to Workspace/i })).toBeVisible();
 
     // Click "Create Account" tab
     await page.getByRole('button', { name: 'Create Account' }).click();
 
     // Verify registration fields appear
     await expect(page.getByLabel(/Full Name/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Register Practice' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Create Optical Practice/i })).toBeVisible();
 
     // Switch back to Sign In
     await page.getByRole('button', { name: 'Sign In' }).click();
     await expect(page.getByLabel(/Full Name/i)).not.toBeVisible();
 
-    // Test Quick Fill Demo button
-    await page.getByRole('button', { name: 'Admin Demo' }).click();
-    await expect(page.getByLabel(/Email Address/i)).toHaveValue('admin@optix.com');
-    await expect(page.getByLabel(/Password/i)).toHaveValue('AdminPass123!');
+    // Test filling credentials
+    await page.getByPlaceholder('admin@optixos.com').fill('admin@optix.com');
+    await page.getByPlaceholder('••••••••').fill('AdminPass123!');
+    await expect(page.getByPlaceholder('admin@optixos.com')).toHaveValue('admin@optix.com');
+    await expect(page.getByPlaceholder('••••••••')).toHaveValue('AdminPass123!');
   });
 
   test('Better Auth API returns session status', async ({ request }) => {

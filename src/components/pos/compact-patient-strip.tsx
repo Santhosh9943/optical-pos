@@ -12,6 +12,7 @@ import {
   Edit3,
   Maximize2,
   Sparkles,
+  X,
 } from 'lucide-react';
 import type { POSPatient } from '@/store/pos-store';
 import type { PrescriptionValues } from './prescription-grid';
@@ -23,6 +24,7 @@ interface CompactPatientStripProps {
   currentRx?: PrescriptionValues | null;
   orderCount: number;
   onSwitchInvoiceAccount: (patientId: string) => void;
+  onRemoveFamilyMember?: (patientId: string) => void;
   onOpenAddFamilyModal: () => void;
   onExpandRx: () => void;
   onViewOrders: () => void;
@@ -35,6 +37,7 @@ export function CompactPatientStrip({
   currentRx,
   orderCount,
   onSwitchInvoiceAccount,
+  onRemoveFamilyMember,
   onOpenAddFamilyModal,
   onExpandRx,
   onViewOrders,
@@ -157,6 +160,43 @@ export function CompactPatientStrip({
             </span>
           )}
         </div>
+
+        {/* Attached Family Members Badges with Quick Remove (×) */}
+        {activePatients.length > 1 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {dynamicActivePatients.map((member) => {
+              const isPayer = member.id === selectedPatient.id;
+              return (
+                <span
+                  key={member.id}
+                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold border ${
+                    isPayer
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <span className="truncate max-w-[100px]">
+                    {member.fullName} ({member.relationType || 'Family'})
+                  </span>
+                  {onRemoveFamilyMember && activePatients.length > 1 && (
+                    <button
+                      type="button"
+                      aria-label={`Remove ${member.fullName} from order`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveFamilyMember(member.id);
+                      }}
+                      className="rounded-full p-0.5 text-slate-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-950/50 transition cursor-pointer ml-0.5"
+                      title={`Remove ${member.fullName} from billing session`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {/* Prescription Summary Pill */}
         <button

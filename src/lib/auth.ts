@@ -1,8 +1,13 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { organization } from 'better-auth/plugins';
+import { organization, twoFactor, admin } from 'better-auth/plugins';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
+import {
+  sendPasswordResetEmail,
+  sendTwoFactorOtpEmail,
+  dispatchAsyncEmail,
+} from '@/lib/email';
 
 function getServerBaseURL(): string {
   if (process.env.BETTER_AUTH_URL) {
@@ -24,6 +29,9 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    sendResetPassword: async ({ user, url, token }) => {
+      dispatchAsyncEmail(() => sendPasswordResetEmail(user.email, url, token));
+    },
   },
   socialProviders: {
     google: {
@@ -34,6 +42,19 @@ export const auth = betterAuth({
   },
   plugins: [
     organization(),
+    admin({
+      defaultRole: 'user',
+      adminRole: ['super_admin'],
+    }),
+    twoFactor({
+      issuer: 'OptixOS Eyecare',
+      allowPasswordless: true,
+      otpOptions: {
+        sendOTP: async ({ user, otp }) => {
+          dispatchAsyncEmail(() => sendTwoFactorOtpEmail(user.email, otp));
+        },
+      },
+    }),
   ],
   secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
   baseURL: getServerBaseURL(),

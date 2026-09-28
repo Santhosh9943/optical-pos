@@ -22,6 +22,11 @@ import {
   MapPin,
   Store,
   Layers,
+  Share2,
+  AlertTriangle,
+  ArrowUpDown,
+  Filter,
+  CreditCard,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -49,15 +54,40 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
   const [selectedOrderForSettlement, setSelectedOrderForSettlement] = useState<SettleInvoiceData | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const selectedBranchIds = useTenantStore((state) => state.selectedBranchIds);
+  // Ergonomic Sorting & Filtering States
+  const [filterChip, setFilterChip] = useState<'ALL' | 'OVERDUE' | 'BALANCE_PENDING'>('ALL');
+  const [sortBy, setSortBy] = useState<'promisedDate' | 'orderDate' | 'customerName' | 'balanceDue'>('promisedDate');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Column-specific sub-filters for Kanban boxes
+  const [col1Filter, setCol1Filter] = useState<'ALL' | 'URGENT'>('ALL');
+  const [col2Filter, setCol2Filter] = useState<'ALL' | 'LAB' | 'FITTING'>('ALL');
+  const [col3Filter, setCol3Filter] = useState<'ALL' | 'BALANCE' | 'PAID'>('ALL');
+
+  const selectedBranchId = useTenantStore((state) => state.selectedBranchId);
   const branches = useTenantStore((state) => state.branches);
 
-  // Dynamic reload based on selected branch(es)
+  const overdueCount = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return orders.filter(
+      (o) =>
+        o.promisedDeliveryDate &&
+        new Date(o.promisedDeliveryDate).getTime() < today.getTime() &&
+        o.orderStatus !== 'DELIVERED_AND_CLOSED'
+    ).length;
+  }, [orders]);
+
+  const balancePendingCount = useMemo(() => {
+    return orders.filter((o) => Number(o.balanceDue) > 0).length;
+  }, [orders]);
+
+  // Dynamic reload based on selected branch
   useEffect(() => {
     let isMounted = true;
     startTransition(async () => {
       try {
-        const data = await getActiveLabOrders(selectedBranchIds);
+        const data = await getActiveLabOrders(selectedBranchId ? [selectedBranchId] : undefined);
         if (isMounted) {
           setOrders(data);
         }
@@ -68,18 +98,12 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
     return () => {
       isMounted = false;
     };
-  }, [selectedBranchIds]);
+  }, [selectedBranchId]);
 
   const activeBranchLabel = useMemo(() => {
-    if (!selectedBranchIds || selectedBranchIds.includes('all') || selectedBranchIds.length === 0) {
-      return 'All Branches';
-    }
-    if (selectedBranchIds.length === 1) {
-      const match = branches.find((b) => b.id === selectedBranchIds[0]);
-      return match ? match.name : 'Selected Store';
-    }
-    return `${selectedBranchIds.length} Stores Selected`;
-  }, [selectedBranchIds, branches]);
+    const match = branches.find((b) => b.id === selectedBranchId);
+    return match ? match.name : 'Main Store';
+  }, [selectedBranchId, branches]);
 
   const handleSettleOrder = (order: LabOrderSummary) => {
     setSelectedOrderForSettlement({
@@ -144,21 +168,138 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
     });
   }, [orders, searchQuery]);
 
-  // Status mapping to 4 workflow columns (reflects search query in Kanban columns)
-  const orderColumns = useMemo(() => {
-    return {
-      actionRequired: searchedOrders.filter((o) => o.orderStatus === 'ORDERED'),
-      atLabFitting: searchedOrders.filter(
+  // Filter and Sort orders according to active Filter Chip and Sort criteria
+  const processedOrders = useMemo(() => {
+    let list = [...searchedOrders];
+
+    // 1. Filter Chip
+    if (filterChip === 'OVERDUE') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      list = list.filter(
+        (o) =>
+          o.promisedDeliveryDate &&
+          new Date(o.promisedDeliveryDate).getTime() < today.getTime() &&
+          o.orderStatus !== 'DELIVERED_AND_CLOSED'
+      );
+    } else if (filterChip === 'BALANCE_PENDING') {
+      list = list.filter((o) => Number(o.balanceDue) > 0);
+    }
+
+    // 2. Sorting
+    list.sort((a, b) => {
+      let comp = 0;
+      if (sortBy === 'promisedDate') {
+        const timeA = a.promisedDeliveryDate ? new Date(a.promisedDeliveryDate).getTime() : 9999999999999;
+        const timeB = b.promisedDeliveryDate ? new Date(b.promisedDeliveryDate).getTime() : 9999999999999;
+        comp = timeA - timeB;
+      } else if (sortBy === 'orderDate') {
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+        comp = timeB - timeA;
+      } else if (sortBy === 'customerName') {
+        comp = a.customerName.localeCompare(b.customerName);
+      } else if (sortBy === 'balanceDue') {
+        comp = Number(b.balanceDue) - Number(a.balanceDue);
+      }
+      return sortDirection === 'asc' ? comp : -comp;
+    });
+
+    return list;
+  }, [searchedOrders, filterChip, sortBy, sortDirection]);
+
+  // Column 1: Action Required
+  const actionRequiredAll = useMemo(
+    () => processedOrders.filter((o) => o.orderStatus === 'ORDERED'),
+    [processedOrders]
+  );
+  const col1UrgentCount = useMemo(() => {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return actionRequiredAll.filter(
+      (o) => o.promisedDeliveryDate && new Date(o.promisedDeliveryDate).getTime() <= today.getTime()
+    ).length;
+  }, [actionRequiredAll]);
+
+  const actionRequiredFiltered = useMemo(() => {
+    if (col1Filter === 'URGENT') {
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      return actionRequiredAll.filter(
+        (o) => o.promisedDeliveryDate && new Date(o.promisedDeliveryDate).getTime() <= today.getTime()
+      );
+    }
+    return actionRequiredAll;
+  }, [actionRequiredAll, col1Filter]);
+
+  // Column 2: At Lab / In Fitting
+  const atLabFittingAll = useMemo(
+    () =>
+      processedOrders.filter(
         (o) => o.orderStatus === 'SENT_TO_LAB' || o.orderStatus === 'IN_FITTING'
       ),
-      readyPickup: searchedOrders.filter((o) => o.orderStatus === 'READY_FOR_COLLECTION'),
-      completed: searchedOrders.filter((o) => o.orderStatus === 'DELIVERED_AND_CLOSED'),
+    [processedOrders]
+  );
+  const col2LabCount = useMemo(
+    () => atLabFittingAll.filter((o) => o.orderStatus === 'SENT_TO_LAB').length,
+    [atLabFittingAll]
+  );
+  const col2FittingCount = useMemo(
+    () => atLabFittingAll.filter((o) => o.orderStatus === 'IN_FITTING').length,
+    [atLabFittingAll]
+  );
+  const atLabFittingFiltered = useMemo(() => {
+    if (col2Filter === 'LAB') {
+      return atLabFittingAll.filter((o) => o.orderStatus === 'SENT_TO_LAB');
+    }
+    if (col2Filter === 'FITTING') {
+      return atLabFittingAll.filter((o) => o.orderStatus === 'IN_FITTING');
+    }
+    return atLabFittingAll;
+  }, [atLabFittingAll, col2Filter]);
+
+  // Column 3: Ready for Pickup
+  const readyPickupAll = useMemo(
+    () => processedOrders.filter((o) => o.orderStatus === 'READY_FOR_COLLECTION'),
+    [processedOrders]
+  );
+  const col3BalanceCount = useMemo(
+    () => readyPickupAll.filter((o) => Number(o.balanceDue) > 0).length,
+    [readyPickupAll]
+  );
+  const col3PaidCount = useMemo(
+    () => readyPickupAll.filter((o) => Number(o.balanceDue) <= 0).length,
+    [readyPickupAll]
+  );
+  const readyPickupFiltered = useMemo(() => {
+    if (col3Filter === 'BALANCE') {
+      return readyPickupAll.filter((o) => Number(o.balanceDue) > 0);
+    }
+    if (col3Filter === 'PAID') {
+      return readyPickupAll.filter((o) => Number(o.balanceDue) <= 0);
+    }
+    return readyPickupAll;
+  }, [readyPickupAll, col3Filter]);
+
+  // Column 4: Completed
+  const completedAll = useMemo(
+    () => processedOrders.filter((o) => o.orderStatus === 'DELIVERED_AND_CLOSED'),
+    [processedOrders]
+  );
+
+  // Status mapping to 4 workflow columns (reflects search query, chip filter, sort & column sub-filters)
+  const orderColumns = useMemo(() => {
+    return {
+      actionRequired: actionRequiredFiltered,
+      atLabFitting: atLabFittingFiltered,
+      readyPickup: readyPickupFiltered,
+      completed: completedAll,
     };
-  }, [searchedOrders]);
+  }, [actionRequiredFiltered, atLabFittingFiltered, readyPickupFiltered, completedAll]);
 
   // Filtered orders for table/tabbed view
   const filteredOrders = useMemo(() => {
-    let list = searchedOrders;
+    let list = processedOrders;
 
     if (activeTab === 'ORDERED') {
       list = orderColumns.actionRequired;
@@ -171,7 +312,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
     }
 
     return list;
-  }, [searchedOrders, activeTab, orderColumns]);
+  }, [processedOrders, activeTab, orderColumns]);
 
   const handleStatusChange = async (invoiceId: string, newStatus: OrderStatus) => {
     const targetOrder = orders.find((o) => o.id === invoiceId);
@@ -304,66 +445,31 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
 
   return (
     <div className="flex flex-col h-full w-full p-4 md:p-6 gap-6">
-      {/* ── Page Top Header & Metrics Bar ── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
-        <div className="shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
-              <ClipboardList className="h-5 w-5" />
+      {/* ── Page Top Header ── */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs">
+            <ClipboardList className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-bold text-foreground tracking-tight">
+                Lab Order & Workshop Management
+              </h1>
+              <span
+                data-testid="lab-orders-scope-badge"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+              >
+                <Store className="h-3 w-3" />
+                <span>Store: {activeBranchLabel}</span>
+                {isPending && <span className="animate-pulse">...</span>}
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold text-foreground tracking-tight">
-                  Lab Order & Workshop Management
-                </h1>
-                <span
-                  data-testid="lab-orders-scope-badge"
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
-                >
-                  {selectedBranchIds?.includes('all') || !selectedBranchIds?.length ? (
-                    <Layers className="h-3 w-3" />
-                  ) : selectedBranchIds.length === 1 ? (
-                    <Store className="h-3 w-3" />
-                  ) : (
-                    <Building2 className="h-3 w-3" />
-                  )}
-                  <span>{activeBranchLabel}</span>
-                  {isPending && <span className="animate-pulse">...</span>}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Track fabrication, surfacing, lens fitting, and customer pickup in real-time.
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Track fabrication, surfacing, lens fitting, and customer pickup in real-time.
+            </p>
           </div>
         </div>
-
-        {/* In Kanban View: Center-positioned Search Box */}
-        {viewMode === 'kanban' && (
-          <div className="relative flex-1 max-w-md w-full sm:mx-4">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              data-testid="input-lab-orders-search"
-              aria-label="Search lab orders by invoice number, customer name, phone, or SKU"
-              placeholder="Search by invoice #, customer name, phone, or SKU..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-border bg-card pl-9 pr-8 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear search"
-                className="absolute right-2.5 top-2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
-                title="Clear search"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-        )}
 
         {/* View Mode Switcher */}
         <div className="flex items-center gap-2 shrink-0">
@@ -398,36 +504,213 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
         </div>
       </div>
 
-      {/* ── Table View Navigation Bar (Search + Status Filter Tabs) ── */}
-      {viewMode === 'table' && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 shrink-0">
-          {/* Search Input for Table */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              data-testid="input-lab-orders-search"
-              aria-label="Search lab orders by invoice number, customer name, phone, or SKU"
-              placeholder="Search by invoice #, customer name, phone, or SKU..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-border bg-card pl-9 pr-8 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
-            />
-            {searchQuery && (
+      {/* ── Searchbar Line with Common Controls Inline (No Congested Extra Box) ── */}
+      {viewMode === 'kanban' ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
+          {/* Left: Search Bar & Common Filter Chips */}
+          <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+            <div className="relative w-72 sm:w-80">
+              <Search className="absolute left-3 top-2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                data-testid="input-lab-orders-search"
+                aria-label="Search lab orders by invoice number, customer name, phone, or SKU"
+                placeholder="Search by invoice #, customer name, phone, or SKU..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-border bg-card pl-9 pr-8 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                  className="absolute right-2.5 top-1.5 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
+                  title="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Common Filter Chips */}
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+              <span className="text-[11px] font-semibold text-muted-foreground mr-1 flex items-center gap-1">
+                <Filter className="h-3 w-3" />
+                <span>Filter:</span>
+              </span>
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear search"
-                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
-                title="Clear search"
+                data-testid="filter-chip-all"
+                onClick={() => setFilterChip('ALL')}
+                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                  filterChip === 'ALL'
+                    ? 'bg-foreground text-background shadow-xs'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
               >
-                <X className="h-3.5 w-3.5" />
+                All ({orders.length})
               </button>
-            )}
+              <button
+                type="button"
+                data-testid="filter-chip-overdue"
+                onClick={() => setFilterChip('OVERDUE')}
+                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                  filterChip === 'OVERDUE'
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20'
+                }`}
+              >
+                <AlertTriangle className="h-3 w-3" />
+                <span>Overdue ({overdueCount})</span>
+              </button>
+              <button
+                type="button"
+                data-testid="filter-chip-balance"
+                onClick={() => setFilterChip('BALANCE_PENDING')}
+                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                  filterChip === 'BALANCE_PENDING'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                }`}
+              >
+                <CreditCard className="h-3 w-3" />
+                <span>Balance Due ({balancePendingCount})</span>
+              </button>
+            </div>
           </div>
 
-          {/* Status Tabs for Tabbed Navigation - Only visible in Table List */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+          {/* Right: Sort Controls */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+              <ArrowUpDown className="h-3 w-3" />
+              <span>Sort:</span>
+            </span>
+            <select
+              data-testid="select-lab-orders-sort"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground focus:outline-hidden cursor-pointer"
+            >
+              <option value="promisedDate">Promised Date</option>
+              <option value="orderDate">Order Date</option>
+              <option value="customerName">Customer Name</option>
+              <option value="balanceDue">Balance Due</option>
+            </select>
+            <button
+              type="button"
+              data-testid="btn-toggle-sort-dir"
+              onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+              title={`Sort direction: ${sortDirection === 'asc' ? 'Ascending' : 'Descending'}`}
+              className="rounded-lg border border-border bg-card px-2 py-1 text-xs font-bold text-foreground hover:bg-muted transition cursor-pointer"
+            >
+              {sortDirection === 'asc' ? '↑ Asc' : '↓ Desc'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Table Mode Toolbar: Search + Status Tabs + Filter & Sort Inline */
+        <div className="flex flex-col gap-3 shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Search Input for Table */}
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                data-testid="input-lab-orders-search"
+                aria-label="Search lab orders by invoice number, customer name, phone, or SKU"
+                placeholder="Search by invoice #, customer name, phone, or SKU..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-border bg-card pl-9 pr-8 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                  className="absolute right-2.5 top-1.5 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
+                  title="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Filter Chips & Sort Controls */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  data-testid="filter-chip-all"
+                  onClick={() => setFilterChip('ALL')}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                    filterChip === 'ALL'
+                      ? 'bg-foreground text-background shadow-xs'
+                      : 'bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  All ({orders.length})
+                </button>
+                <button
+                  type="button"
+                  data-testid="filter-chip-overdue"
+                  onClick={() => setFilterChip('OVERDUE')}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                    filterChip === 'OVERDUE'
+                      ? 'bg-red-600 text-white shadow-xs'
+                      : 'bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20'
+                  }`}
+                >
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>Overdue ({overdueCount})</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="filter-chip-balance"
+                  onClick={() => setFilterChip('BALANCE_PENDING')}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                    filterChip === 'BALANCE_PENDING'
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                  }`}
+                >
+                  <CreditCard className="h-3 w-3" />
+                  <span>Balance Due ({balancePendingCount})</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                  <ArrowUpDown className="h-3 w-3" />
+                  <span>Sort:</span>
+                </span>
+                <select
+                  data-testid="select-lab-orders-sort"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground focus:outline-hidden cursor-pointer"
+                >
+                  <option value="promisedDate">Promised Date</option>
+                  <option value="orderDate">Order Date</option>
+                  <option value="customerName">Customer Name</option>
+                  <option value="balanceDue">Balance Due</option>
+                </select>
+                <button
+                  type="button"
+                  data-testid="btn-toggle-sort-dir"
+                  onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+                  title={`Sort direction: ${sortDirection === 'asc' ? 'Ascending' : 'Descending'}`}
+                  className="rounded-lg border border-border bg-card px-2 py-1 text-xs font-bold text-foreground hover:bg-muted transition cursor-pointer"
+                >
+                  {sortDirection === 'asc' ? '↑ Asc' : '↓ Desc'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Tabs for Tabbed Navigation - Only in Table List */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 border-t border-border pt-2">
             <button
               type="button"
               data-testid="tab-all"
@@ -440,7 +723,6 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
             >
               All Orders ({searchedOrders.length})
             </button>
-
             <button
               type="button"
               data-testid="tab-ordered"
@@ -451,9 +733,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                   : 'bg-card text-amber-600 dark:text-amber-400 border border-border hover:bg-amber-500/10'
               }`}
             >
-              Action Required ({orderColumns.actionRequired.length})
+              Action Required ({actionRequiredAll.length})
             </button>
-
             <button
               type="button"
               data-testid="tab-in-fitting"
@@ -464,9 +745,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                   : 'bg-card text-indigo-600 dark:text-indigo-400 border border-border hover:bg-indigo-500/10'
               }`}
             >
-              In Fitting ({orderColumns.atLabFitting.length})
+              In Fitting ({atLabFittingAll.length})
             </button>
-
             <button
               type="button"
               data-testid="tab-ready"
@@ -477,9 +757,8 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                   : 'bg-card text-emerald-600 dark:text-emerald-400 border border-border hover:bg-emerald-500/10'
               }`}
             >
-              Ready for Pickup ({orderColumns.readyPickup.length})
+              Ready for Pickup ({readyPickupAll.length})
             </button>
-
             <button
               type="button"
               data-testid="tab-completed"
@@ -490,7 +769,7 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                   : 'bg-card text-muted-foreground border border-border hover:bg-muted hover:text-foreground'
               }`}
             >
-              Completed ({orderColumns.completed.length})
+              Completed ({completedAll.length})
             </button>
           </div>
         </div>
@@ -506,16 +785,46 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               data-testid="kanban-column-action-required"
               className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden"
             >
-              <div className="flex items-center justify-between border-b border-amber-500/20 bg-amber-500/10 px-3.5 py-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
-                  <h2 className="text-xs font-bold text-amber-700 dark:text-amber-300">
-                    1. Action Required
-                  </h2>
+              <div className="flex flex-col border-b border-amber-500/20 bg-amber-500/10 px-3 py-2 gap-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+                    <h2 className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                      1. Action Required
+                    </h2>
+                  </div>
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
+                    {orderColumns.actionRequired.length}
+                  </span>
                 </div>
-                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
-                  {orderColumns.actionRequired.length}
-                </span>
+                {/* Column 1 Contextual Sub-filters */}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    data-testid="col1-filter-all"
+                    onClick={() => setCol1Filter('ALL')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition cursor-pointer ${
+                      col1Filter === 'ALL'
+                        ? 'bg-amber-600 text-white shadow-2xs'
+                        : 'bg-amber-500/15 text-amber-800 dark:text-amber-300 hover:bg-amber-500/25'
+                    }`}
+                  >
+                    All ({actionRequiredAll.length})
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="col1-filter-urgent"
+                    onClick={() => setCol1Filter('URGENT')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition cursor-pointer flex items-center gap-1 ${
+                      col1Filter === 'URGENT'
+                        ? 'bg-red-600 text-white shadow-2xs'
+                        : 'bg-red-500/15 text-red-700 dark:text-red-300 hover:bg-red-500/25'
+                    }`}
+                  >
+                    <span>⚠️ Urgent</span>
+                    <span>({col1UrgentCount})</span>
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/20">
@@ -543,16 +852,57 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               data-testid="kanban-column-at-lab"
               className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden"
             >
-              <div className="flex items-center justify-between border-b border-indigo-500/20 bg-indigo-500/10 px-3.5 py-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
-                  <h2 className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                    2. At Lab / In Fitting
-                  </h2>
+              <div className="flex flex-col border-b border-indigo-500/20 bg-indigo-500/10 px-3 py-2 gap-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
+                    <h2 className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                      2. At Lab / In Fitting
+                    </h2>
+                  </div>
+                  <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-800 dark:text-indigo-300">
+                    {orderColumns.atLabFitting.length}
+                  </span>
                 </div>
-                <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-800 dark:text-indigo-300">
-                  {orderColumns.atLabFitting.length}
-                </span>
+                {/* Column 2 Contextual Sub-filters */}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    data-testid="col2-filter-all"
+                    onClick={() => setCol2Filter('ALL')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition cursor-pointer ${
+                      col2Filter === 'ALL'
+                        ? 'bg-indigo-600 text-white shadow-2xs'
+                        : 'bg-indigo-500/15 text-indigo-800 dark:text-indigo-300 hover:bg-indigo-500/25'
+                    }`}
+                  >
+                    All ({atLabFittingAll.length})
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="col2-filter-lab"
+                    onClick={() => setCol2Filter('LAB')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition cursor-pointer ${
+                      col2Filter === 'LAB'
+                        ? 'bg-blue-600 text-white shadow-2xs'
+                        : 'bg-blue-500/15 text-blue-700 dark:text-blue-300 hover:bg-blue-500/25'
+                    }`}
+                  >
+                    Lab ({col2LabCount})
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="col2-filter-fitting"
+                    onClick={() => setCol2Filter('FITTING')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition cursor-pointer ${
+                      col2Filter === 'FITTING'
+                        ? 'bg-indigo-700 text-white shadow-2xs'
+                        : 'bg-indigo-500/15 text-indigo-800 dark:text-indigo-300 hover:bg-indigo-500/25'
+                    }`}
+                  >
+                    Fitting ({col2FittingCount})
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/20">
@@ -580,16 +930,57 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
               data-testid="kanban-column-ready-pickup"
               className="flex flex-col rounded-xl border border-border bg-card shadow-2xs overflow-hidden"
             >
-              <div className="flex items-center justify-between border-b border-emerald-500/20 bg-emerald-500/10 px-3.5 py-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  <h2 className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                    3. Ready for Pickup
-                  </h2>
+              <div className="flex flex-col border-b border-emerald-500/20 bg-emerald-500/10 px-3 py-2 gap-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    <h2 className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                      3. Ready for Pickup
+                    </h2>
+                  </div>
+                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
+                    {orderColumns.readyPickup.length}
+                  </span>
                 </div>
-                <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
-                  {orderColumns.readyPickup.length}
-                </span>
+                {/* Column 3 Contextual Sub-filters */}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    data-testid="col3-filter-all"
+                    onClick={() => setCol3Filter('ALL')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition cursor-pointer ${
+                      col3Filter === 'ALL'
+                        ? 'bg-emerald-600 text-white shadow-2xs'
+                        : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/25'
+                    }`}
+                  >
+                    All ({readyPickupAll.length})
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="col3-filter-balance"
+                    onClick={() => setCol3Filter('BALANCE')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition cursor-pointer ${
+                      col3Filter === 'BALANCE'
+                        ? 'bg-amber-600 text-white shadow-2xs'
+                        : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25'
+                    }`}
+                  >
+                    Due ({col3BalanceCount})
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="col3-filter-paid"
+                    onClick={() => setCol3Filter('PAID')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition cursor-pointer ${
+                      col3Filter === 'PAID'
+                        ? 'bg-emerald-700 text-white shadow-2xs'
+                        : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/25'
+                    }`}
+                  >
+                    Paid ({col3PaidCount})
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/20">
@@ -805,27 +1196,44 @@ export function LabOrdersView({ initialOrders }: LabOrdersViewProps) {
                                 )}
 
                               {order.orderStatus === 'READY_FOR_COLLECTION' && (
-                                Number(order.balanceDue) > 0 ? (
+                                <>
+                                  {Number(order.balanceDue) > 0 ? (
+                                    <button
+                                      type="button"
+                                      data-testid="btn-collect-balance"
+                                      onClick={() => handleSettleOrder(order)}
+                                      className="rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500"
+                                    >
+                                      Collect Balance
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      data-testid="btn-mark-delivered"
+                                      onClick={() =>
+                                        handleStatusChange(order.id, 'DELIVERED_AND_CLOSED')
+                                      }
+                                      className="rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 border border-blue-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
+                                    >
+                                      Mark Delivered
+                                    </button>
+                                  )}
+
                                   <button
                                     type="button"
-                                    data-testid="btn-collect-balance"
-                                    onClick={() => handleSettleOrder(order)}
-                                    className="rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500"
+                                    data-testid="btn-notify-whatsapp"
+                                    onClick={() => {
+                                      const digits = order.customerPhone.replace(/\D/g, '');
+                                      const phone = digits.length === 10 ? `91${digits}` : digits;
+                                      const msg = `👓 *Optix Vision Care — Order Ready for Pickup!*\n\nHello *${order.customerName}*,\nYour optical eyewear order for invoice *${order.invoiceNumber}* is ready for collection at our store.\n${Number(order.balanceDue) > 0 ? `\nBalance Due: ₹${order.balanceDue}` : ''}\n\nPlease visit our counter to collect your glasses.\nThank you!`;
+                                      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                                    }}
+                                    className="flex items-center gap-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-2 py-1 text-[11px] font-bold transition cursor-pointer"
                                   >
-                                    Collect Balance
+                                    <Share2 className="h-3 w-3 text-emerald-500" />
+                                    <span>WA</span>
                                   </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    data-testid="btn-mark-delivered"
-                                    onClick={() =>
-                                      handleStatusChange(order.id, 'DELIVERED_AND_CLOSED')
-                                    }
-                                    className="rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 border border-blue-500/30 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
-                                  >
-                                    Mark Delivered
-                                  </button>
-                                )
+                                </>
                               )}
 
                               <button
@@ -892,16 +1300,27 @@ function OrderCard({
   return (
     <div
       data-testid="order-card"
-      className="rounded-lg border border-border bg-card text-card-foreground p-3 shadow-xs hover:border-blue-500/50 dark:hover:border-blue-400/50 transition flex flex-col justify-between gap-2.5"
+      className="rounded-lg border border-border bg-card text-card-foreground p-2.5 shadow-2xs hover:border-blue-500/50 dark:hover:border-blue-400/50 transition flex flex-col justify-between gap-1.5"
     >
-      {/* Top row: Invoice # and Promised Date */}
       <div>
-        <div className="flex items-start justify-between gap-1">
-          <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
-            {order.invoiceNumber}
-          </span>
+        {/* Top row: Invoice #, Branch & Promised Date Badge */}
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
+              {order.invoiceNumber}
+            </span>
+            {order.branchName && (
+              <span
+                data-testid="kanban-card-branch-badge"
+                className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.2 text-[9px] font-medium text-muted-foreground"
+              >
+                <MapPin className="h-2 w-2 text-muted-foreground shrink-0" />
+                <span className="truncate max-w-[80px]">{order.branchName}</span>
+              </span>
+            )}
+          </div>
           <span
-            className={`text-[10px] font-semibold px-1.5 py-0.2 rounded ${
+            className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
               promised.isOverdue
                 ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30'
                 : promised.isToday
@@ -913,48 +1332,47 @@ function OrderCard({
           </span>
         </div>
 
-        {/* Branch Location Badge */}
-        {order.branchName && (
-          <div className="mt-1">
-            <span
-              data-testid="kanban-card-branch-badge"
-              className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800/90 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-            >
-              <MapPin className="h-2.5 w-2.5 text-slate-400 shrink-0" />
-              <span className="truncate max-w-[140px]">{order.branchName}</span>
+        {/* Customer & Phone & Balance Badge */}
+        <div className="mt-1 flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1 truncate text-xs">
+            <User className="h-3 w-3 text-muted-foreground shrink-0" />
+            <span className="font-bold text-foreground truncate max-w-[120px]">{order.customerName}</span>
+            <span className="text-[10px] font-mono text-muted-foreground truncate">({order.customerPhone})</span>
+          </div>
+          {Number(order.balanceDue) > 0 ? (
+            <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.2 rounded border border-amber-500/20 shrink-0">
+              ₹{order.balanceDue} Due
             </span>
-          </div>
-        )}
-
-        {/* Customer / Wearer */}
-        <div className="mt-1">
-          <div className="text-xs font-bold text-foreground flex items-center gap-1">
-            <User className="h-3 w-3 text-muted-foreground" />
-            <span>{order.customerName}</span>
-          </div>
-          <div className="text-[10px] font-mono text-muted-foreground pl-4">
-            {order.customerPhone}
-          </div>
+          ) : (
+            <span className="text-[9px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.2 rounded shrink-0">
+              Paid
+            </span>
+          )}
         </div>
 
-        {/* Items Summary */}
-        <div className="mt-2 text-[11px] text-muted-foreground space-y-0.5 border-t border-border pt-1.5">
-          {order.items.map((item, idx) => (
-            <div key={idx} className="line-clamp-1 text-foreground/90">
+        {/* Items Summary (Compact) */}
+        <div className="mt-1 text-[10px] text-muted-foreground border-t border-border/50 pt-1 space-y-0.5">
+          {order.items.slice(0, 2).map((item, idx) => (
+            <div key={idx} className="line-clamp-1 text-foreground/80">
               • {item.description}
             </div>
           ))}
+          {order.items.length > 2 && (
+            <div className="text-[9px] text-muted-foreground italic">
+              +{order.items.length - 2} more item{order.items.length - 2 > 1 ? 's' : ''}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Action Footer */}
-      <div className="pt-2 border-t border-border flex items-center justify-between gap-1.5">
+      {/* Action Footer (Compact) */}
+      <div className="pt-1.5 border-t border-border flex items-center justify-between gap-1">
         {/* View Lab Slip Button */}
         <button
           type="button"
           data-testid="btn-view-lab-slip"
           onClick={() => onViewSlip(order)}
-          className="flex items-center gap-1 rounded border border-border bg-background text-foreground hover:bg-muted px-2 py-1 text-[10px] font-bold transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="flex items-center gap-1 rounded border border-border bg-background text-foreground hover:bg-muted px-1.5 py-0.5 text-[10px] font-bold transition cursor-pointer"
         >
           <Printer className="h-3 w-3 text-indigo-500" />
           <span>Slip</span>
@@ -967,7 +1385,7 @@ function OrderCard({
               type="button"
               data-testid="btn-status-sent-lab"
               onClick={() => onStatusChange(order.id, 'IN_FITTING')}
-              className="flex items-center gap-1 rounded bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-600 dark:text-indigo-400 px-2 py-1 text-[10px] font-bold border border-indigo-500/30 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="flex items-center gap-0.5 rounded bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 text-[10px] font-bold border border-indigo-500/30 transition cursor-pointer"
             >
               <span>Fit</span>
               <ArrowRight className="h-2.5 w-2.5" />
@@ -980,7 +1398,7 @@ function OrderCard({
                 type="button"
                 data-testid="btn-mark-ready"
                 onClick={() => onStatusChange(order.id, 'READY_FOR_COLLECTION')}
-                className="flex items-center gap-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 px-2 py-1 text-[10px] font-bold border border-emerald-500/30 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+                className="flex items-center gap-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-bold border border-emerald-500/30 transition cursor-pointer"
               >
                 <span>Ready</span>
                 <Check className="h-2.5 w-2.5" />
@@ -988,27 +1406,45 @@ function OrderCard({
             )}
 
           {order.orderStatus === 'READY_FOR_COLLECTION' && (
-            Number(order.balanceDue) > 0 ? (
+            <>
+              {Number(order.balanceDue) > 0 ? (
+                <button
+                  type="button"
+                  data-testid="btn-collect-balance"
+                  onClick={() => onSettleBalance(order)}
+                  className="flex items-center gap-0.5 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-bold border border-amber-500/30 transition cursor-pointer"
+                >
+                  <span>Collect</span>
+                  <PackageCheck className="h-2.5 w-2.5" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="btn-mark-delivered"
+                  onClick={() => onStatusChange(order.id, 'DELIVERED_AND_CLOSED')}
+                  className="flex items-center gap-0.5 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 text-[10px] font-bold border border-blue-500/30 transition cursor-pointer"
+                >
+                  <span>Deliver</span>
+                  <PackageCheck className="h-2.5 w-2.5" />
+                </button>
+              )}
+
               <button
                 type="button"
-                data-testid="btn-collect-balance"
-                onClick={() => onSettleBalance(order)}
-                className="flex items-center gap-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 px-2 py-1 text-[10px] font-bold border border-amber-500/30 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500"
+                data-testid="btn-kanban-notify-whatsapp"
+                title="Notify Customer via WhatsApp"
+                onClick={() => {
+                  const digits = order.customerPhone.replace(/\D/g, '');
+                  const phone = digits.length === 10 ? `91${digits}` : digits;
+                  const msg = `👓 *Optix Vision Care — Order Ready for Pickup!*\n\nHello *${order.customerName}*,\nYour optical eyewear order for invoice *${order.invoiceNumber}* is ready for collection at our store.\n${Number(order.balanceDue) > 0 ? `\nBalance Due: ₹${order.balanceDue}` : ''}\n\nPlease visit our counter to collect your glasses.\nThank you!`;
+                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                }}
+                className="flex items-center gap-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-1 py-0.5 text-[10px] font-bold transition cursor-pointer"
               >
-                <span>Collect Balance</span>
-                <PackageCheck className="h-2.5 w-2.5" />
+                <Share2 className="h-2.5 w-2.5" />
+                <span>WA</span>
               </button>
-            ) : (
-              <button
-                type="button"
-                data-testid="btn-mark-delivered"
-                onClick={() => onStatusChange(order.id, 'DELIVERED_AND_CLOSED')}
-                className="flex items-center gap-1 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 px-2 py-1 text-[10px] font-bold border border-blue-500/30 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
-              >
-                <span>Mark Delivered</span>
-                <PackageCheck className="h-2.5 w-2.5" />
-              </button>
-            )
+            </>
           )}
 
           {/* Quick Dropdown Selector */}
@@ -1017,7 +1453,7 @@ function OrderCard({
             data-testid="select-order-status"
             value={order.orderStatus}
             onChange={(e) => onStatusChange(order.id, e.target.value as OrderStatus)}
-            className="rounded border border-border bg-background px-1.5 py-1 text-[10px] font-semibold text-foreground focus:outline-hidden cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="rounded border border-border bg-background px-1 py-0.5 text-[9px] font-semibold text-foreground focus:outline-hidden cursor-pointer"
           >
             <option value="ORDERED">Ordered</option>
             <option value="SENT_TO_LAB">At Lab</option>

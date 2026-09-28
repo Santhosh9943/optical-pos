@@ -1,17 +1,21 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import Decimal from 'decimal.js';
 import { db } from '@/db';
 import { inventoryItems, invoiceItems, branches } from '@/db/schema';
-import { getCurrentSession } from '@/lib/auth-utils';
+import { getCurrentSession, isManagerOrAdmin, requireManagerOrAdmin } from '@/lib/auth-utils';
 import {
   createInventoryItemSchema,
   type CreateInventoryItemInput,
 } from '@/lib/validators/inventory';
+import { withCache, invalidateCache } from '@/lib/cache';
+import { dispatchNotificationAction } from '@/actions/notification-actions';
+import { createStoreApprovalRequestAction } from '@/actions/approval-actions';
 
-export type InventoryRow = typeof inventoryItems.$inferSelect & {
+export type InventoryRow = Omit<typeof inventoryItems.$inferSelect, 'costPrice'> & {
+  costPrice?: string | null;
   branchName?: string | null;
 };
 
@@ -22,48 +26,67 @@ export async function getInventoryList(branchIds?: string[]): Promise<{
 }> {
   try {
     const session = await getCurrentSession();
+    const isManager = await isManagerOrAdmin(session);
+    const branchKey = branchIds && branchIds.length > 0 ? branchIds.slice().sort().join(',') : 'all';
 
-    const conditions: SQL[] = [
-      eq(inventoryItems.organizationId, session.organizationId),
-      eq(inventoryItems.isActive, true),
-    ];
+    return await withCache(
+      {
+        orgId: session.organizationId,
+        namespace: 'inventory',
+        key: `list:${branchKey}:${isManager ? 'mgr' : 'staff'}`,
+        ttl: 300,
+      },
+      async () => {
+        const conditions: SQL[] = [
+          eq(inventoryItems.organizationId, session.organizationId),
+          eq(inventoryItems.isActive, true),
+        ];
 
-    if (branchIds && branchIds.length > 0 && !branchIds.includes('all')) {
-      conditions.push(inArray(inventoryItems.branchId, branchIds));
-    }
+        if (branchIds && branchIds.length > 0 && !branchIds.includes('all')) {
+          conditions.push(
+            or(
+              inArray(inventoryItems.branchId, branchIds),
+              isNull(inventoryItems.branchId)
+            )!
+          );
+        }
 
-    const items = await db
-      .select({
-        id: inventoryItems.id,
-        sku: inventoryItems.sku,
-        barcode: inventoryItems.barcode,
-        category: inventoryItems.category,
-        brand: inventoryItems.brand,
-        model: inventoryItems.model,
-        description: inventoryItems.description,
-        costPrice: inventoryItems.costPrice,
-        sellingPrice: inventoryItems.sellingPrice,
-        mrp: inventoryItems.mrp,
-        stockQuantity: inventoryItems.stockQuantity,
-        lowStockThreshold: inventoryItems.lowStockThreshold,
-        taxRate: inventoryItems.taxRate,
-        hsnCode: inventoryItems.hsnCode,
-        lensType: inventoryItems.lensType,
-        coating: inventoryItems.coating,
-        lensMaterial: inventoryItems.lensMaterial,
-        organizationId: inventoryItems.organizationId,
-        branchId: inventoryItems.branchId,
-        branchName: branches.name,
-        isActive: inventoryItems.isActive,
-        createdAt: inventoryItems.createdAt,
-        updatedAt: inventoryItems.updatedAt,
-      })
-      .from(inventoryItems)
-      .leftJoin(branches, eq(inventoryItems.branchId, branches.id))
-      .where(and(...conditions))
-      .orderBy(desc(inventoryItems.createdAt));
+        const items = await db
+          .select({
+            id: inventoryItems.id,
+            sku: inventoryItems.sku,
+            barcode: inventoryItems.barcode,
+            category: inventoryItems.category,
+            brand: inventoryItems.brand,
+            model: inventoryItems.model,
+            description: inventoryItems.description,
+            costPrice: isManager ? inventoryItems.costPrice : sql<string | null>`NULL`,
+            sellingPrice: inventoryItems.sellingPrice,
+            mrp: inventoryItems.mrp,
+            stockQuantity: inventoryItems.stockQuantity,
+            lowStockThreshold: inventoryItems.lowStockThreshold,
+            taxRate: inventoryItems.taxRate,
+            hsnCode: inventoryItems.hsnCode,
+            lensType: inventoryItems.lensType,
+            coating: inventoryItems.coating,
+            lensMaterial: inventoryItems.lensMaterial,
+            customCategory: inventoryItems.customCategory,
+            isGstExempt: inventoryItems.isGstExempt,
+            organizationId: inventoryItems.organizationId,
+            branchId: inventoryItems.branchId,
+            branchName: branches.name,
+            isActive: inventoryItems.isActive,
+            createdAt: inventoryItems.createdAt,
+            updatedAt: inventoryItems.updatedAt,
+          })
+          .from(inventoryItems)
+          .leftJoin(branches, eq(inventoryItems.branchId, branches.id))
+          .where(and(...conditions))
+          .orderBy(desc(inventoryItems.createdAt));
 
-    return { success: true, items };
+        return { success: true, items };
+      }
+    );
   } catch (error: unknown) {
     console.error('[getInventoryList] Failed:', error);
     return {
@@ -80,6 +103,7 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
   error?: string;
 }> {
   try {
+    const session = await requireManagerOrAdmin();
     const parsed = createInventoryItemSchema.parse(rawInput);
 
     // Auto-generate a random SKU if left blank
@@ -98,7 +122,9 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
       parsed.mrp && parsed.mrp.trim() !== ''
         ? new Decimal(parsed.mrp).toFixed(2)
         : null;
-    const taxRate = new Decimal(parsed.taxRate || '18.00').toFixed(2);
+    const taxRate = parsed.isGstExempt
+      ? '0.00'
+      : new Decimal(parsed.taxRate || '18.00').toFixed(2);
 
     // Default HSN code based on category if omitted
     let hsnCode = parsed.hsnCode?.trim() || null;
@@ -109,8 +135,6 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
       else if (parsed.category === 'CONTACT_LENS') hsnCode = '9001';
       else if (parsed.category === 'ACCESSORY') hsnCode = '9003';
     }
-
-    const session = await getCurrentSession();
 
     const [inserted] = await db
       .insert(inventoryItems)
@@ -128,6 +152,8 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
         lowStockThreshold: parsed.lowStockThreshold,
         taxRate,
         hsnCode,
+        customCategory: parsed.customCategory?.trim() || null,
+        isGstExempt: parsed.isGstExempt ?? false,
         organizationId: session.organizationId,
         branchId: parsed.branchId || session.branchId,
         isActive: true,
@@ -145,6 +171,7 @@ export async function addInventoryItem(rawInput: CreateInventoryItemInput): Prom
 
     revalidatePath('/admin/inventory');
     revalidatePath('/');
+    await invalidateCache({ orgId: session.organizationId, namespace: 'inventory' });
     return { success: true, item: { ...inserted, branchName } };
   } catch (error: unknown) {
     console.error('[addInventoryItem] Failed:', error);
@@ -181,7 +208,7 @@ export async function updateInventoryItem(
   error?: string;
 }> {
   try {
-    const session = await getCurrentSession();
+    const session = await requireManagerOrAdmin();
 
     const updateData: Partial<typeof inventoryItems.$inferInsert> = {
       updatedAt: new Date(),
@@ -276,8 +303,29 @@ export async function updateInventoryItem(
       branchName = branch?.name || null;
     }
 
+    // Automated Alert: If stock is at or below threshold, dispatch low stock notification
+    if (updated.stockQuantity <= updated.lowStockThreshold) {
+      await dispatchNotificationAction({
+        type: 'inventory.low_stock',
+        organizationId: session.organizationId,
+        branchId: updated.branchId || undefined,
+        severity: updated.stockQuantity === 0 ? 'critical' : 'high',
+        dedupKey: `low_stock:${updated.id}:${updated.stockQuantity}`,
+        payload: {
+          itemId: updated.id,
+          itemName: `${updated.brand || ''} ${updated.model || ''}`.trim() || updated.sku,
+          sku: updated.sku,
+          currentStock: updated.stockQuantity,
+          threshold: updated.lowStockThreshold,
+          branchId: updated.branchId || '',
+          branchName: branchName || undefined,
+        },
+      });
+    }
+
     revalidatePath('/admin/inventory');
     revalidatePath('/');
+    await invalidateCache({ orgId: session.organizationId, namespace: 'inventory' });
     return { success: true, item: { ...updated, branchName } };
   } catch (error: unknown) {
     console.error('[updateInventoryItem] Failed:', error);
@@ -288,12 +336,21 @@ export async function updateInventoryItem(
   }
 }
 
-export async function deleteInventoryItem(id: string): Promise<{
+export async function deleteInventoryItem(
+  id: string,
+  reason?: string
+): Promise<{
   success: boolean;
+  requiresApproval?: boolean;
+  requestId?: string;
+  message?: string;
   error?: string;
 }> {
   try {
     const session = await getCurrentSession();
+    if (!session?.organizationId) {
+      return { success: false, error: 'Unauthorized: Session required' };
+    }
 
     // Verify item belongs to tenant
     const [existing] = await db
@@ -309,6 +366,30 @@ export async function deleteInventoryItem(id: string): Promise<{
 
     if (!existing) {
       return { success: false, error: 'Inventory item not found' };
+    }
+
+    const itemName = `${existing.brand || ''} ${existing.model || ''}`.trim() || existing.sku;
+
+    // RBAC Check: If non-admin, route to Maker-Checker Approval Request
+    const isAdmin = await isManagerOrAdmin(session);
+    if (!isAdmin) {
+      const approvalResult = await createStoreApprovalRequestAction({
+        type: 'delete_inventory',
+        targetId: id,
+        targetName: itemName,
+        reason: reason?.trim() || 'Staff requested inventory deletion / deactivation',
+      });
+
+      if (!approvalResult.success) {
+        return { success: false, error: approvalResult.error || 'Failed to submit approval request' };
+      }
+
+      return {
+        success: true,
+        requiresApproval: true,
+        requestId: approvalResult.requestId,
+        message: 'Approval request submitted to store administrator. Item will be removed once approved.',
+      };
     }
 
     // Check if referenced in historical invoices
@@ -347,6 +428,7 @@ export async function deleteInventoryItem(id: string): Promise<{
 
     revalidatePath('/admin/inventory');
     revalidatePath('/');
+    await invalidateCache({ orgId: session.organizationId, namespace: 'inventory' });
     return { success: true };
   } catch (error: unknown) {
     console.error('[deleteInventoryItem] Failed:', error);
@@ -356,3 +438,80 @@ export async function deleteInventoryItem(id: string): Promise<{
     };
   }
 }
+
+/**
+ * Searches an active inventory product by barcode or SKU for instant hardware barcode scans.
+ */
+export async function searchBarcodeItemAction(
+  barcode: string,
+  branchId?: string
+): Promise<{
+  success: boolean;
+  item?: InventoryRow;
+  error?: string;
+}> {
+  try {
+    const session = await getCurrentSession();
+    const isManager = await isManagerOrAdmin(session);
+    const query = barcode.trim();
+    if (!query) {
+      return { success: false, error: 'Empty barcode' };
+    }
+
+    const conditions: SQL[] = [
+      eq(inventoryItems.organizationId, session.organizationId),
+      eq(inventoryItems.isActive, true),
+      sql`(${inventoryItems.barcode} = ${query} OR ${inventoryItems.sku} = ${query})`,
+    ];
+
+    if (branchId && branchId !== 'all') {
+      conditions.push(eq(inventoryItems.branchId, branchId));
+    }
+
+    const [item] = await db
+      .select({
+        id: inventoryItems.id,
+        sku: inventoryItems.sku,
+        barcode: inventoryItems.barcode,
+        category: inventoryItems.category,
+        brand: inventoryItems.brand,
+        model: inventoryItems.model,
+        description: inventoryItems.description,
+        costPrice: isManager ? inventoryItems.costPrice : sql<string | null>`NULL`,
+        sellingPrice: inventoryItems.sellingPrice,
+        mrp: inventoryItems.mrp,
+        stockQuantity: inventoryItems.stockQuantity,
+        lowStockThreshold: inventoryItems.lowStockThreshold,
+        taxRate: inventoryItems.taxRate,
+        hsnCode: inventoryItems.hsnCode,
+        lensType: inventoryItems.lensType,
+        coating: inventoryItems.coating,
+        lensMaterial: inventoryItems.lensMaterial,
+        customCategory: inventoryItems.customCategory,
+        isGstExempt: inventoryItems.isGstExempt,
+        organizationId: inventoryItems.organizationId,
+        branchId: inventoryItems.branchId,
+        branchName: branches.name,
+        isActive: inventoryItems.isActive,
+        createdAt: inventoryItems.createdAt,
+        updatedAt: inventoryItems.updatedAt,
+      })
+      .from(inventoryItems)
+      .leftJoin(branches, eq(inventoryItems.branchId, branches.id))
+      .where(and(...conditions))
+      .limit(1);
+
+    if (!item) {
+      return { success: false, error: `No item found for barcode: ${query}` };
+    }
+
+    return { success: true, item };
+  } catch (err: unknown) {
+    console.error('[searchBarcodeItemAction] Failed:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Barcode lookup failed',
+    };
+  }
+}
+

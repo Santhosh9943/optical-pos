@@ -1,0 +1,28 @@
+---
+description: Universal in-project AI agent memory hub, session handoff ledger, and compact bug fix log.
+globs: ["src/**/*", "e2e/**/*", "docs/**/*"]
+alwaysApply: true
+---
+
+# Universal AI Agent Memory & Handoff Rules
+
+## 1. In-Project Memory Hub (Read First!)
+- **No Agent Memory Silos**: Memory and historical context live inside the project repository, shared across all AI agents (Cursor, Claude, Gemini, Antigravity).
+- **Task Start Requirement**:
+  1. Inspect `docs/agent-memory/SESSION_HANDOFF.md` before writing code to see the previous agent's achievements, architectural changes, and in-flight work.
+  2. Inspect `docs/agent-memory/BUG_FIX_LOG.md` to avoid repeating solved historical bugs (BUG-001 through BUG-012+).
+  3. Review `docs/agent-memory/AGENT_HANDOFF_PROTOCOL.md` for standard operating procedures.
+
+## 2. Bug Fix Logging Mandate
+- Whenever a bug is fixed during a session:
+  - Immediately append a compact entry to `docs/agent-memory/BUG_FIX_LOG.md`.
+  - Include: Short Title, Component, Symptom, Root Cause, The Fix, and Permanent Invariant.
+
+## 3. Session Handoff Closure Mandate
+- Before completing any task or ending your turn:
+  - Update `docs/agent-memory/SESSION_HANDOFF.md` with:
+    - Active Session Metadata (Timestamp, Agent Name).
+    - Recent task accomplishments.
+    - Files modified.
+    - Quality gate verification results (`npm run check`, `graphify update .`).
+    - Explicit instructions for whichever agent takes the next task.

@@ -1,7 +1,7 @@
 'use server';
 
 import Decimal from 'decimal.js';
-import { and, desc, eq, gte, lte, inArray, type SQL } from 'drizzle-orm';
+import { and, desc, eq, gte, lte, inArray, isNull, or, type SQL } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   invoices,
@@ -32,6 +32,16 @@ export interface DailyReportTransaction {
   branchName?: string | null;
 }
 
+export interface StorePerformanceMetric {
+  branchId: string;
+  branchName: string;
+  orderCount: number;
+  revenue: string;
+  advanceCollected: string;
+  balanceDue: string;
+  revenueSharePercent: string;
+}
+
 export interface DailyFinancialsReport {
   date: string; // Human-readable range or date string
   startDate?: string;
@@ -51,6 +61,7 @@ export interface DailyFinancialsReport {
     totalCollected: string;
   };
   transactions: DailyReportTransaction[];
+  storeBreakdown?: StorePerformanceMetric[];
 }
 
 export type DatePreset =
@@ -70,6 +81,7 @@ export interface FinancialsReportFilter {
   paymentMode?: string; // 'ALL' | 'CASH' | 'UPI' | 'CARD'
   orderStatus?: string; // 'ALL' | OrderStatus
   branchIds?: string[];
+  branchScope?: 'all' | string;
 }
 
 function formatDateStr(d: Date): string {
@@ -251,13 +263,16 @@ export async function getFinancialsReport(
       conditions.push(eq(invoices.orderStatus, filterObj.orderStatus as OrderStatus));
     }
 
-    // Branch filter
-    if (
+    // Branch filter: supports specific branchScope or branchIds array
+    const effectiveScope = filterObj.branchScope;
+    if (effectiveScope && effectiveScope !== 'all') {
+      conditions.push(or(eq(invoices.branchId, effectiveScope), isNull(invoices.branchId))!);
+    } else if (
       filterObj.branchIds &&
       filterObj.branchIds.length > 0 &&
       !filterObj.branchIds.includes('all')
     ) {
-      conditions.push(inArray(invoices.branchId, filterObj.branchIds));
+      conditions.push(or(inArray(invoices.branchId, filterObj.branchIds), isNull(invoices.branchId))!);
     }
 
     // Query invoices joined with customer and branch
@@ -389,6 +404,50 @@ export async function getFinancialsReport(
       }
     }
 
+    // Compute Store Breakdown using decimal.js
+    const storeMap = new Map<string, {
+      branchId: string;
+      branchName: string;
+      orderCount: number;
+      revenueDec: Decimal;
+      advanceDec: Decimal;
+      balanceDec: Decimal;
+    }>();
+
+    for (const inv of finalInvoices) {
+      const bId = inv.branchId || 'unassigned';
+      const bName = inv.branchName || 'Main Store';
+      const current = storeMap.get(bId) || {
+        branchId: bId,
+        branchName: bName,
+        orderCount: 0,
+        revenueDec: new Decimal(0),
+        advanceDec: new Decimal(0),
+        balanceDec: new Decimal(0),
+      };
+
+      current.orderCount += 1;
+      current.revenueDec = current.revenueDec.plus(new Decimal(inv.grandTotal || '0.00'));
+      current.advanceDec = current.advanceDec.plus(new Decimal(inv.advancePaid || '0.00'));
+      current.balanceDec = current.balanceDec.plus(new Decimal(inv.balanceDue || '0.00'));
+      storeMap.set(bId, current);
+    }
+
+    const storeBreakdown: StorePerformanceMetric[] = Array.from(storeMap.values()).map((s) => {
+      const share = totalRevenueDec.isZero()
+        ? '0.0'
+        : s.revenueDec.dividedBy(totalRevenueDec).times(100).toFixed(1);
+      return {
+        branchId: s.branchId,
+        branchName: s.branchName,
+        orderCount: s.orderCount,
+        revenue: s.revenueDec.toFixed(2),
+        advanceCollected: s.advanceDec.toFixed(2),
+        balanceDue: s.balanceDec.toFixed(2),
+        revenueSharePercent: share,
+      };
+    }).sort((a, b) => new Decimal(b.revenue).minus(new Decimal(a.revenue)).toNumber());
+
     const report: DailyFinancialsReport = {
       date: range.label,
       startDate: range.startDate,
@@ -407,6 +466,7 @@ export async function getFinancialsReport(
         totalCollected: totalCollectedDec.toFixed(2),
       },
       transactions,
+      storeBreakdown,
     };
 
     return { success: true, data: report };

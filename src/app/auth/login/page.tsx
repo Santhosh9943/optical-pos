@@ -4,13 +4,13 @@ import React, { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { ensureDefaultSuperAdminAction } from '@/actions/auth-seed-action';
 import {
   Glasses,
   Lock,
   Mail,
   User,
   Building2,
+  Store,
   Loader2,
   AlertCircle,
   Eye,
@@ -20,11 +20,20 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { setupPracticeOnboardingAction } from '@/actions/tenant-actions';
+import { verifyOwnerLoginPreflightAction } from '@/actions/staff-auth-actions';
 
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/pos/new-bill';
+  const rawCallbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard';
+  // Strict Open-Redirect Defense: Must be an internal path starting with single '/' and no protocol-relative '//' or backslash
+  const callbackUrl =
+    rawCallbackUrl.startsWith('/') &&
+    !rawCallbackUrl.startsWith('//') &&
+    !rawCallbackUrl.includes('\\')
+      ? rawCallbackUrl
+      : '/admin/dashboard';
   const planParam = searchParams.get('plan');
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
 
@@ -33,12 +42,18 @@ function LoginFormContent() {
   const [oauthLoading, setOauthLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [staffRedirectInfo, setStaffRedirectInfo] = useState<{
+    isStaff: boolean;
+    orgCode: string;
+    email: string;
+  } | null>(null);
 
   // Form states
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [organizationName, setOrganizationName] = useState('');
+  const [branchName, setBranchName] = useState('');
 
   useEffect(() => {
     if (searchParams.get('mode') === 'signup') {
@@ -49,19 +64,45 @@ function LoginFormContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setStaffRedirectInfo(null);
     setLoading(true);
 
     try {
       if (mode === 'signin') {
-        const { error } = await authClient.signIn.email({
-          email: email.trim(),
+        const trimmedEmail = email.trim();
+
+        // 1. Preflight check: prevent staff accounts from logging into owner portal
+        const preflight = await verifyOwnerLoginPreflightAction(trimmedEmail);
+        if (preflight.isStaff) {
+          setErrorMsg(
+            preflight.error ||
+              `Staff account detected. Please sign in via the Staff Portal with your Practice ID (${preflight.orgCode || 'OPT-X'}).`
+          );
+          setStaffRedirectInfo({
+            isStaff: true,
+            orgCode: preflight.orgCode || '',
+            email: trimmedEmail,
+          });
+          toast.warning('Staff account detected. Please sign in via the Staff Portal.');
+          setLoading(false);
+          return;
+        }
+
+        const res = await authClient.signIn.email({
+          email: trimmedEmail,
           password,
         });
 
-        if (error) {
-          setErrorMsg(error.message || 'Invalid email or password. Please try again.');
-          toast.error(error.message || 'Sign in failed');
+        if (res.error) {
+          setErrorMsg(res.error.message || 'Invalid email or password. Please try again.');
+          toast.error(res.error.message || 'Sign in failed');
           setLoading(false);
+          return;
+        }
+
+        if ((res.data as any)?.twoFactorRedirect) {
+          toast.info('Two-Factor Authentication required');
+          router.push('/auth/2fa');
           return;
         }
 
@@ -69,6 +110,12 @@ function LoginFormContent() {
         router.push(callbackUrl);
         router.refresh();
       } else {
+        if (!organizationName.trim()) {
+          setErrorMsg('Please enter your practice or organization name.');
+          setLoading(false);
+          return;
+        }
+
         const { error } = await authClient.signUp.email({
           name: name.trim(),
           email: email.trim(),
@@ -82,9 +129,29 @@ function LoginFormContent() {
           return;
         }
 
-        toast.success('Account created successfully');
-        router.push(callbackUrl);
-        router.refresh();
+        // Automatically provision Practice Organization & Store Branch
+        const finalBranch = branchName.trim() || 'Main Branch';
+        try {
+          const setupRes = await setupPracticeOnboardingAction({
+            practiceName: organizationName.trim(),
+            branchName: finalBranch,
+            userEmail: email.trim(),
+          });
+
+          if (setupRes.success) {
+            toast.success(`Practice workspace created! Store ID: ${setupRes.orgCode || 'Active'}`);
+            router.push(callbackUrl || '/pos/new-bill');
+            router.refresh();
+          } else {
+            toast.info('Account created. Please complete practice workspace details.');
+            router.push('/onboarding');
+            router.refresh();
+          }
+        } catch (setupErr) {
+          console.warn('[handleSubmit] Automatic setup notice, routing to /onboarding:', setupErr);
+          router.push('/onboarding');
+          router.refresh();
+        }
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'An unexpected error occurred.');
@@ -108,21 +175,6 @@ function LoginFormContent() {
       setErrorMsg(err.message || 'Google Sign-In failed to initialize.');
       toast.error('Google Sign-In failed');
       setOauthLoading(false);
-    }
-  };
-
-  const handleQuickFill = async (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setErrorMsg(null);
-
-    // If super admin is selected, ensure the database has the record seeded
-    if (demoEmail === 'admin@optixos.com' || demoEmail === 'admin@optix.com') {
-      try {
-        await ensureDefaultSuperAdminAction();
-      } catch {
-        // ignore background seed errors
-      }
     }
   };
 
@@ -252,10 +304,29 @@ function LoginFormContent() {
       {errorMsg && (
         <div
           role="alert"
-          className="mb-5 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400"
+          className="mb-4 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400"
         >
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {/* Staff Portal Redirect Prompt */}
+      {staffRedirectInfo?.isStaff && (
+        <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-900 dark:text-amber-200">
+          <p className="font-bold text-amber-800 dark:text-amber-300 text-xs mb-1">
+            Store Staff Account Detected
+          </p>
+          <p className="mb-3 text-[11px] leading-relaxed text-amber-700 dark:text-amber-300/90">
+            Store staff must sign in using the dedicated Staff Portal with your Practice ID (<strong>{staffRedirectInfo.orgCode}</strong>).
+          </p>
+          <Link
+            href={`/auth/staff-login?org=${encodeURIComponent(staffRedirectInfo.orgCode)}&email=${encodeURIComponent(staffRedirectInfo.email)}`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 transition shadow-xs text-xs"
+          >
+            <span>Open Staff Portal ({staffRedirectInfo.orgCode})</span>
+            <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
+          </Link>
         </div>
       )}
 
@@ -289,16 +360,44 @@ function LoginFormContent() {
                 htmlFor="organizationName"
                 className="mb-1.5 block text-xs font-medium text-foreground"
               >
-                Practice / Store Name
+                Organization / Practice Name <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Building2 className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <input
                   id="organizationName"
+                  data-testid="input-signup-org-name"
                   type="text"
+                  required
                   value={organizationName}
                   onChange={(e) => setOrganizationName(e.target.value)}
-                  placeholder="Vision Care Opticals"
+                  placeholder="e.g. Vision Care Opticals"
+                  className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-blue-600 focus:outline-hidden focus:ring-1 focus:ring-blue-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label
+                  htmlFor="branchName"
+                  className="block text-xs font-medium text-foreground"
+                >
+                  Store / Branch Name
+                </label>
+                <span className="text-[11px] text-muted-foreground font-normal">
+                  Optional (defaults to Main Branch)
+                </span>
+              </div>
+              <div className="relative">
+                <Store className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <input
+                  id="branchName"
+                  data-testid="input-signup-branch-name"
+                  type="text"
+                  value={branchName}
+                  onChange={(e) => setBranchName(e.target.value)}
+                  placeholder="e.g. Downtown Branch (or leave blank)"
                   className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-blue-600 focus:outline-hidden focus:ring-1 focus:ring-blue-600"
                 />
               </div>
@@ -328,12 +427,22 @@ function LoginFormContent() {
         </div>
 
         <div>
-          <label
-            htmlFor="password"
-            className="mb-1.5 block text-xs font-medium text-foreground"
-          >
-            Password
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label
+              htmlFor="password"
+              className="block text-xs font-medium text-foreground"
+            >
+              Password
+            </label>
+            {mode === 'signin' && (
+              <Link
+                href="/auth/forgot-password"
+                className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            )}
+          </div>
           <div className="relative">
             <Lock className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <input
@@ -374,37 +483,21 @@ function LoginFormContent() {
             <span>{mode === 'signin' ? 'Sign In to Workspace' : 'Create Optical Practice'}</span>
           )}
         </button>
-      </form>
 
-      {/* Quick Fill Demo Helper */}
-      <div className="mt-6 border-t border-border pt-4">
-        <p className="mb-2 text-center text-[11px] font-medium text-muted-foreground">
-          Demo Instant Quick-Fill
-        </p>
-        <div className="grid grid-cols-3 gap-1.5">
-          <button
-            type="button"
-            onClick={() => handleQuickFill('admin@optixos.com', 'AdminPass123!')}
-            className="rounded-md border border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/20 py-1.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400 transition hover:bg-blue-100 dark:hover:bg-blue-900/40 text-center"
-          >
-            Super Admin
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickFill('admin@optix.com', 'AdminPass123!')}
-            className="rounded-md border border-border bg-muted/50 py-1.5 text-[11px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground text-center"
-          >
-            Store Admin
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickFill('optometrist@optix.com', 'OptomPass123!')}
-            className="rounded-md border border-border bg-muted/50 py-1.5 text-[11px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground text-center"
-          >
-            Optometrist
-          </button>
+        {/* Dedicated Store Staff Portal Entry Link */}
+        <div className="pt-3 border-t border-border/80 text-center">
+          <p className="text-xs text-muted-foreground">
+            Store Staff or Optometrist?{' '}
+            <Link
+              href="/auth/staff-login"
+              data-testid="link-staff-portal"
+              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+            >
+              Sign in to Staff Portal &rarr;
+            </Link>
+          </p>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

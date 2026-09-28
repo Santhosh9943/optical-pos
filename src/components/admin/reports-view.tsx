@@ -27,8 +27,13 @@ import {
   Glasses,
   ListFilter,
   Building2,
+  Store,
+  FileEdit,
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { EditInvoiceModal } from './edit-invoice-modal';
+import { ReturnRefundModal } from './return-refund-modal';
 import {
   getFinancialsReport,
   type DailyFinancialsReport,
@@ -39,8 +44,24 @@ import {
 import { useTenantStore } from '@/store/tenant-store';
 
 export function ReportsView() {
-  const selectedBranchIds = useTenantStore((s) => s.selectedBranchIds);
+  const selectedBranchId = useTenantStore((s) => s.selectedBranchId);
   const branches = useTenantStore((s) => s.branches);
+  const activeRoleMode = useTenantStore((s) => s.activeRoleMode);
+  const isOwner = activeRoleMode === 'organizer' || activeRoleMode === 'super_admin';
+
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
+  const [returnInvoiceId, setReturnInvoiceId] = useState<string | null>(null);
+
+  // Store scope state: Practice Owners can see 'all', while staff are strictly locked to their selected branch
+  const [reportBranchScope, setReportBranchScope] = useState<string>(
+    isOwner ? 'all' : (selectedBranchId || 'all')
+  );
+
+  useEffect(() => {
+    if (!isOwner && selectedBranchId) {
+      setReportBranchScope(selectedBranchId);
+    }
+  }, [isOwner, selectedBranchId]);
 
   const getTodayStr = () => {
     const d = new Date();
@@ -109,7 +130,7 @@ export function ReportsView() {
       setIsLoading(true);
       const res = await getFinancialsReport({
         ...filterConfig,
-        branchIds: filterConfig.branchIds ?? selectedBranchIds,
+        branchScope: filterConfig.branchScope ?? reportBranchScope,
       });
       if (res.success && res.data) {
         setReport(res.data);
@@ -128,7 +149,7 @@ export function ReportsView() {
     }
   };
 
-  // Fetch report whenever main filters or selected branches change
+  // Fetch report whenever main filters or selected store scope change
   useEffect(() => {
     const filterConfig: FinancialsReportFilter = {
       preset,
@@ -137,13 +158,13 @@ export function ReportsView() {
       paymentStatus: paymentStatusFilter,
       paymentMode: paymentModeFilter,
       orderStatus: orderStatusFilter,
-      branchIds: selectedBranchIds,
+      branchScope: reportBranchScope,
     };
 
     fetchReport(filterConfig);
     setCurrentPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preset, paymentStatusFilter, paymentModeFilter, orderStatusFilter, selectedBranchIds]);
+  }, [preset, paymentStatusFilter, paymentModeFilter, orderStatusFilter, reportBranchScope]);
 
   const handleApplyCustomRange = (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,7 +186,7 @@ export function ReportsView() {
       paymentStatus: paymentStatusFilter,
       paymentMode: paymentModeFilter,
       orderStatus: orderStatusFilter,
-      branchIds: selectedBranchIds,
+      branchScope: reportBranchScope,
     });
   };
 
@@ -188,7 +209,7 @@ export function ReportsView() {
         paymentStatus: paymentStatusFilter,
         paymentMode: paymentModeFilter,
         orderStatus: orderStatusFilter,
-        branchIds: selectedBranchIds,
+        branchScope: reportBranchScope,
       });
       toast.info('Report refreshed', { duration: 2000 });
     });
@@ -261,18 +282,43 @@ export function ReportsView() {
               {report?.date || 'Selected Period'}
             </strong>
           </p>
-          <div className="mt-1.5 flex items-center gap-2">
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <span
               data-testid="reports-scope-badge"
               className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
             >
               <Building2 className="h-3 w-3" />
-              {selectedBranchIds.includes('all')
-                ? `All Branches (${branches.length > 0 ? `${branches.length} Stores` : 'Consolidated'})`
-                : selectedBranchIds.length === 1
-                  ? branches.find((b) => b.id === selectedBranchIds[0])?.name || 'Single Store'
-                  : `${selectedBranchIds.length} Stores Selected`}
+              {reportBranchScope === 'all'
+                ? `All Branches (${branches.length > 0 ? `${branches.length} Stores` : 'Consolidated Practice'})`
+                : branches.find((b) => b.id === reportBranchScope)?.name || 'Selected Store'}
             </span>
+
+            {/* Store Scope Switcher in Reports */}
+            <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-0.5 text-xs shadow-2xs">
+              <Store className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Store Scope:
+              </span>
+              <select
+                data-testid="select-report-store-scope"
+                aria-label="Select Report Store Scope"
+                value={reportBranchScope}
+                onChange={(e) => {
+                  setReportBranchScope(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent font-semibold text-foreground text-xs focus:outline-hidden cursor-pointer"
+              >
+                {isOwner && (
+                  <option value="all">🏢 All Stores (Consolidated Practice)</option>
+                )}
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    🏪 {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -615,6 +661,78 @@ export function ReportsView() {
             </div>
           )}
 
+          {/* ── Multi-Store Performance Comparison Hub ── */}
+          {report?.storeBreakdown && report.storeBreakdown.length > 0 && (
+            <div
+              data-testid="multi-store-breakdown-section"
+              className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs space-y-3 no-print"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <Building2 className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                      Multi-Store Performance & Comparative Analytics
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      Consolidated revenue contributions and transaction volumes across stores
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                  {report.storeBreakdown.length} {report.storeBreakdown.length === 1 ? 'Store' : 'Stores'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {report.storeBreakdown.map((store) => (
+                  <div
+                    key={store.branchId}
+                    data-testid={`store-card-${store.branchId}`}
+                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-3.5 space-y-2.5 hover:border-blue-500/40 transition"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-bold text-xs text-foreground truncate">
+                        <Store className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span className="truncate">{store.branchName}</span>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">
+                        {store.orderCount} {store.orderCount === 1 ? 'order' : 'orders'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-baseline text-xs">
+                        <span className="text-muted-foreground text-[11px]">Revenue:</span>
+                        <span className="font-extrabold text-foreground">₹{store.revenue}</span>
+                      </div>
+                      {/* Share Progress Bar */}
+                      <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-blue-600 dark:bg-blue-500 h-full rounded-full transition-all"
+                          style={{ width: `${Math.min(100, Math.max(0, parseFloat(store.revenueSharePercent) || 0))}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+                        <span>Practice Share: {store.revenueSharePercent}%</span>
+                        <span>Collected: ₹{store.advanceCollected}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-800/60 text-[10px]">
+                      <span className="text-muted-foreground">Balance Due:</span>
+                      <span className={`font-semibold ${parseFloat(store.balanceDue) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                        ₹{store.balanceDue}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── BOTTOM SECTION: TRANSACTION AUDIT LEDGER ── */}
           <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
             {/* Header & Action Toolbar */}
@@ -743,12 +861,13 @@ export function ReportsView() {
                     <th className="py-2.5 px-3 text-right bg-slate-100 dark:bg-slate-900">Advance Paid</th>
                     <th className="py-2.5 px-3 text-right bg-slate-100 dark:bg-slate-900">Balance Due</th>
                     <th className="py-2.5 px-3 text-right bg-slate-100 dark:bg-slate-900">Grand Total</th>
+                    <th className="py-2.5 px-3 text-center bg-slate-100 dark:bg-slate-900 w-16">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                   {paginatedTransactions.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="py-12 text-center">
+                      <td colSpan={11} className="py-12 text-center">
                         <Receipt className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
                         <p className="mt-2 font-medium text-slate-600 dark:text-slate-300 text-xs">
                           No transactions match the selected filters
@@ -882,6 +1001,32 @@ export function ReportsView() {
                           <td className="py-2 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                             ₹{Number(tx.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                           </td>
+
+                          {/* Action Button */}
+                          <td className="py-2 px-3 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                data-testid="btn-edit-invoice-table"
+                                onClick={() => setEditingInvoiceId(tx.id)}
+                                className="inline-flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 px-2 py-0.5 text-[11px] font-semibold transition cursor-pointer"
+                                title="Edit invoice details and GST tax"
+                              >
+                                <FileEdit className="h-3 w-3" />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                type="button"
+                                data-testid="btn-return-refund-table"
+                                onClick={() => setReturnInvoiceId(tx.id)}
+                                className="inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-2 py-0.5 text-[11px] font-semibold transition cursor-pointer"
+                                title="Process return and issue refund or store credit"
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                                <span>Return</span>
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })
@@ -953,6 +1098,22 @@ export function ReportsView() {
           </div>
         </>
       )}
+
+      {/* ── Edit Invoice Details & GST Modal ── */}
+      <EditInvoiceModal
+        isOpen={!!editingInvoiceId}
+        invoiceId={editingInvoiceId}
+        onClose={() => setEditingInvoiceId(null)}
+        onSuccess={() => handlePresetSelect(preset)}
+      />
+
+      {/* ── Return & Store Credit Modal ── */}
+      <ReturnRefundModal
+        isOpen={!!returnInvoiceId}
+        invoiceId={returnInvoiceId}
+        onClose={() => setReturnInvoiceId(null)}
+        onSuccess={() => handlePresetSelect(preset)}
+      />
     </div>
   );
 }

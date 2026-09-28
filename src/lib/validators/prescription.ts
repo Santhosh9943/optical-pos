@@ -258,7 +258,11 @@ export const createOrderSchema = z.object({
   promisedDeliveryDate: z.string().datetime().optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   billingDetails: invoiceBillingDetailsSchema.optional(),
-  branchId: z.string().uuid().optional().nullable(),
+  branchId: z
+    .string()
+    .regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/, 'Invalid UUID')
+    .optional()
+    .nullable(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

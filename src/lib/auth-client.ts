@@ -1,5 +1,9 @@
 import { createAuthClient } from 'better-auth/client';
-import { organizationClient } from 'better-auth/client/plugins';
+import {
+  organizationClient,
+  twoFactorClient,
+  adminClient,
+} from 'better-auth/client/plugins';
 
 function getClientBaseURL(): string | undefined {
   if (process.env.NEXT_PUBLIC_BETTER_AUTH_URL) {
@@ -21,6 +25,14 @@ export const authClient = createAuthClient({
   baseURL: getClientBaseURL(),
   plugins: [
     organizationClient(),
+    twoFactorClient({
+      onTwoFactorRedirect() {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/2fa';
+        }
+      },
+    }),
+    adminClient(),
   ],
 });
 

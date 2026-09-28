@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import { getActiveLabOrders } from '@/actions/lab-actions';
+import { getCurrentPlanAction } from '@/actions/plan-actions';
 import { LabOrdersView } from '@/components/admin/lab-orders-view';
+import { PlanUpgradeGate } from '@/components/subscription/plan-upgrade-gate';
 
 export const metadata: Metadata = {
   title: 'Lab Orders & Workshop | OptixOS',
@@ -10,7 +12,14 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function LabOrdersPage() {
-  const initialOrders = await getActiveLabOrders();
+  const [initialOrders, planStatus] = await Promise.all([
+    getActiveLabOrders(),
+    getCurrentPlanAction(),
+  ]);
 
-  return <LabOrdersView initialOrders={initialOrders} />;
+  return (
+    <PlanUpgradeGate featureKey="workshop_lab_kanban" currentPlan={planStatus.planId}>
+      <LabOrdersView initialOrders={initialOrders} />
+    </PlanUpgradeGate>
+  );
 }

@@ -11,11 +11,18 @@ import {
   Users,
   ChevronRight,
   Layers,
+  Eye,
+  Shield,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function SimulationBanner() {
   const router = useRouter();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const {
     isSimulating,
     activeRoleMode,
@@ -30,15 +37,19 @@ export function SimulationBanner() {
     updateSimulatedBranch,
   } = useTenantStore();
 
-  if (!isSimulating) {
+  if (!mounted || !isSimulating) {
     return null;
   }
 
   const roleLabels: Record<RoleMode, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
-    super_admin: { label: 'Super Admin', icon: ShieldAlert },
-    organizer: { label: 'Organizer (Org Owner)', icon: Building2 },
+    super_admin: { label: 'Root Super Admin', icon: ShieldAlert },
+    super_moderator: { label: 'Platform Moderator', icon: Shield },
+    super_viewer: { label: 'Platform Viewer', icon: Eye },
+    organizer: { label: 'Practice Owner (Admin)', icon: Building2 },
+    moderator: { label: 'Store Moderator (Manager)', icon: Store },
     admin: { label: 'Store Admin', icon: Store },
     user: { label: 'Store Staff (POS)', icon: Users },
+    viewer: { label: 'Practice Viewer (Auditor)', icon: Eye },
   };
 
   const currentRole = roleLabels[activeRoleMode] || roleLabels.user;
@@ -56,7 +67,7 @@ export function SimulationBanner() {
   const handleExit = () => {
     exitSimulation();
     toast.success('Exited simulation mode. Returned to Super Admin Console.');
-    router.push('/super-admin/simulator');
+    router.push('/super-admin/dashboard');
   };
 
   const handleRoleChange = (newRole: RoleMode) => {

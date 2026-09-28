@@ -3,9 +3,9 @@
 
 import { useMemo } from 'react';
 import Decimal from 'decimal.js';
-import { Banknote, QrCode, CreditCard, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Banknote, QrCode, CreditCard, AlertCircle, CheckCircle2, Wallet } from 'lucide-react';
 
-export type PaymentMode = 'CASH' | 'UPI' | 'CARD';
+export type PaymentMode = 'CASH' | 'UPI' | 'CARD' | 'CREDIT';
 
 interface PaymentPanelProps {
   grandTotal: Decimal;
@@ -16,6 +16,7 @@ interface PaymentPanelProps {
   reference: string;
   onReferenceChange: (ref: string) => void;
   disabled?: boolean;
+  customerAdvanceBalance?: string;
 }
 
 export function PaymentPanel({
@@ -27,6 +28,7 @@ export function PaymentPanel({
   reference,
   onReferenceChange,
   disabled = false,
+  customerAdvanceBalance,
 }: PaymentPanelProps) {
   const { balanceDue, isOverpaid, isFullyPaid } = useMemo(() => {
     const total = grandTotal instanceof Decimal ? grandTotal : new Decimal(grandTotal || '0.00');
@@ -85,50 +87,98 @@ export function PaymentPanel({
         </span>
       </div>
 
+      {/* Store Credit Wallet Banner if available */}
+      {customerAdvanceBalance && Number(customerAdvanceBalance) > 0 && (
+        <div className="flex items-center justify-between rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 border border-emerald-200 dark:border-emerald-800 text-xs">
+          <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+            <Wallet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="font-semibold">Store Credit:</span>
+            <span className="font-mono font-bold">₹{customerAdvanceBalance}</span>
+          </div>
+          <button
+            type="button"
+            data-testid="btn-apply-store-credit"
+            onClick={() => {
+              const totalVal = grandTotal instanceof Decimal ? grandTotal : new Decimal(grandTotal || '0.00');
+              const creditVal = new Decimal(customerAdvanceBalance);
+              const applied = Decimal.min(totalVal, creditVal).toFixed(2);
+              onAdvancePaidChange(applied);
+              onPaymentModeChange('CREDIT');
+              onReferenceChange(`Store Credit applied (Balance ₹${customerAdvanceBalance})`);
+            }}
+            disabled={disabled}
+            className="rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0.5 text-[10px] transition cursor-pointer"
+          >
+            Apply Credit
+          </button>
+        </div>
+      )}
+
       {/* Payment Mode Selector Tabs */}
       <div>
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1 block">
           Payment Mode
         </span>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-4 gap-1">
           <button
             type="button"
             onClick={() => onPaymentModeChange('CASH')}
             disabled={disabled}
-            className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+            className={`flex items-center justify-center gap-1 rounded-md py-1.5 text-xs font-semibold border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               paymentMode === 'CASH'
                 ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                 : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
             }`}
           >
-            <Banknote className="h-3.5 w-3.5" />
+            <Banknote className="h-3 w-3" />
             <span>Cash</span>
           </button>
           <button
             type="button"
             onClick={() => onPaymentModeChange('UPI')}
             disabled={disabled}
-            className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+            className={`flex items-center justify-center gap-1 rounded-md py-1.5 text-xs font-semibold border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               paymentMode === 'UPI'
                 ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                 : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
             }`}
           >
-            <QrCode className="h-3.5 w-3.5" />
+            <QrCode className="h-3 w-3" />
             <span>UPI</span>
           </button>
           <button
             type="button"
             onClick={() => onPaymentModeChange('CARD')}
             disabled={disabled}
-            className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+            className={`flex items-center justify-center gap-1 rounded-md py-1.5 text-xs font-semibold border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               paymentMode === 'CARD'
                 ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                 : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
             }`}
           >
-            <CreditCard className="h-3.5 w-3.5" />
+            <CreditCard className="h-3 w-3" />
             <span>Card</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onPaymentModeChange('CREDIT');
+              if (customerAdvanceBalance && Number(customerAdvanceBalance) > 0) {
+                const totalVal = grandTotal instanceof Decimal ? grandTotal : new Decimal(grandTotal || '0.00');
+                const creditVal = new Decimal(customerAdvanceBalance);
+                onAdvancePaidChange(Decimal.min(totalVal, creditVal).toFixed(2));
+                onReferenceChange(`Store Credit applied (Balance ₹${customerAdvanceBalance})`);
+              }
+            }}
+            disabled={disabled}
+            className={`flex items-center justify-center gap-1 rounded-md py-1.5 text-xs font-semibold border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+              paymentMode === 'CREDIT'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                : 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+            }`}
+          >
+            <Wallet className="h-3 w-3" />
+            <span>Credit</span>
           </button>
         </div>
       </div>

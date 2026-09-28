@@ -76,10 +76,20 @@ src/
 - **Transactional Consistency:** Critical business operations (e.g. order processing, payment collection, stock decrement) execute within atomic `db.transaction()` boundaries. If any step fails, the entire transaction rolls back cleanly.
 - **Drizzle Typed Schema:** Strict schema definitions in [`src/db/schema.ts`](file:///f:/hobby-projects/optical-pos/src/db/schema.ts) using `pgTable`, `uuid`, `numeric(12, 2)`, and custom enums.
 
-### 3.3 High-Speed Upstash Redis Caching
-- **Fast Reads:** High-frequency endpoints (patient search autocomplete, catalog lookups, store profile settings) query Upstash Redis first.
-- **Resilient Zero-Crash Fallback:** If Redis credentials are not configured or Redis is temporarily unreachable, [`src/lib/redis.ts`](file:///f:/hobby-projects/optical-pos/src/lib/redis.ts) catches errors gracefully and seamlessly falls back to querying the primary Neon database without dropping user requests.
-- **Cache Invalidation:** Mutations (e.g. updating store profile, creating invoices, registering new patients) immediately invalidate their respective Redis cache keys (`cacheDel` or key pattern invalidation).
+### 3.3 Zero-Latency 3-Tier Caching Architecture
+OptixOS eliminates perceived UI loading screens using a cascading 3-tier caching hierarchy:
+1. **Tier 1: Client Browser Cache (0ms Instant Mount)**:
+   - Uses `useCachedResource` (`src/hooks/use-cached-resource.ts`) to synchronously hydrate directory records (Inventory, Patients, Staff) from `localStorage` (`optix_client_cache:{key}`) on the very first render frame.
+   - Eliminates blocking loading spinners on subsequent page visits.
+   - Executes silent background revalidation (`isRevalidating`) with 60-second periodic auto-refresh and window-focus listeners without customer disruption.
+   - Optimistic client mutations (`mutate`) reflect changes instantaneously.
+2. **Tier 2: Universal Server Caching Engine (`src/lib/cache.ts`)**:
+   - Cascading fallback: Local Redis (`ioredis` TCP) ➔ Upstash Redis (HTTP REST) ➔ In-Memory LRU Cache (`MemoryLRUProvider`).
+   - Server Actions wrapped with `withCache` query Tier 2 before hitting PostgreSQL.
+   - Targeted multi-tenant invalidation: `invalidateCache({ orgId, namespace })` deletes matching keys upon entity creation, update, or deletion.
+3. **Tier 3: Neon PostgreSQL (Ground Truth)**:
+   - Serverless connection pooler (`-pooler` endpoint) with PgBouncer.
+   - Atomic transactions (`db.transaction()`) with conditional locks (`WHERE stock_quantity >= :qty RETURNING id`).
 
 ### 3.4 State Management Strategy: Volatile vs. Persistent
 - **URL & Router Navigation:** Primary pages use native Next.js SPA routing (`<Link href="...">`) to maintain clean browser history.

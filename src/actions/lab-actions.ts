@@ -76,7 +76,12 @@ export async function getActiveLabOrders(branchIds?: string[]): Promise<LabOrder
     ];
 
     if (branchIds && branchIds.length > 0 && !branchIds.includes('all')) {
-      whereConditions.push(inArray(invoices.branchId, branchIds));
+      whereConditions.push(
+        or(
+          inArray(invoices.branchId, branchIds),
+          isNull(invoices.branchId)
+        )
+      );
     }
 
     const rawInvoices = await db.query.invoices.findMany({

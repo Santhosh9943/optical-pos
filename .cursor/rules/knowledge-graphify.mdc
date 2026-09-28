@@ -1,0 +1,29 @@
+---
+description: Codebase exploration via graphify, graphifyable code conventions, and continuous knowledge graph synchronization.
+globs: ["src/**/*", "e2e/**/*", "docs/**/*"]
+alwaysApply: true
+---
+
+# Knowledge Graph (`graphify`) & Graphifyable Code Rules
+
+## 1. Graph-First Exploration ("No Blind Fresh Exploration")
+- **Forbidden Practice**: Never start a task by blindly scanning files, running unguided wide grep queries, or attempting to rediscover the codebase architecture from scratch.
+- **Knowledge Graph Entrypoint**: Always query the pre-indexed semantic and AST graph in `graphify-out/`:
+  - `graphify query "<natural language query>"`: Identify target symbols, files, and architectural communities.
+  - `graphify explain "<Symbol>"`: Inspect callers, callees, dependencies, and 2-hop radius of a symbol.
+  - `graphify path "<Source>" "<Target>" --undirected`: Trace call paths and dependency chains between two components or actions.
+- Consult `graphify-out/GRAPH_REPORT.md` for architectural community structures, hub nodes, and domain boundaries.
+
+## 2. Graphifyable Code Standards (Before Running Graphify)
+To ensure AST extractors and semantic parsers create accurate, high-fidelity nodes in the knowledge graph:
+- **JSDoc / TSDoc Documentation**: Every exported Server Action, React component, Zod validator, Drizzle schema, and helper function MUST include JSDoc comments detailing purpose, `@param`, and `@returns`.
+- **Explicit Named Exports**: Always use named exports (e.g. `export async function createOrderAction(...)`). Never use anonymous default exports.
+- **Strict Type Signatures**: Explicitly annotate function parameter types and return types so the AST extractor builds precise dependency edges.
+- **Cohesive Domain Modularity**: Organize logic by vertical feature slices to preserve clear community clustering in the knowledge graph.
+
+## 3. Mandatory Knowledge Graph Synchronization
+- After modifying, creating, or refactoring code and passing validation checks (`npm run check` or `npm run validate`):
+  ```bash
+  graphify update .
+  ```
+- Keep `graphify-out/graph.json` and `graphify-out/GRAPH_REPORT.md` continuously synchronized with the active codebase.

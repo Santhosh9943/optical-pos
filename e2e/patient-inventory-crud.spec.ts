@@ -110,7 +110,7 @@ test.describe('Patient and Inventory Comprehensive CRUD & UI Verification', () =
     await page.waitForLoadState('networkidle');
 
     // 2. Locate an inventory row
-    const firstRow = page.locator('tbody tr').first();
+    const firstRow = page.locator('tbody tr', { has: page.getByTestId('btn-edit-inventory') }).first();
     await expect(firstRow).toBeVisible({ timeout: 15000 });
 
     // 3. Click Edit button on the first item

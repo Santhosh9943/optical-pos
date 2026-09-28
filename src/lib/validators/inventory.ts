@@ -13,6 +13,8 @@ export const createInventoryItemSchema = z.object({
   sku: z.string().trim().max(50).optional(),
   barcode: z.string().trim().max(50).optional().nullable(),
   category: z.enum(inventoryCategoryValues),
+  customCategory: z.string().trim().max(100).optional().nullable(),
+  isGstExempt: z.boolean().optional().default(false),
   brand: z.string().trim().max(100).optional().nullable(),
   model: z.string().trim().max(150).optional().nullable(),
   description: z.string().trim().optional().nullable(),
@@ -41,14 +43,12 @@ export const createInventoryItemSchema = z.object({
   stockQuantity: z.coerce
     .number()
     .int()
-    .min(0, 'Stock quantity cannot be negative')
     .default(0),
   lowStockThreshold: z.coerce
     .number()
     .int()
-    .min(0, 'Low stock threshold cannot be negative')
     .default(5),
-  taxRate: z.enum(['5.00', '18.00']).default('18.00'),
+  taxRate: z.string().trim().default('18.00'),
   hsnCode: z.string().trim().max(10).optional().nullable(),
   branchId: z.string().uuid().optional().nullable(),
 });

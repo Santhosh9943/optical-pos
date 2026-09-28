@@ -1,0 +1,25 @@
+---
+description: Spec-Driven Vibe Coding workflow using encapsulated feature directories in specs/.
+globs: ["specs/**/*", "src/**/*", "e2e/**/*"]
+alwaysApply: true
+---
+
+# Spec-Driven Vibe Coding Rules
+
+## 1. Encapsulated Feature Context (`specs/`)
+- **No Monolithic Context Rot**: When developing, expanding, or refactoring features, do not rely on massive global PRD documents. Use the encapsulated feature folder in `specs/{feature-id}/`.
+- **The 3-Document Linked Chain**:
+  1. **`spec.md`**: Defines the "What" and "Why" (user stories, functional requirements, optical domain invariants, Gherkin acceptance criteria).
+  2. **`plan.md`**: Defines the "How" (architecture, schema changes, blast radius, security, verification commands).
+  3. **`tasks.md`**: Defines the step-by-step execution checklist.
+
+## 2. Agent Execution Invariants
+- **Check `specs/` First**: Before starting a new feature, check if a folder exists in `specs/`. If not, duplicate `specs/TEMPLATE/` to create one.
+- **Atomic Task Progression**: Execute tasks in `tasks.md` one by one. Check off completed items (`[x]`) only after passing static compilation (`npm run check`) and tests.
+- **Do Not Stray from Invariants**: Verify that all implementations in `specs/` preserve:
+  - Exact `decimal.js` monetary calculations with `.toFixed(2)` strings.
+  - Optical diopters in 0.25 D steps with integer scaling.
+  - Multi-tenant query scoping (`organization_id`).
+  - Atomic conditional stock decrements in SQL.
+  - Zero-Latency 3-Tier Caching: Client SWR (`useCachedResource`) for 0ms initial render + background revalidation, Tier 2 Redis Server Action wrapping (`withCache`), and instant mutation invalidation (`invalidateCache` + optimistic `mutate`).
+- **Archival Mandate**: Upon completing a feature and passing the full CI gate, move the completed feature folder from `specs/{feature-id}` to `specs/archive/{feature-id}`.

@@ -1,7 +1,15 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-export type RoleMode = 'super_admin' | 'organizer' | 'admin' | 'user';
+export type RoleMode =
+  | 'super_admin'
+  | 'super_moderator'
+  | 'super_viewer'
+  | 'organizer'
+  | 'moderator'
+  | 'admin'
+  | 'user'
+  | 'viewer';
 
 export interface BranchOption {
   id: string;
@@ -13,6 +21,8 @@ export interface BranchOption {
 export interface OrgOption {
   id: string;
   name: string;
+  orgCode?: string | null;
+  orgNumber?: number | null;
 }
 
 interface TenantState {
@@ -21,8 +31,9 @@ interface TenantState {
   // Active role (either native or simulated)
   activeRoleMode: RoleMode;
   selectedOrganizationId: string;
-  selectedBranchId: string | 'all';
-  selectedBranchIds: string[]; // Array of branch UUIDs or ['all']
+  selectedBranchId: string;
+  selectedBranchIds: string[]; // Always [selectedBranchId] for single-store operational isolation
+  activeOrgCode?: string | null;
   organizations: OrgOption[];
   branches: BranchOption[];
   isLoading: boolean;
@@ -35,150 +46,214 @@ interface TenantState {
   // Actions
   setRoleMode: (mode: RoleMode) => void;
   setSelectedOrganization: (orgId: string) => void;
-  setSelectedBranch: (branchId: string | 'all') => void;
-  setSelectedBranches: (branchIds: string[]) => void;
-  toggleBranchSelection: (branchId: string) => void;
-  selectAllBranches: () => void;
+  setSelectedBranch: (branchId: string) => void;
+  setSelectedBranches?: (branchIds: string[]) => void;
   setTenancyData: (data: {
     actualRole: RoleMode;
     activeRoleMode?: RoleMode;
     selectedOrganizationId?: string;
-    selectedBranchId?: string | 'all';
-    selectedBranchIds?: string[];
+    selectedBranchId?: string;
     organizations: OrgOption[];
     branches: BranchOption[];
+    activeOrgCode?: string | null;
   }) => void;
   startSimulation: (params: {
     role: RoleMode;
     orgId: string;
     orgName: string;
-    branchId: string | 'all';
+    branchId: string;
     branchName: string;
   }) => void;
   exitSimulation: () => void;
   updateSimulatedRole: (role: RoleMode) => void;
-  updateSimulatedBranch: (branchId: string | 'all', branchName: string) => void;
+  updateSimulatedBranch: (branchId: string, branchName: string) => void;
 }
+
+/**
+ * Safely reads persisted tenant state synchronously from sessionStorage on initial client frame.
+ * Prevents asynchronous rehydration gap while ensuring valid single-store UUID is loaded.
+ */
+function getInitialPersistedTenantState(): Partial<TenantState> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = sessionStorage.getItem('optix-tenant-context');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && parsed.state) {
+        const state = parsed.state;
+        // Guarantee selectedBranchId is never 'all'
+        if (state.selectedBranchId === 'all') {
+          state.selectedBranchId = '00000000-0000-0000-0000-000000000002';
+        }
+        return state;
+      }
+    }
+
+    // Fallback: check localStorage for last active branch
+    const savedBranch = localStorage.getItem('optix-last-active-branch');
+    if (savedBranch && savedBranch !== 'all') {
+      return {
+        selectedBranchId: savedBranch,
+        selectedBranchIds: [savedBranch],
+      };
+    }
+  } catch (err) {
+    console.warn('[TenantStore] Error reading initial storage:', err);
+  }
+  return {};
+}
+
+const savedInitialTenant = getInitialPersistedTenantState();
+
+export const DEFAULT_ORG_ID = '00000000-0000-0000-0000-000000000001';
+export const DEFAULT_BRANCH_ID =
+  (savedInitialTenant.selectedBranchId && savedInitialTenant.selectedBranchId !== 'all'
+    ? savedInitialTenant.selectedBranchId
+    : '00000000-0000-0000-0000-000000000002');
 
 export const useTenantStore = create<TenantState>()(
   persist(
     (set) => ({
-      actualRole: 'super_admin',
-      activeRoleMode: 'super_admin',
-      selectedOrganizationId: '00000000-0000-0000-0000-000000000001',
-      selectedBranchId: 'all',
-      selectedBranchIds: ['all'],
-      organizations: [],
-      branches: [],
+      actualRole: (savedInitialTenant.actualRole as RoleMode) || 'super_admin',
+      activeRoleMode: (savedInitialTenant.activeRoleMode as RoleMode) || 'super_admin',
+      selectedOrganizationId:
+        savedInitialTenant.selectedOrganizationId || '00000000-0000-0000-0000-000000000001',
+      selectedBranchId: DEFAULT_BRANCH_ID,
+      selectedBranchIds: [DEFAULT_BRANCH_ID],
+      organizations: [
+        { id: '00000000-0000-0000-0000-000000000001', name: 'Optix Vision Care' },
+      ],
+      branches: [
+        {
+          id: '00000000-0000-0000-0000-000000000002',
+          name: 'Main Branch',
+          organizationId: '00000000-0000-0000-0000-000000000001',
+          isActive: true,
+        },
+        {
+          id: '00000000-0000-0000-0000-000000000003',
+          name: 'Downtown Flagship',
+          organizationId: '00000000-0000-0000-0000-000000000001',
+          isActive: true,
+        },
+      ],
       isLoading: false,
 
-      isSimulating: false,
-      simulatedOrgName: undefined,
-      simulatedBranchName: undefined,
+      isSimulating: savedInitialTenant.isSimulating || false,
+      simulatedOrgName: savedInitialTenant.simulatedOrgName,
+      simulatedBranchName: savedInitialTenant.simulatedBranchName,
 
       setRoleMode: (mode) => set({ activeRoleMode: mode }),
 
       setSelectedOrganization: (orgId) =>
-        set({ selectedOrganizationId: orgId, selectedBranchId: 'all', selectedBranchIds: ['all'] }),
+        set((state) => {
+          const orgBranches = state.branches.filter((b) => b.organizationId === orgId);
+          const firstBranchId = orgBranches[0]?.id || DEFAULT_BRANCH_ID;
+          return {
+            selectedOrganizationId: orgId,
+            selectedBranchId: firstBranchId,
+            selectedBranchIds: [firstBranchId],
+          };
+        }),
 
-      setSelectedBranch: (branchId) =>
+      setSelectedBranch: (branchId) => {
+        if (typeof window !== 'undefined' && branchId && branchId !== 'all') {
+          try {
+            localStorage.setItem('optix-last-active-branch', branchId);
+          } catch {}
+        }
         set({
           selectedBranchId: branchId,
-          selectedBranchIds: branchId === 'all' ? ['all'] : [branchId],
-        }),
+          selectedBranchIds: [branchId],
+        });
+      },
 
       setSelectedBranches: (branchIds) =>
         set((state) => {
-          if (!branchIds || branchIds.length === 0 || branchIds.includes('all')) {
-            return { selectedBranchId: 'all', selectedBranchIds: ['all'] };
-          }
-          if (state.branches.length > 0 && branchIds.length === state.branches.length) {
-            return { selectedBranchId: 'all', selectedBranchIds: ['all'] };
+          const targetId = branchIds && branchIds.length > 0 && branchIds[0] !== 'all'
+            ? branchIds[0]
+            : (state.branches[0]?.id || DEFAULT_BRANCH_ID);
+          if (typeof window !== 'undefined' && targetId && targetId !== 'all') {
+            try {
+              localStorage.setItem('optix-last-active-branch', targetId);
+            } catch {}
           }
           return {
-            selectedBranchId: branchIds[0] || 'all',
-            selectedBranchIds: branchIds,
+            selectedBranchId: targetId,
+            selectedBranchIds: [targetId],
           };
         }),
 
-      toggleBranchSelection: (branchId) =>
+      setTenancyData: (data) =>
         set((state) => {
-          if (branchId === 'all') {
-            return { selectedBranchId: 'all', selectedBranchIds: ['all'] };
-          }
-
-          let currentIds = state.selectedBranchIds;
-          // If currently in 'all' mode, toggling a branch selects all EXCEPT that branch (or if starting fresh, selects only that branch if was all)
-          if (currentIds.includes('all')) {
-            // When currently on all branches, clicking a checkbox toggles to all existing branches minus this one, or just this one
-            const allAvailableIds = state.branches.map((b) => b.id);
-            if (allAvailableIds.length <= 1) {
-              return { selectedBranchId: branchId, selectedBranchIds: [branchId] };
-            }
-            const filtered = allAvailableIds.filter((id) => id !== branchId);
+          // If simulating, do not let background fetches clobber the active simulated role or org
+          if (state.isSimulating) {
             return {
-              selectedBranchId: filtered[0] || 'all',
-              selectedBranchIds: filtered.length > 0 ? filtered : ['all'],
+              actualRole: data.actualRole,
+              organizations: data.organizations,
+              branches: data.branches,
+              isLoading: false,
             };
           }
 
-          let nextIds: string[];
-          if (currentIds.includes(branchId)) {
-            nextIds = currentIds.filter((id) => id !== branchId);
-          } else {
-            nextIds = [...currentIds, branchId];
+          // Available branches and organizations from new tenancy context
+          const availableBranchIds = new Set(data.branches.map((b) => b.id));
+          const availableOrgIds = new Set(data.organizations.map((o) => o.id));
+
+          let finalOrgId = data.selectedOrganizationId || state.selectedOrganizationId;
+          if (data.actualRole !== 'super_admin' || !availableOrgIds.has(state.selectedOrganizationId)) {
+            finalOrgId = data.selectedOrganizationId || data.organizations[0]?.id || DEFAULT_ORG_ID;
           }
 
-          if (
-            nextIds.length === 0 ||
-            (state.branches.length > 0 && nextIds.length >= state.branches.length)
-          ) {
-            return { selectedBranchId: 'all', selectedBranchIds: ['all'] };
+          // Retain current branch selection if it's still valid in available branches
+          let finalBranchId = state.selectedBranchId;
+          if (!finalBranchId || finalBranchId === 'all' || !availableBranchIds.has(finalBranchId)) {
+            // Check localStorage
+            let storedLastBranch: string | null = null;
+            if (typeof window !== 'undefined') {
+              try {
+                storedLastBranch = localStorage.getItem('optix-last-active-branch');
+              } catch {}
+            }
+
+            if (storedLastBranch && availableBranchIds.has(storedLastBranch)) {
+              finalBranchId = storedLastBranch;
+            } else {
+              finalBranchId =
+                (data.selectedBranchId && data.selectedBranchId !== 'all' && availableBranchIds.has(data.selectedBranchId)
+                  ? data.selectedBranchId
+                  : data.branches[0]?.id) || DEFAULT_BRANCH_ID;
+            }
           }
+
+          const activeOrg = data.organizations.find((o) => o.id === finalOrgId);
+          const activeOrgCode = activeOrg?.orgCode || (activeOrg?.orgNumber ? `OPT-${activeOrg.orgNumber}` : null);
 
           return {
-            selectedBranchId: nextIds[0] || 'all',
-            selectedBranchIds: nextIds,
+            actualRole: data.actualRole,
+            activeRoleMode: data.activeRoleMode || state.activeRoleMode || data.actualRole,
+            selectedOrganizationId: finalOrgId,
+            selectedBranchId: finalBranchId,
+            selectedBranchIds: [finalBranchId],
+            activeOrgCode,
+            organizations: data.organizations,
+            branches: data.branches,
+            isLoading: false,
           };
         }),
 
-      selectAllBranches: () =>
-        set({ selectedBranchId: 'all', selectedBranchIds: ['all'] }),
-
-      setTenancyData: (data) =>
-        set((state) => ({
-          actualRole: data.actualRole,
-          // If simulating, do not let background fetches clobber the active simulated role or org
-          activeRoleMode: state.isSimulating
-            ? state.activeRoleMode
-            : data.activeRoleMode || state.activeRoleMode || data.actualRole,
-          selectedOrganizationId: state.isSimulating
-            ? state.selectedOrganizationId
-            : data.selectedOrganizationId || state.selectedOrganizationId,
-          selectedBranchId: state.isSimulating
-            ? state.selectedBranchId
-            : data.selectedBranchId || state.selectedBranchId,
-          selectedBranchIds: state.isSimulating
-            ? state.selectedBranchIds
-            : data.selectedBranchIds ||
-              (data.selectedBranchId && data.selectedBranchId !== 'all'
-                ? [data.selectedBranchId]
-                : state.selectedBranchIds),
-          organizations: data.organizations,
-          branches: data.branches,
-          isLoading: false,
-        })),
-
-      startSimulation: ({ role, orgId, orgName, branchId, branchName }) =>
+      startSimulation: ({ role, orgId, orgName, branchId, branchName }) => {
+        const cleanBranchId = branchId === 'all' ? DEFAULT_BRANCH_ID : branchId;
         set({
           isSimulating: true,
           activeRoleMode: role,
           selectedOrganizationId: orgId,
-          selectedBranchId: branchId,
-          selectedBranchIds: branchId === 'all' ? ['all'] : [branchId],
+          selectedBranchId: cleanBranchId,
+          selectedBranchIds: [cleanBranchId],
           simulatedOrgName: orgName,
           simulatedBranchName: branchName,
-        }),
+        });
+      },
 
       exitSimulation: () =>
         set((state) => ({
@@ -190,12 +265,14 @@ export const useTenantStore = create<TenantState>()(
 
       updateSimulatedRole: (role) => set({ activeRoleMode: role }),
 
-      updateSimulatedBranch: (branchId, branchName) =>
+      updateSimulatedBranch: (branchId, branchName) => {
+        const cleanBranchId = branchId === 'all' ? DEFAULT_BRANCH_ID : branchId;
         set({
-          selectedBranchId: branchId,
-          selectedBranchIds: branchId === 'all' ? ['all'] : [branchId],
+          selectedBranchId: cleanBranchId,
+          selectedBranchIds: [cleanBranchId],
           simulatedBranchName: branchName,
-        }),
+        });
+      },
     }),
     {
       name: 'optix-tenant-context',

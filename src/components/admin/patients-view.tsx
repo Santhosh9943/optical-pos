@@ -25,6 +25,8 @@ import {
   Building2,
   Store,
   Layers,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -33,66 +35,56 @@ import {
   type PatientSummary,
 } from '@/actions/patient-actions';
 import { useTenantStore } from '@/store/tenant-store';
+import { useCachedResource } from '@/hooks/use-cached-resource';
 import { PatientDetailSheet } from '@/components/admin/patient-detail-sheet';
 import { AddPatientModal } from '@/components/admin/add-patient-modal';
 import { EditPatientModal } from '@/components/admin/edit-patient-modal';
 
 export function PatientsView() {
-  const [patients, setPatients] = useState<PatientSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const selectedBranchId = useTenantStore((state) => state.selectedBranchId);
+  const branches = useTenantStore((state) => state.branches);
+  const branchKey = selectedBranchId || 'default';
+
+  const {
+    data: cachedPatients,
+    isLoading,
+    isRevalidating,
+    refresh,
+    mutate,
+  } = useCachedResource<PatientSummary[]>({
+    cacheKey: `patients_list:${branchKey}`,
+    fetcher: async () => {
+      const res = await getPatients(selectedBranchId ? [selectedBranchId] : undefined);
+      if (res.success && res.patients) {
+        return res.patients;
+      }
+      throw new Error(res.error || 'Failed to fetch patients');
+    },
+    refreshInterval: 60000,
+  });
+
+  const patients = useMemo(() => cachedPatients || [], [cachedPatients]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-
-  const selectedBranchIds = useTenantStore((state) => state.selectedBranchIds);
-  const branches = useTenantStore((state) => state.branches);
 
   // CRUD Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<PatientSummary | null>(null);
   const [deletingPatient, setDeletingPatient] = useState<PatientSummary | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const fetchPatients = async (branchIds?: string[]) => {
-    try {
-      setIsLoading(true);
-      const res = await getPatients(branchIds);
-      if (res.success && res.patients) {
-        setPatients(res.patients);
-      } else {
-        toast.error('Failed to load patient directory', {
-          description: res.error || 'Could not fetch patients.',
-        });
-      }
-    } catch (err) {
-      console.error('[PatientsView] fetch error:', err);
-      toast.error('Connection error', {
-        description: 'Failed to connect to patient service.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPatients(selectedBranchIds);
-  }, [selectedBranchIds]);
+  const [copiedPhoneId, setCopiedPhoneId] = useState<string | null>(null);
 
   const activeBranchLabel = useMemo(() => {
-    if (!selectedBranchIds || selectedBranchIds.includes('all') || selectedBranchIds.length === 0) {
-      return 'All Branches';
-    }
-    if (selectedBranchIds.length === 1) {
-      const match = branches.find((b) => b.id === selectedBranchIds[0]);
-      return match ? match.name : 'Selected Store';
-    }
-    return `${selectedBranchIds.length} Stores Selected`;
-  }, [selectedBranchIds, branches]);
+    const match = branches.find((b) => b.id === selectedBranchId);
+    return match ? match.name : 'Main Store';
+  }, [selectedBranchId, branches]);
 
   const handleRefresh = () => {
     startTransition(async () => {
-      await fetchPatients();
+      await refresh();
       toast.info('Patient directory refreshed', { duration: 1500 });
     });
   };
@@ -142,11 +134,11 @@ export function PatientsView() {
   };
 
   const handlePatientAdded = (newPatient: PatientSummary) => {
-    setPatients((prev) => [newPatient, ...prev.filter((p) => p.id !== newPatient.id)]);
+    mutate((prev) => [newPatient, ...(prev || []).filter((p) => p.id !== newPatient.id)]);
   };
 
   const handlePatientUpdated = (updated: PatientSummary) => {
-    setPatients((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    mutate((prev) => (prev || []).map((p) => (p.id === updated.id ? updated : p)));
   };
 
   const handleConfirmDelete = async () => {
@@ -155,14 +147,21 @@ export function PatientsView() {
       setIsDeleting(true);
       const res = await deletePatientAction(deletingPatient.id);
       if (res.success) {
-        setPatients((prev) => prev.filter((p) => p.id !== deletingPatient.id));
+        if ('requiresApproval' in res && res.requiresApproval) {
+          toast.info('Approval Request Submitted', {
+            description: res.message || 'Staff deletion request sent to administrator for Maker-Checker approval.',
+          });
+          setDeletingPatient(null);
+          return;
+        }
+        mutate((prev) => (prev || []).filter((p) => p.id !== deletingPatient.id));
         toast.success('Patient Removed', {
           description: `${deletingPatient.fullName} has been removed from active records.`,
         });
         setDeletingPatient(null);
       } else {
-        toast.error('Failed to delete patient', {
-          description: res.error || 'Please try again.',
+        toast.error('Cannot Delete Patient', {
+          description: res.error || 'Please resolve outstanding orders or balances before deleting.',
         });
       }
     } catch (err) {
@@ -189,15 +188,17 @@ export function PatientsView() {
               data-testid="patients-scope-badge"
               className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
             >
-              {selectedBranchIds?.includes('all') || !selectedBranchIds?.length ? (
-                <Layers className="h-3 w-3" />
-              ) : selectedBranchIds.length === 1 ? (
-                <Store className="h-3 w-3" />
-              ) : (
-                <Building2 className="h-3 w-3" />
+              <Store className="h-3 w-3" />
+              <span>Store: {activeBranchLabel}</span>
+              {isRevalidating && (
+                <span className="flex items-center gap-1 text-[10px] text-blue-500 font-normal">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
+                  </span>
+                  Syncing
+                </span>
               )}
-              <span>{activeBranchLabel}</span>
-              {isLoading && <span className="animate-pulse">...</span>}
             </span>
           </div>
           <p className="text-xs md:text-sm text-slate-500 dark:text-slate-300 mt-0.5">
@@ -344,17 +345,25 @@ export function PatientsView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-16 text-center">
-                    <div className="flex flex-col items-center justify-center space-y-2">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
-                      <p className="text-xs text-slate-600 dark:text-slate-300">
-                        Loading patient records...
-                      </p>
-                    </div>
-                  </td>
-                </tr>
+              {isLoading && patients.length === 0 ? (
+                [1, 2, 3, 4].map((i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800" />
+                        <div className="space-y-1">
+                          <div className="h-3.5 w-28 bg-slate-200 dark:bg-slate-800 rounded" />
+                          <div className="h-2.5 w-20 bg-slate-100 dark:bg-slate-800 rounded" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4"><div className="h-3.5 w-24 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                    <td className="py-3.5 px-4 text-center"><div className="h-5 w-8 mx-auto bg-slate-200 dark:bg-slate-800 rounded-full" /></td>
+                    <td className="py-3.5 px-4"><div className="h-3.5 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                    <td className="py-3.5 px-4 text-right"><div className="h-3.5 w-16 ml-auto bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                    <td className="py-3.5 px-4 text-right"><div className="h-7 w-20 ml-auto bg-slate-200 dark:bg-slate-800 rounded-lg" /></td>
+                  </tr>
+                ))
               ) : filteredPatients.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-16 text-center">
@@ -401,11 +410,33 @@ export function PatientsView() {
                       </td>
 
                       {/* Phone */}
-                      <td className="py-3.5 px-4 font-mono font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                        <span className="flex items-center gap-1.5">
-                          <Phone className="h-3 w-3 text-slate-400 dark:text-slate-300" />
-                          {patient.phone}
-                        </span>
+                      <td
+                        className="py-3.5 px-4 font-mono font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap group/phone"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="h-3 w-3 text-slate-400 dark:text-slate-300 shrink-0" />
+                          <span>{patient.phone}</span>
+                          <button
+                            type="button"
+                            data-testid={`btn-copy-phone-${patient.id}`}
+                            title="Copy Phone Number"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(patient.phone);
+                              setCopiedPhoneId(patient.id);
+                              toast.success(`Copied phone: ${patient.phone}`);
+                              setTimeout(() => setCopiedPhoneId(null), 2000);
+                            }}
+                            className="opacity-0 group-hover/phone:opacity-100 transition p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                          >
+                            {copiedPhoneId === patient.id ? (
+                              <Check className="h-3 w-3 text-emerald-500" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </button>
+                        </div>
                       </td>
 
                       {/* Total Orders */}

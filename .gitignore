@@ -44,7 +44,14 @@ Thumbs.db
 scratch/
 temp/
 *.tmp
+personal/
+/personal/
 
 # Playwright Test Artifacts
 /test-results/
 /playwright-report/
+
+# Graphify AST Cache & Backups
+graphify-out/cache/
+graphify-out/2026*/
+

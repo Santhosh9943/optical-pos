@@ -15,6 +15,7 @@ import {
   primaryKey,
   foreignKey,
   check,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
@@ -114,6 +115,13 @@ export const invoiceNumberSeq = pgSequence('invoice_number_seq', { startWith: 1 
 export const organizations = pgTable('organizations', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 200 }).notNull(),
+  planId: varchar('plan_id', { length: 50 }).notNull().default('starter'),
+  subscriptionStatus: varchar('subscription_status', { length: 50 }).notNull().default('active'),
+  subscriptionPeriod: varchar('subscription_period', { length: 20 }).default('monthly'),
+  subscriptionEndsAt: timestamp('subscription_ends_at', { withTimezone: true }),
+  hasCompletedOnboarding: boolean('has_completed_onboarding').notNull().default(false),
+  orgCode: varchar('org_code', { length: 50 }).unique(),
+  orgNumber: integer('org_number').unique(),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -124,6 +132,43 @@ export const organizations = pgTable('organizations', {
 
 export type Organization = typeof organizations.$inferSelect;
 export type NewOrganization = typeof organizations.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────
+// SAAS SUBSCRIPTIONS & RAZORPAY AUDIT LOG
+// ─────────────────────────────────────────────────────────────
+
+export const subscriptions = pgTable(
+  'subscriptions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    planId: varchar('plan_id', { length: 50 }).notNull(),
+    billingCycle: varchar('billing_cycle', { length: 20 }).notNull().default('monthly'),
+    amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+    currency: varchar('currency', { length: 10 }).notNull().default('INR'),
+    razorpayOrderId: varchar('razorpay_order_id', { length: 100 }),
+    razorpayPaymentId: varchar('razorpay_payment_id', { length: 100 }),
+    razorpaySignature: varchar('razorpay_signature', { length: 255 }),
+    status: varchar('status', { length: 50 }).notNull().default('created'), // 'created' | 'paid' | 'failed' | 'canceled'
+    failureReason: text('failure_reason'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('subscriptions_org_idx').on(table.organizationId),
+    index('subscriptions_order_idx').on(table.razorpayOrderId),
+    index('subscriptions_payment_idx').on(table.razorpayPaymentId),
+  ]
+);
+
+export type Subscription = typeof subscriptions.$inferSelect;
+export type NewSubscription = typeof subscriptions.$inferInsert;
 
 // ─────────────────────────────────────────────────────────────
 // BRANCHES (PHYSICAL STORES)
@@ -300,6 +345,9 @@ export const inventoryItems = pgTable(
     branchId: uuid('branch_id').references(() => branches.id, {
       onDelete: 'set null',
     }),
+    // Custom Merchant Taxonomy & Tax Exemption
+    customCategory: varchar('custom_category', { length: 100 }),
+    isGstExempt: boolean('is_gst_exempt').notNull().default(false),
     // Audit
     isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true })
@@ -569,9 +617,19 @@ export const storeProfile = pgTable('store_profile', {
   defaultPosLayout: varchar('default_pos_layout', { length: 50 })
     .notNull()
     .default('adaptive'),
+  enableGst: boolean('enable_gst').notNull().default(true),
+  allowNegativeStock: boolean('allow_negative_stock').notNull().default(false),
   branchId: uuid('branch_id').references(() => branches.id, {
     onDelete: 'set null',
   }),
+  // SMTP Email Server Configuration
+  smtpHost: varchar('smtp_host', { length: 255 }).default('smtp.gmail.com'),
+  smtpPort: integer('smtp_port').default(587),
+  smtpSecure: boolean('smtp_secure').default(false),
+  smtpUser: varchar('smtp_user', { length: 255 }),
+  smtpPass: varchar('smtp_pass', { length: 255 }),
+  smtpFromEmail: varchar('smtp_from_email', { length: 255 }),
+  smtpFromName: varchar('smtp_from_name', { length: 255 }).default('OptixOS Eyecare'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -715,6 +773,13 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  role: text("role").default("user"),
+  banned: boolean("banned").default(false),
+  banReason: text("ban_reason"),
+  banExpires: timestamp("ban_expires"),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  twoFactorMethod: text("two_factor_method").default("totp"),
+  mustChangePassword: boolean("must_change_password").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -738,8 +803,30 @@ export const session = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     activeOrganizationId: text("active_organization_id"),
+    impersonatedBy: text("impersonated_by"),
   },
   (table) => [index("session_userId_idx").on(table.userId)],
+);
+
+export const twoFactor = pgTable(
+  "two_factor",
+  {
+    id: text("id").primaryKey(),
+    secret: text("secret").notNull(),
+    backupCodes: text("backup_codes").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    verified: boolean("verified").default(false).notNull(),
+    failedVerificationCount: integer("failed_verification_count").default(0).notNull(),
+    lockedUntil: timestamp("locked_until"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("two_factor_userId_idx").on(table.userId)],
 );
 
 export const account = pgTable(
@@ -814,6 +901,39 @@ export const member = pgTable(
   ],
 );
 
+export const staffStoreAssignments = pgTable(
+  "staff_store_assignments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    branchId: uuid("branch_id")
+      .notNull()
+      .references(() => branches.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    role: varchar("role", { length: 50 }).notNull().default("staff"),
+    isPrimary: boolean("is_primary").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("staff_store_assignments_org_idx").on(table.organizationId),
+    index("staff_store_assignments_branch_idx").on(table.branchId),
+    index("staff_store_assignments_user_idx").on(table.userId),
+    uniqueIndex("staff_store_assignments_user_branch_uidx").on(
+      table.userId,
+      table.branchId
+    ),
+  ]
+);
+
+export type StaffStoreAssignment = typeof staffStoreAssignments.$inferSelect;
+export type NewStaffStoreAssignment = typeof staffStoreAssignments.$inferInsert;
+
 export const invitation = pgTable(
   "invitation",
   {
@@ -841,6 +961,14 @@ export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   members: many(member),
   invitations: many(invitation),
+  twoFactors: many(twoFactor),
+}));
+
+export const twoFactorRelations = relations(twoFactor, ({ one }) => ({
+  user: one(user, {
+    fields: [twoFactor.userId],
+    references: [user.id],
+  }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -883,4 +1011,205 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+// ─────────────────────────────────────────────────────────────
+// PRIVILEGED APPROVAL REQUESTS (MAKER-CHECKER GOVERNANCE)
+// ─────────────────────────────────────────────────────────────
+
+export const approvalRequests = pgTable(
+  'approval_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    type: varchar('type', { length: 50 }).notNull(), // 'delete_organization' | 'delete_branch' | 'purge_data' | 'system_config'
+    targetId: text('target_id').notNull(),
+    targetName: varchar('target_name', { length: 255 }).notNull(),
+    requesterId: text('requester_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    requesterEmail: varchar('requester_email', { length: 255 }).notNull(),
+    requesterName: varchar('requester_name', { length: 255 }).notNull(),
+    reason: text('reason').notNull(),
+    status: varchar('status', { length: 30 }).default('pending').notNull(), // 'pending' | 'approved' | 'rejected'
+    reviewedBy: text('reviewed_by'),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    organizationId: uuid('organization_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('approval_status_idx').on(table.status),
+    index('approval_requester_idx').on(table.requesterId),
+  ]
+);
+
+export type ApprovalRequest = typeof approvalRequests.$inferSelect;
+export type NewApprovalRequest = typeof approvalRequests.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────
+// NOTIFICATIONS & ALERTING SUBSYSTEM
+// ─────────────────────────────────────────────────────────────
+
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    branchId: uuid('branch_id').references(() => branches.id, { onDelete: 'cascade' }),
+    recipientId: text('recipient_id').references(() => user.id, { onDelete: 'cascade' }),
+    targetRole: varchar('target_role', { length: 50 }), // 'all' | 'admin' | 'optometrist' | 'clerk' | 'super_admin'
+    category: varchar('category', { length: 30 }).notNull(), // 'system' | 'alert' | 'reminder'
+    type: varchar('type', { length: 100 }).notNull(), // e.g. 'inventory.low_stock'
+    severity: varchar('severity', { length: 20 }).default('medium').notNull(), // 'low' | 'medium' | 'high' | 'critical'
+    title: varchar('title', { length: 255 }).notNull(),
+    message: text('message').notNull(),
+    metadata: jsonb('metadata'), // structured context
+    actionUrl: text('action_url'), // deep link e.g. '/admin/lab-orders'
+    actionLabel: varchar('action_label', { length: 50 }), // e.g. 'View Order'
+    dedupKey: varchar('dedup_key', { length: 255 }), // deduplication key to throttle repetitive alerts
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('notifications_org_idx').on(table.organizationId),
+    index('notifications_branch_idx').on(table.branchId),
+    index('notifications_recipient_idx').on(table.recipientId),
+    index('notifications_category_idx').on(table.category),
+    index('notifications_created_at_idx').on(table.createdAt),
+    index('notifications_dedup_idx').on(table.dedupKey),
+  ]
+);
+
+export const notificationReads = pgTable(
+  'notification_reads',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    notificationId: uuid('notification_id')
+      .notNull()
+      .references(() => notifications.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    readAt: timestamp('read_at', { withTimezone: true }).defaultNow().notNull(),
+    dismissedAt: timestamp('dismissed_at', { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('notification_user_read_unique_idx').on(table.notificationId, table.userId),
+    index('notification_reads_user_idx').on(table.userId),
+  ]
+);
+
+export const notificationPreferences = pgTable(
+  'notification_preferences',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    inAppAlerts: boolean('in_app_alerts').default(true).notNull(),
+    emailAlerts: boolean('email_alerts').default(true).notNull(),
+    browserPush: boolean('browser_push').default(false).notNull(),
+    lowStockAlerts: boolean('low_stock_alerts').default(true).notNull(),
+    labOrderReminders: boolean('lab_order_reminders').default(true).notNull(),
+    paymentReminders: boolean('payment_reminders').default(true).notNull(),
+    systemUpdates: boolean('system_updates').default(true).notNull(),
+    soundEnabled: boolean('sound_enabled').default(false).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('notification_pref_user_org_idx').on(table.userId, table.organizationId),
+  ]
+);
+
+export type Notification = typeof notifications.$inferSelect;
+export type NewNotification = typeof notifications.$inferInsert;
+export type NotificationRead = typeof notificationReads.$inferSelect;
+export type NewNotificationRead = typeof notificationReads.$inferInsert;
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type NewNotificationPreference = typeof notificationPreferences.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────
+// PRODUCT TYPES & DYNAMIC WORKFLOW BUILDER
+// ─────────────────────────────────────────────────────────────
+
+export interface WorkflowStepOption {
+  label: string;
+  value: string;
+  surcharge?: number;
+  showIfParent?: string[];
+  description?: string;
+}
+
+export interface WorkflowDependency {
+  stepId: string;
+  whenValueEquals: string | string[];
+  showOptions: WorkflowStepOption[];
+}
+
+export interface WorkflowStep {
+  id: string;
+  stepName: string;
+  inputType: 'single_select' | 'multi_select' | 'text';
+  options: WorkflowStepOption[];
+  dependency?: WorkflowDependency;
+}
+
+export const productTypes = pgTable(
+  'product_types',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    code: varchar('code', { length: 50 }).notNull(),
+    name: varchar('name', { length: 100 }).notNull(),
+    description: text('description'),
+    icon: varchar('icon', { length: 50 }).default('Glasses'),
+    basePrice: numeric('base_price', { precision: 12, scale: 2 }).notNull().default('0.00'),
+    isSystemDefault: boolean('is_system_default').notNull().default(false),
+    isEnabled: boolean('is_enabled').notNull().default(true),
+    displayOrder: integer('display_order').notNull().default(0),
+    requiresFrame: boolean('requires_frame').notNull().default(false),
+    requiresPrescription: boolean('requires_prescription').notNull().default(false),
+    workflowSteps: jsonb('workflow_steps').$type<WorkflowStep[]>().notNull().default([]),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('product_types_org_idx').on(table.organizationId),
+    index('product_types_code_idx').on(table.code),
+  ]
+);
+export type ProductType = typeof productTypes.$inferSelect;
+export type NewProductType = typeof productTypes.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────
+// SUPER ADMIN OTP-ONLY AUTHENTICATION
+// ─────────────────────────────────────────────────────────────
+
+export const superAdminOtps = pgTable(
+  'super_admin_otps',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: varchar('email', { length: 255 }).notNull(),
+    otpHash: text('otp_hash').notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    maxAttempts: integer('max_attempts').notNull().default(5),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('super_admin_otps_email_idx').on(table.email),
+    index('super_admin_otps_created_at_idx').on(table.createdAt),
+  ]
+);
+
+export type SuperAdminOtp = typeof superAdminOtps.$inferSelect;
+export type NewSuperAdminOtp = typeof superAdminOtps.$inferInsert;
+
+
 

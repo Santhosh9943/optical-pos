@@ -44,7 +44,9 @@ export function PatientSearch({
 }: PatientSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Patient[]>([]);
+  const [recentPatients, setRecentPatients] = useState<Patient[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingRecent, setIsLoadingRecent] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -63,7 +65,27 @@ export function PatientSearch({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelect = (patient: Patient, allResults = results) => {
+  const fetchRecentPatients = async () => {
+    if (recentPatients.length > 0) {
+      setIsOpen(true);
+      return;
+    }
+    setIsLoadingRecent(true);
+    try {
+      const res = await fetch('/api/patients/search?recent=true');
+      if (res.ok) {
+        const data = await res.json();
+        setRecentPatients(data.patients || []);
+        setIsOpen(true);
+      }
+    } catch (err) {
+      console.error('[patient-search] Failed to load recent patients:', err);
+    } finally {
+      setIsLoadingRecent(false);
+    }
+  };
+
+  const handleSelect = (patient: Patient, allResults = (results.length > 0 ? results : recentPatients)) => {
     // Collect all family members in this search matching the same phone or primaryCustomerId
     const primaryId = patient.primaryCustomerId || patient.id;
     const familyGroup = allResults.filter(
@@ -85,7 +107,9 @@ export function PatientSearch({
     if (trimmed.length < 3) {
       setResults([]);
       setIsSearching(false);
-      setIsOpen(false);
+      if (recentPatients.length > 0) {
+        setIsOpen(true);
+      }
       return;
     }
 
@@ -115,6 +139,8 @@ export function PatientSearch({
     inputRef.current?.focus();
   };
 
+  const activeDisplayList = results.length > 0 ? results : (query.trim().length === 0 ? recentPatients : []);
+
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <div className="relative flex items-center">
@@ -140,17 +166,28 @@ export function PatientSearch({
             search(e.target.value);
           }}
           onFocus={() => {
-            if (results.length > 0) setIsOpen(true);
+            if (query.trim().length >= 3) {
+              if (results.length > 0) setIsOpen(true);
+            } else {
+              fetchRecentPatients();
+            }
+          }}
+          onClick={() => {
+            if (query.trim().length >= 3) {
+              if (results.length > 0) setIsOpen(true);
+            } else {
+              fetchRecentPatients();
+            }
           }}
           placeholder="Search patient by name or phone (e.g. Rajesh, 9876543210)... [F2]"
           className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-9 pr-10 text-sm font-medium text-slate-900 dark:text-slate-100 shadow-2xs transition placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-400 dark:hover:border-slate-600 focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-600/20"
         />
 
         <div className="absolute right-3 flex items-center space-x-1">
-          {isSearching && (
+          {(isSearching || isLoadingRecent) && (
             <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
           )}
-          {(query || selectedPatient) && !isSearching && (
+          {(query || selectedPatient) && !isSearching && !isLoadingRecent && (
             <button
               type="button"
               aria-label="Clear patient search"
@@ -167,40 +204,51 @@ export function PatientSearch({
       {/* Results Dropdown */}
       {isOpen && (
         <div className="absolute z-50 mt-1 max-h-80 w-full overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
-          {results.length > 0 ? (
+          {isLoadingRecent ? (
+            <div className="flex items-center justify-center p-4 text-xs text-slate-500 dark:text-slate-400 gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
+              <span>Loading recent patients...</span>
+            </div>
+          ) : activeDisplayList.length > 0 ? (
             <div className="p-1">
               <div className="flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-300">
-                <span>Matching Patients ({results.length})</span>
-                <span className="text-[10px] lowercase text-slate-500 dark:text-slate-300">
-                  family group linked
+                <span className="flex items-center gap-1.5">
+                  {results.length > 0 ? (
+                    <>Matching Patients ({results.length})</>
+                  ) : (
+                    <>Recent &amp; Modified Patients ({recentPatients.length})</>
+                  )}
+                </span>
+                <span className="text-[10px] lowercase text-slate-500 dark:text-slate-300 font-normal">
+                  {results.length > 0 ? 'family group linked' : '1-click quick select'}
                 </span>
               </div>
               <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-                {results.map((patient) => {
+                {activeDisplayList.map((patient) => {
                   const isDependent = !!patient.primaryCustomerId;
                   return (
                     <li
                       key={patient.id}
                       onClick={() => handleSelect(patient)}
-                      className="flex cursor-pointer items-center justify-between rounded-md p-3 transition hover:bg-blue-50 dark:hover:bg-slate-800/70"
+                      className="group flex cursor-pointer items-center justify-between rounded-lg p-2.5 transition-colors hover:bg-blue-50/70 dark:hover:bg-slate-800/80"
                     >
                       <div className="flex items-center space-x-3">
                         <div
-                          className={`flex h-9 w-9 items-center justify-center rounded-full font-semibold ${
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-bold text-xs shadow-2xs ${
                             isDependent
-                              ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300'
-                              : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
+                              ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60'
+                              : 'bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60'
                           }`}
                         >
-                          {patient.fullName.charAt(0)}
+                          {patient.fullName.charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <div className="flex items-center space-x-2">
-                            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                               {patient.fullName}
                             </span>
                             <span
-                              className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                              className={`rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider ${
                                 isDependent
                                   ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
                                   : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
@@ -210,23 +258,23 @@ export function PatientSearch({
                                 ? patient.relationType
                                 : isDependent
                                   ? 'Dependent'
-                                  : 'Primary Account'}
+                                  : 'Primary'}
                             </span>
                             {patient.gender && (
-                              <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                              <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-medium text-slate-600 dark:text-slate-300">
                                 {patient.gender}
                                 {patient.age ? `, ${patient.age}y` : ''}
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center space-x-3 text-xs text-slate-600 dark:text-slate-300">
-                            <span className="flex items-center font-mono">
-                              <Phone className="mr-1 h-3 w-3 text-slate-500 dark:text-slate-300" />
+                          <div className="flex items-center space-x-3 text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                            <span className="flex items-center font-mono text-[11px]">
+                              <Phone className="mr-1 h-3 w-3 text-slate-400 dark:text-slate-500" />
                               {patient.phone}
                             </span>
                             {patient.city && (
-                              <span className="flex items-center">
-                                <MapPin className="mr-1 h-3 w-3 text-slate-500 dark:text-slate-300" />
+                              <span className="flex items-center text-[11px]">
+                                <MapPin className="mr-1 h-3 w-3 text-slate-400 dark:text-slate-500" />
                                 {patient.city}
                               </span>
                             )}
@@ -236,11 +284,9 @@ export function PatientSearch({
 
                       <div className="text-right">
                         {patient.advanceBalance && Number(patient.advanceBalance) > 0 ? (
-                          <div className="text-xs">
-                            <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                              Credit: ₹{patient.advanceBalance}
-                            </span>
-                          </div>
+                          <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-mono shadow-2xs">
+                            Credit: ₹{patient.advanceBalance}
+                          </span>
                         ) : null}
                       </div>
                     </li>

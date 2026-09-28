@@ -1,0 +1,20 @@
+---
+description: Autonomous documentation retrieval via MCP and web search, and uncompromising code quality over token optimization.
+globs: ["src/**/*", "e2e/**/*", "docs/**/*"]
+alwaysApply: true
+---
+
+# Autonomous Research, Official Documentation & Code Quality Rules
+
+## 1. Zero Guesswork & Autonomous Documentation Retrieval
+- **Forbidden Practice**: Never guess API parameters, database schemas, or framework conventions when the user does not provide explicit documentation. Never rely on outdated training memory.
+- **MCP Protocol First**: If context relates to mockups, database state, project tasks, or browser inspection, query active MCP servers (Figma, Notion, Lovable, Chrome DevTools, database proxies).
+- **Live Official Documentation**: When working with external libraries, platforms, or APIs (Next.js 16, React 19, Better Auth, Drizzle ORM, Neon PostgreSQL, Upstash Redis, Tailwind v4, Zod), proactively fetch the **latest official vendor documentation** using web search and URL reading tools (`search_web`, `read_url_content`, `browser_subagent`).
+- **Version Compatibility**: Check `package.json` to verify current versions and confirm API compatibility and deprecation notices before implementing.
+
+## 2. Quality & Bug-Free Correctness Over Token Optimization
+- **Quality Mandate**: Clean, resilient, bug-free, domain-solid code is strictly prioritized over saving tokens. Never truncate research, rush implementations, or skip thorough validation to conserve tokens.
+- **The "Think & Verify Twice" Protocol**:
+  1. **Pre-Implementation Verification**: Deeply inspect existing schemas, actions, stores, and invariants using `graphify explain` and direct file analysis before drafting code.
+  2. **Risk & Regression Analysis**: Anticipate edge cases, concurrency collisions, multi-tenant leaks, optical domain invariants (0.25 D quarter steps, axis rules), and Indian GST tax calculations.
+  3. **Verification Loop**: Run strict validation (`npm run check`, `npm run validate`) and thoroughly analyze outputs before marking any feature complete.

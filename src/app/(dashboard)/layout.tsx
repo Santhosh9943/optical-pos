@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Glasses,
   Receipt,
@@ -14,12 +14,20 @@ import {
   Clock,
   Shield,
   Store,
+  Sparkles,
+  LayoutDashboard,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { UserNav } from '@/components/layout/user-nav';
 import { BranchSwitcher } from '@/components/layout/branch-switcher';
 import { SimulationBanner } from '@/components/layout/simulation-banner';
 import { useTenantStore } from '@/store/tenant-store';
+import { getCurrentPlanAction } from '@/actions/plan-actions';
+import { SubscriberOnboardingModal } from '@/components/subscription/subscriber-onboarding-modal';
+import { PriorityNotesTrigger, PriorityNotesDrawer } from '@/components/priority-notes';
+import { usePriorityNotesStore } from '@/store/priority-notes-store';
+import { NotificationBellTrigger } from '@/components/notifications';
+import { SettingsSidebar } from '@/components/layout/settings-sidebar';
 
 export default function DashboardLayout({
   children,
@@ -30,6 +38,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const { activeRoleMode, isSimulating } = useTenantStore();
 
+  const isDashboard = pathname === '/admin/dashboard';
   const isPos = pathname?.startsWith('/pos');
   const isInventory = pathname?.startsWith('/admin/inventory');
   const isReports = pathname?.startsWith('/admin/reports');
@@ -38,12 +47,39 @@ export default function DashboardLayout({
   const isSettings = pathname?.startsWith('/admin/settings');
   const isBranches = pathname?.startsWith('/admin/branches');
   const isStaff = pathname?.startsWith('/admin/staff');
-  const isSuperAdminPlatform = pathname?.startsWith('/super-admin');
 
-  const isStaffOnly = activeRoleMode === 'user';
-  const isStoreAdmin = activeRoleMode === 'admin';
-  const isOrganizer = activeRoleMode === 'organizer';
-  const isSuperAdmin = activeRoleMode === 'super_admin';
+  const [activePlanName, setActivePlanName] = useState('Starter Practice');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { isPinned: isNotesPinned, isOpen: isNotesOpen } = usePriorityNotesStore();
+  const shouldShiftLayout = mounted && isNotesPinned && isNotesOpen;
+
+  const isStaffOnly = mounted && activeRoleMode === 'user';
+  const isStoreAdmin = mounted && (activeRoleMode === 'admin' || activeRoleMode === 'organizer' || activeRoleMode === 'super_admin');
+  const isOrganizer = mounted && (activeRoleMode === 'organizer' || activeRoleMode === 'super_admin');
+  const isSuperAdmin = mounted && activeRoleMode === 'super_admin';
+
+  useEffect(() => {
+    async function loadPlan() {
+      try {
+        const res = await getCurrentPlanAction();
+        if (res?.planName) {
+          setActivePlanName(res.planName);
+          if (!res.hasCompletedOnboarding && res.planId !== 'starter') {
+            setShowOnboarding(true);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load plan', e);
+      }
+    }
+    loadPlan();
+  }, []);
 
   // Global Keyboard Shortcuts (F1 for POS Billing, F3 for Inventory)
   useEffect(() => {
@@ -70,7 +106,10 @@ export default function DashboardLayout({
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100">
       {/* ── Persistent Left Navigation Sidebar ── */}
-      <aside className="flex w-56 flex-shrink-0 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-20">
+      {isSettings ? (
+        <SettingsSidebar />
+      ) : (
+        <aside className="flex w-56 flex-shrink-0 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-20">
         {/* Brand Header */}
         <div className="flex h-14 items-center gap-2.5 border-b border-slate-200 dark:border-slate-800 px-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
@@ -91,6 +130,28 @@ export default function DashboardLayout({
           <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-300">
             Operations
           </div>
+
+          {/* Executive Dashboard Nav Link */}
+          <Link
+            href="/admin/dashboard"
+            data-testid="nav-dashboard"
+            className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
+              isDashboard
+                ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shadow-2xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <LayoutDashboard
+                className={`h-4 w-4 ${
+                  isDashboard
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-slate-400 dark:text-slate-400'
+                }`}
+              />
+              <span>Dashboard</span>
+            </div>
+          </Link>
 
           {/* POS Billing Nav Link */}
           <Link
@@ -220,29 +281,19 @@ export default function DashboardLayout({
                 </span>
               </Link>
 
-              {/* Manage Branches: Exclusive to Organizer and Super Admin */}
+              {/* Organization Owner Portal (HQ): Visible to Practice Owner & Super Admin */}
               {(isOrganizer || isSuperAdmin) && (
                 <Link
-                  href="/admin/branches"
-                  data-testid="nav-branches"
-                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
-                    isBranches
-                      ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
-                  }`}
+                  href="/owner"
+                  data-testid="nav-owner-portal"
+                  className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold text-blue-700 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition mb-1 border border-blue-200/60 dark:border-blue-900/40 shadow-2xs"
                 >
                   <div className="flex items-center gap-2">
-                    <Store
-                      className={`h-4 w-4 ${
-                        isBranches
-                          ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-slate-400 dark:text-slate-400'
-                      }`}
-                    />
-                    <span>Manage Branches</span>
+                    <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <span>Owner Portal</span>
                   </div>
-                  <span className="rounded bg-blue-100 dark:bg-blue-950/80 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-blue-700 dark:text-blue-300">
-                    Stores
+                  <span className="rounded bg-blue-200/70 dark:bg-blue-900 px-1.5 py-0.5 text-[9px] font-mono font-bold text-blue-800 dark:text-blue-200">
+                    HQ
                   </span>
                 </Link>
               )}
@@ -274,7 +325,7 @@ export default function DashboardLayout({
                 </Link>
               )}
 
-              {/* Practice Settings */}
+              {/* Settings */}
               <Link
                 href="/admin/settings"
                 data-testid="nav-settings"
@@ -292,39 +343,12 @@ export default function DashboardLayout({
                         : 'text-slate-400 dark:text-slate-400'
                     }`}
                   />
-                  <span>Settings</span>
+                  <span>Store Settings</span>
                 </div>
                 <span className="rounded bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-mono text-slate-600 dark:text-slate-300">
                   Cfg
                 </span>
               </Link>
-
-              {/* Super Admin Console Nav Link */}
-              {isSuperAdmin && !isSimulating && (
-                <Link
-                  href="/super-admin/dashboard"
-                  data-testid="nav-super-admin"
-                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-600 ${
-                    isSuperAdminPlatform
-                      ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 hover:text-purple-900 dark:hover:text-purple-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Shield
-                      className={`h-4 w-4 ${
-                        isSuperAdminPlatform
-                          ? 'text-purple-600 dark:text-purple-400'
-                          : 'text-slate-400 dark:text-slate-400'
-                      }`}
-                    />
-                    <span>Super Admin</span>
-                  </div>
-                  <span className="rounded bg-purple-100 dark:bg-purple-900/60 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-purple-700 dark:text-purple-300">
-                    SaaS
-                  </span>
-                </Link>
-              )}
             </div>
           )}
         </nav>
@@ -350,69 +374,121 @@ export default function DashboardLayout({
           </div>
         </div>
       </aside>
+      )}
 
       {/* ── Persistent Main Viewport Container ── */}
-      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+      <div
+        className={`flex flex-1 flex-col overflow-hidden min-w-0 transition-all duration-300 ${
+          shouldShiftLayout ? 'mr-[340px] sm:mr-[360px]' : ''
+        }`}
+      >
         {/* Persistent Sticky Simulation Banner (Active when simulating) */}
         <SimulationBanner />
 
         {/* ── Persistent Top Global Action Bar ── */}
         <header className="flex h-14 items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 shrink-0 z-10">
-          {/* Navigation Tabs / Link Switcher */}
-          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/90 p-1 rounded-lg border border-slate-200 dark:border-slate-700/60">
-            <Link
-              href="/pos/new-bill"
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
-                isPos
-                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100'
-              }`}
-            >
-              <Receipt className="h-3.5 w-3.5" />
-              <span>Billing (POS)</span>
-              <span className="text-[10px] font-mono text-slate-500 dark:text-slate-300">F1</span>
-            </Link>
-
-            <Link
-              href="/admin/inventory"
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
-                isInventory
-                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100'
-              }`}
-            >
-              <Package className="h-3.5 w-3.5" />
-              <span>Inventory Catalog</span>
-              <span className="text-[10px] font-mono text-slate-500 dark:text-slate-300">F3</span>
-            </Link>
-
-            <Link
-              href="/admin/reports"
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
-                isReports
-                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100'
-              }`}
-            >
-              <BarChart3 className="h-3.5 w-3.5" />
-              <span>Daily Reports</span>
-            </Link>
-
-            <Link
-              href="/admin/patients"
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 ${
-                isPatients
-                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100'
-              }`}
-            >
-              <Users className="h-3.5 w-3.5" />
-              <span>Patients</span>
-            </Link>
+          {/* Active Location / Route Context Breadcrumb */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+              <span className="flex items-center gap-2 text-foreground font-bold text-sm">
+                {isDashboard && (
+                  <>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                      <LayoutDashboard className="h-4 w-4" />
+                    </div>
+                    <span>Executive Dashboard</span>
+                  </>
+                )}
+                {isPos && (
+                  <>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                      <Receipt className="h-4 w-4" />
+                    </div>
+                    <span>Billing (POS)</span>
+                  </>
+                )}
+                {isInventory && (
+                  <>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                      <Package className="h-4 w-4" />
+                    </div>
+                    <span>Inventory Catalog</span>
+                  </>
+                )}
+                {isReports && (
+                  <>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                      <BarChart3 className="h-4 w-4" />
+                    </div>
+                    <span>Daily Z-Report & Audits</span>
+                  </>
+                )}
+                {isPatients && (
+                  <>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <span>Patient Directory</span>
+                  </>
+                )}
+                {isLabOrders && (
+                  <>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                      <ClipboardList className="h-4 w-4" />
+                    </div>
+                    <span>Lab Orders Kanban</span>
+                  </>
+                )}
+                {isBranches && (
+                  <>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                      <Store className="h-4 w-4" />
+                    </div>
+                    <span>Manage Branches</span>
+                  </>
+                )}
+                {isStaff && (
+                  <>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-600/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <span>Store Staff</span>
+                  </>
+                )}
+                {isSettings && (
+                  <>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                      <Settings className="h-4 w-4" />
+                    </div>
+                    <span>Store Settings & Hardware</span>
+                  </>
+                )}
+                {pathname === '/pricing' && (
+                  <>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 dark:bg-amber-500/20">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <span>Plans & SaaS Upgrade</span>
+                  </>
+                )}
+              </span>
+            </div>
           </div>
 
           {/* Store / Shift Meta & Theme Toggle & User Navigation */}
           <div className="flex items-center space-x-3">
+            {/* Practice Owner Return to Owner Portal Badge & Action */}
+            {(isOrganizer || isSuperAdmin) && (
+              <Link
+                href="/owner"
+                data-testid="btn-return-owner-portal"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-50/70 dark:bg-blue-950/50 px-3 py-1 text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition shadow-2xs"
+              >
+                <Shield className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span>Owner Portal</span>
+              </Link>
+            )}
+
             {/* Multi-Store Branch Switcher */}
             <BranchSwitcher />
 
@@ -426,6 +502,12 @@ export default function DashboardLayout({
               Counter 01
             </div>
 
+            {/* Priority Notes Launcher Icon */}
+            <PriorityNotesTrigger />
+
+            {/* Notification Center Bell Trigger */}
+            <NotificationBellTrigger />
+
             <ThemeToggle />
 
             {/* Profile Avatar, Initials, Role Badge, and Logout Flow */}
@@ -438,6 +520,18 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+
+      {/* First-time Subscriber Onboarding Tour (Org Owners Only) */}
+      {(isOrganizer || isSuperAdmin) && (
+        <SubscriberOnboardingModal
+          isOpen={showOnboarding}
+          planName={activePlanName}
+          onClose={() => setShowOnboarding(false)}
+        />
+      )}
+
+      {/* Priority Notes (Temp Notes) Floating / Pinned Slide-Over Drawer */}
+      <PriorityNotesDrawer />
     </div>
   );
 }

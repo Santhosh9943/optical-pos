@@ -17,8 +17,16 @@ import {
   Check,
   Clock,
   Loader2,
+  Calculator,
+  Sparkles,
+  X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { isQuarterStep } from '@/lib/validators/prescription';
+import {
+  convertSpectacleToContactLens,
+  formatDiopter as formatDioptreString,
+} from '@/lib/vertex-converter';
 import type { PatientPrescriptionHistory } from '@/actions/patient-actions';
 
 export interface PrescriptionValues {
@@ -77,6 +85,7 @@ interface PrescriptionGridProps {
   onToggleAddNewPower?: (isAdding: boolean) => void;
   onSaveNewPower?: (rx: PrescriptionValues) => Promise<void>;
   onUsePrescriptionHistory?: (historyItem: PatientPrescriptionHistory) => void;
+  onRemovePatientTab?: (patientId: string) => void;
 }
 
 export const initialPrescriptionValues: PrescriptionValues = {
@@ -122,6 +131,7 @@ interface StepFieldProps {
   disabled?: boolean;
   dataTestId?: string;
   ariaLabel?: string;
+  eye?: 'OD' | 'OS';
 }
 
 function StepField({
@@ -136,6 +146,7 @@ function StepField({
   disabled = false,
   dataTestId,
   ariaLabel,
+  eye,
 }: StepFieldProps) {
   const [text, setText] = useState<string>('');
 
@@ -194,14 +205,20 @@ function StepField({
   };
 
   return (
-    <div className="flex items-center space-x-1">
+    <div className="flex items-center space-x-1 justify-center">
       <button
         type="button"
         tabIndex={-1}
         disabled={disabled}
         aria-label={`Decrease ${ariaLabel || 'value'}`}
         onClick={handleDecrement}
-        className="flex h-7 w-6 items-center justify-center rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-200 dark:active:bg-slate-600 disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className={`flex h-7 w-6.5 items-center justify-center rounded border text-xs font-bold transition disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-slate-600 focus-visible:outline-none focus-visible:ring-2 active:scale-95 cursor-pointer ${
+          eye === 'OD'
+            ? 'border-sky-200 dark:border-sky-800/80 bg-sky-50/60 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60 focus-visible:ring-sky-500'
+            : eye === 'OS'
+            ? 'border-violet-200 dark:border-violet-800/80 bg-violet-50/60 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/60 focus-visible:ring-violet-500'
+            : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 focus-visible:ring-blue-500'
+        }`}
       >
         −
       </button>
@@ -215,12 +232,20 @@ function StepField({
         placeholder={placeholder}
         onChange={(e) => setText(e.target.value)}
         onBlur={handleBlur}
-        className={`h-7 w-16 rounded border px-1 text-center font-mono text-xs font-semibold transition focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600/20 disabled:bg-slate-50 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 bg-white dark:bg-slate-900 ${
+        className={`h-7 w-16 rounded border px-1 text-center font-mono text-xs font-bold transition focus:outline-none focus:ring-2 disabled:bg-slate-50 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 bg-white dark:bg-slate-900 shadow-2xs ${
+          eye === 'OD'
+            ? 'focus:border-sky-500 focus:ring-sky-500/20'
+            : eye === 'OS'
+            ? 'focus:border-violet-500 focus:ring-violet-500/20'
+            : 'focus:border-blue-600 focus:ring-blue-600/20'
+        } ${
           value !== null && !isAxis && !isPd && value < 0
-            ? 'text-red-600 dark:text-red-400 border-slate-300 dark:border-slate-700'
+            ? 'text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-900/60'
             : value !== null && !isAxis && !isPd && value > 0
-            ? 'text-blue-700 dark:text-blue-400 border-slate-300 dark:border-slate-700'
-            : 'text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700'
+            ? eye === 'OD'
+              ? 'text-sky-700 dark:text-sky-400 border-sky-300 dark:border-sky-800'
+              : 'text-violet-700 dark:text-violet-400 border-violet-300 dark:border-violet-800'
+            : 'text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700'
         }`}
       />
       <button
@@ -229,7 +254,13 @@ function StepField({
         disabled={disabled}
         aria-label={`Increase ${ariaLabel || 'value'}`}
         onClick={handleIncrement}
-        className="flex h-7 w-6 items-center justify-center rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-200 dark:active:bg-slate-600 disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className={`flex h-7 w-6.5 items-center justify-center rounded border text-xs font-bold transition disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-slate-600 focus-visible:outline-none focus-visible:ring-2 active:scale-95 cursor-pointer ${
+          eye === 'OD'
+            ? 'border-sky-200 dark:border-sky-800/80 bg-sky-50/60 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60 focus-visible:ring-sky-500'
+            : eye === 'OS'
+            ? 'border-violet-200 dark:border-violet-800/80 bg-violet-50/60 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/60 focus-visible:ring-violet-500'
+            : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 focus-visible:ring-blue-500'
+        }`}
       >
         +
       </button>
@@ -250,9 +281,18 @@ export function PrescriptionGrid({
   onToggleAddNewPower,
   onSaveNewPower,
   onUsePrescriptionHistory,
+  onRemovePatientTab,
 }: PrescriptionGridProps) {
   const [showNotes, setShowNotes] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showClConverter, setShowClConverter] = useState(false);
+  const [vertexDistanceMm, setVertexDistanceMm] = useState<number>(12);
+  const [preferSphericalEquivalent, setPreferSphericalEquivalent] = useState<boolean>(true);
+
+  const clConversion = convertSpectacleToContactLens(value, {
+    vertexDistanceMm,
+    useSphericalEquivalent: preferSphericalEquivalent,
+  });
 
   const hasHistory = !!(
     patientPrescriptionHistory && patientPrescriptionHistory.length > 0
@@ -341,30 +381,48 @@ export function PrescriptionGrid({
                 rx.osCylinder !== null);
 
             return (
-              <button
+              <div
                 key={p.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                data-testid="rx-patient-tab"
-                onClick={() => onSelectPatientTab?.(p.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition ${
                   isActive
                     ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
-                <span>{p.fullName}</span>
-                <span className="text-[10px] font-normal text-slate-500 dark:text-slate-300">
-                  ({p.relationType || 'Current'})
-                </span>
-                {isFilled && (
-                  <span
-                    className="h-2 w-2 rounded-full bg-emerald-500"
-                    title="Prescription entered"
-                  />
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  data-testid="rx-patient-tab"
+                  onClick={() => onSelectPatientTab?.(p.id)}
+                  className="flex items-center gap-1.5 cursor-pointer text-left"
+                >
+                  <span>{p.fullName}</span>
+                  <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">
+                    ({p.relationType || 'Current'})
+                  </span>
+                  {isFilled && (
+                    <span
+                      className="h-2 w-2 rounded-full bg-emerald-500 shrink-0"
+                      title="Prescription entered"
+                    />
+                  )}
+                </button>
+                {onRemovePatientTab && patients.length > 1 && (
+                  <button
+                    type="button"
+                    aria-label={`Remove ${p.fullName} from order`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemovePatientTab(p.id);
+                    }}
+                    className="rounded-full p-0.5 text-slate-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-950/50 transition cursor-pointer ml-0.5"
+                    title={`Remove ${p.fullName} from billing session`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
@@ -437,12 +495,13 @@ export function PrescriptionGrid({
 
                     <button
                       type="button"
-                      data-testid="btn-use-rx-history"
+                      data-testid="btn-load-into-editor"
                       onClick={() => onUsePrescriptionHistory?.(item)}
-                      className="flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition active:scale-95 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
+                      className="flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95"
+                      title="Load values into active clinical refraction editor"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span>Use in Order</span>
+                      <RotateCcw className="h-3 w-3 text-slate-500 dark:text-slate-400" />
+                      <span>Load in Editor</span>
                     </button>
                   </div>
 
@@ -543,6 +602,21 @@ export function PrescriptionGrid({
               )}
               <button
                 type="button"
+                data-testid="btn-toggle-cl-converter"
+                onClick={() => setShowClConverter(!showClConverter)}
+                className={`flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] font-semibold transition active:scale-95 ${
+                  showClConverter
+                    ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
+                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+                title="Toggle Spectacle to Contact Lens Vertex Distance Converter"
+              >
+                <Calculator className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
+                <span>CL Converter</span>
+                {showClConverter ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+              <button
+                type="button"
                 onClick={copyODtoOS}
                 title="Copy Right Eye (OD) values to Left Eye (OS)"
                 className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -562,12 +636,144 @@ export function PrescriptionGrid({
             </div>
           </div>
 
+          {/* Contact Lens Vertex Distance Converter Drawer */}
+          {showClConverter && (
+            <div className="mt-3 rounded-lg border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/30 dark:bg-indigo-950/20 p-3 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 dark:border-indigo-800/40 pb-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-950 dark:text-indigo-200">
+                    Spectacle Rx → Contact Lens Vertex Distance Converter
+                  </span>
+                  <span className="text-[10px] text-indigo-700 dark:text-indigo-300 bg-indigo-100/70 dark:bg-indigo-900/60 px-1.5 py-0.5 rounded font-mono">
+                    Fc = F / (1 - d·F)
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <label className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                    <span className="text-[11px] font-medium">BVD:</span>
+                    <select
+                      value={vertexDistanceMm}
+                      onChange={(e) => setVertexDistanceMm(Number(e.target.value))}
+                      className="rounded border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-900 px-1.5 py-0.5 text-xs font-mono font-bold text-slate-800 dark:text-slate-200"
+                    >
+                      <option value={10}>10 mm</option>
+                      <option value={12}>12 mm (Standard)</option>
+                      <option value={14}>14 mm</option>
+                    </select>
+                  </label>
+                  <label className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={preferSphericalEquivalent}
+                      onChange={(e) => setPreferSphericalEquivalent(e.target.checked)}
+                      className="rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-[11px] font-medium">Spherical Equiv. (&lt;0.75 CYL)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Dual Eye Results Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                {/* OD Contact Lens Power */}
+                <div className="rounded-md border border-sky-200 dark:border-sky-800/60 bg-white dark:bg-slate-900/80 p-2.5 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="rounded bg-sky-100 dark:bg-sky-950 px-1.5 py-0.5 font-mono text-[10px] font-bold text-sky-800 dark:text-sky-300">
+                        OD (Right Eye CL)
+                      </span>
+                      {clConversion.od.clCylinder === null && (value.odCylinder !== null && value.odCylinder !== 0) && (
+                        <span className="text-[9px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1 rounded border border-amber-200 dark:border-amber-800">
+                          Sph Equiv
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-mono text-sm font-bold text-slate-900 dark:text-white">
+                      SPH {clConversion.od.clSphere !== null ? formatDioptreString(clConversion.od.clSphere) : '0.00'}
+                      {clConversion.od.clCylinder !== null && (
+                        <span className="text-slate-600 dark:text-slate-300 font-normal ml-1.5">
+                          CYL {formatDioptreString(clConversion.od.clCylinder)} × {clConversion.od.clAxis ?? 180}°
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Spectacle: SPH {formatDioptre(value.odSphere) || '0.00'}{' '}
+                      {value.odCylinder ? `CYL ${formatDioptre(value.odCylinder)} × ${value.odAxis || 180}°` : ''}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const odText = `OD CL: SPH ${clConversion.od.clSphere !== null ? formatDioptreString(clConversion.od.clSphere) : '0.00'}${clConversion.od.clCylinder ? ` CYL ${formatDioptreString(clConversion.od.clCylinder)} × ${clConversion.od.clAxis}°` : ''}`;
+                      navigator.clipboard.writeText(odText);
+                      toast.success('Copied OD Contact Lens Power to clipboard');
+                    }}
+                    className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-[10px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                    title="Copy OD CL Power"
+                  >
+                    <Copy className="h-3 w-3" />
+                    <span>Copy</span>
+                  </button>
+                </div>
+
+                {/* OS Contact Lens Power */}
+                <div className="rounded-md border border-violet-200 dark:border-violet-800/60 bg-white dark:bg-slate-900/80 p-2.5 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="rounded bg-violet-100 dark:bg-violet-950 px-1.5 py-0.5 font-mono text-[10px] font-bold text-violet-800 dark:text-violet-300">
+                        OS (Left Eye CL)
+                      </span>
+                      {clConversion.os.clCylinder === null && (value.osCylinder !== null && value.osCylinder !== 0) && (
+                        <span className="text-[9px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1 rounded border border-amber-200 dark:border-amber-800">
+                          Sph Equiv
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-mono text-sm font-bold text-slate-900 dark:text-white">
+                      SPH {clConversion.os.clSphere !== null ? formatDioptreString(clConversion.os.clSphere) : '0.00'}
+                      {clConversion.os.clCylinder !== null && (
+                        <span className="text-slate-600 dark:text-slate-300 font-normal ml-1.5">
+                          CYL {formatDioptreString(clConversion.os.clCylinder)} × {clConversion.os.clAxis ?? 180}°
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Spectacle: SPH {formatDioptre(value.osSphere) || '0.00'}{' '}
+                      {value.osCylinder ? `CYL ${formatDioptre(value.osCylinder)} × ${value.osAxis || 180}°` : ''}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const osText = `OS CL: SPH ${clConversion.os.clSphere !== null ? formatDioptreString(clConversion.os.clSphere) : '0.00'}${clConversion.os.clCylinder ? ` CYL ${formatDioptreString(clConversion.os.clCylinder)} × ${clConversion.os.clAxis}°` : ''}`;
+                      navigator.clipboard.writeText(osText);
+                      toast.success('Copied OS Contact Lens Power to clipboard');
+                    }}
+                    className="flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-[10px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                    title="Copy OS CL Power"
+                  >
+                    <Copy className="h-3 w-3" />
+                    <span>Copy</span>
+                  </button>
+                </div>
+              </div>
+
+              {clConversion.notes.length > 0 && (
+                <div className="flex items-start gap-1.5 text-[11px] text-indigo-800 dark:text-indigo-300 pt-1">
+                  <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                  <span>{clConversion.notes.join(' • ')}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Prescription Tabular Grid */}
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300">
-                  <th className="pb-2 pl-1 w-28">Eye</th>
+                  <th className="pb-2 pl-2 w-28">Eye</th>
                   <th className="pb-2 text-center">Sphere (SPH)</th>
                   <th className="pb-2 text-center">Cylinder (CYL)</th>
                   <th className="pb-2 text-center">Axis (1–180°)</th>
@@ -577,10 +783,10 @@ export function PrescriptionGrid({
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {/* ROW 1: OD (Right Eye) */}
-                <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
-                  <td className="py-2 pl-1">
+                <tr className="bg-sky-50/20 dark:bg-sky-950/20 hover:bg-sky-50/40 dark:hover:bg-sky-950/40 transition border-l-4 border-l-sky-500">
+                  <td className="py-2.5 pl-2">
                     <div className="flex items-center space-x-1.5">
-                      <span className="flex h-5 w-7 items-center justify-center rounded bg-blue-100 dark:bg-blue-950 font-mono text-[10px] font-bold text-blue-800 dark:text-blue-300">
+                      <span className="flex h-5 w-7 items-center justify-center rounded bg-sky-100 dark:bg-sky-950 font-mono text-[10px] font-bold text-sky-800 dark:text-sky-300">
                         OD
                       </span>
                       <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
@@ -588,7 +794,7 @@ export function PrescriptionGrid({
                       </span>
                     </div>
                   </td>
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1 text-center">
                     <StepField
                       value={value.odSphere}
                       onChange={(v) => updateField('odSphere', v)}
@@ -598,9 +804,10 @@ export function PrescriptionGrid({
                       placeholder="0.00"
                       dataTestId="od-sphere-input"
                       ariaLabel="Right Eye Sphere"
+                      eye="OD"
                     />
                   </td>
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1 text-center">
                     <StepField
                       value={value.odCylinder}
                       onChange={(v) => updateField('odCylinder', v)}
@@ -610,9 +817,10 @@ export function PrescriptionGrid({
                       placeholder="0.00"
                       dataTestId="od-cylinder-input"
                       ariaLabel="Right Eye Cylinder"
+                      eye="OD"
                     />
                   </td>
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1 text-center">
                     <div className="relative inline-block">
                       <StepField
                         value={value.odAxis}
@@ -625,6 +833,7 @@ export function PrescriptionGrid({
                         disabled={value.odCylinder === null || value.odCylinder === 0}
                         dataTestId="od-axis-input"
                         ariaLabel="Right Eye Axis"
+                        eye="OD"
                       />
                       {odCylHasError && (
                         <span
@@ -636,7 +845,7 @@ export function PrescriptionGrid({
                       )}
                     </div>
                   </td>
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1 text-center">
                     <StepField
                       value={value.odAdd}
                       onChange={(v) => updateField('odAdd', v)}
@@ -644,9 +853,10 @@ export function PrescriptionGrid({
                       min={0.75}
                       max={4.0}
                       placeholder="—"
+                      eye="OD"
                     />
                   </td>
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1 text-center">
                     <StepField
                       value={value.odPd}
                       onChange={(v) => updateField('odPd', v)}
@@ -655,15 +865,16 @@ export function PrescriptionGrid({
                       max={45}
                       placeholder="31.5"
                       isPd
+                      eye="OD"
                     />
                   </td>
                 </tr>
 
                 {/* ROW 2: OS (Left Eye) */}
-                <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
-                  <td className="py-2 pl-1">
+                <tr className="bg-violet-50/20 dark:bg-violet-950/20 hover:bg-violet-50/40 dark:hover:bg-violet-950/40 transition border-l-4 border-l-violet-500">
+                  <td className="py-2.5 pl-2">
                     <div className="flex items-center space-x-1.5">
-                      <span className="flex h-5 w-7 items-center justify-center rounded bg-indigo-100 dark:bg-indigo-950 font-mono text-[10px] font-bold text-indigo-800 dark:text-indigo-300">
+                      <span className="flex h-5 w-7 items-center justify-center rounded bg-violet-100 dark:bg-violet-950 font-mono text-[10px] font-bold text-violet-800 dark:text-violet-300">
                         OS
                       </span>
                       <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
@@ -671,7 +882,7 @@ export function PrescriptionGrid({
                       </span>
                     </div>
                   </td>
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1 text-center">
                     <StepField
                       value={value.osSphere}
                       onChange={(v) => updateField('osSphere', v)}
@@ -681,9 +892,10 @@ export function PrescriptionGrid({
                       placeholder="0.00"
                       dataTestId="os-sphere-input"
                       ariaLabel="Left Eye Sphere"
+                      eye="OS"
                     />
                   </td>
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1 text-center">
                     <StepField
                       value={value.osCylinder}
                       onChange={(v) => updateField('osCylinder', v)}
@@ -693,9 +905,10 @@ export function PrescriptionGrid({
                       placeholder="0.00"
                       dataTestId="os-cylinder-input"
                       ariaLabel="Left Eye Cylinder"
+                      eye="OS"
                     />
                   </td>
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1 text-center">
                     <div className="relative inline-block">
                       <StepField
                         value={value.osAxis}
@@ -708,6 +921,7 @@ export function PrescriptionGrid({
                         disabled={value.osCylinder === null || value.osCylinder === 0}
                         dataTestId="os-axis-input"
                         ariaLabel="Left Eye Axis"
+                        eye="OS"
                       />
                       {osCylHasError && (
                         <span
@@ -719,7 +933,7 @@ export function PrescriptionGrid({
                       )}
                     </div>
                   </td>
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1 text-center">
                     <StepField
                       value={value.osAdd}
                       onChange={(v) => updateField('osAdd', v)}
@@ -727,9 +941,10 @@ export function PrescriptionGrid({
                       min={0.75}
                       max={4.0}
                       placeholder="—"
+                      eye="OS"
                     />
                   </td>
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1 text-center">
                     <StepField
                       value={value.osPd}
                       onChange={(v) => updateField('osPd', v)}
@@ -738,6 +953,7 @@ export function PrescriptionGrid({
                       max={45}
                       placeholder="31.5"
                       isPd
+                      eye="OS"
                     />
                   </td>
                 </tr>
