@@ -183,4 +183,47 @@ test.describe('Patient and Inventory Comprehensive CRUD & UI Verification', () =
     const createdRow = page.locator('tbody tr', { hasText: testProductName }).first();
     await expect(createdRow).toBeVisible({ timeout: 10000 });
   });
+
+  test('POS: Quick Create Inventory directly from Add Product [F2] and auto-add to cart', async ({ page }) => {
+    // 1. Navigate to POS
+    await page.goto('/pos/new-bill');
+    await page.waitForLoadState('networkidle');
+
+    // 2. Open Add Product [F2] modal
+    const addProductBtn = page.getByTestId('add-product-btn');
+    await expect(addProductBtn).toBeVisible({ timeout: 15000 });
+    await addProductBtn.click();
+
+    // 3. Verify Add Product Modal is open and shows "Create Inventory" button in header
+    const modalCreateInvBtn = page.getByTestId('btn-add-product-create-inventory');
+    await expect(modalCreateInvBtn).toBeVisible({ timeout: 5000 });
+    await modalCreateInvBtn.click();
+
+    // 4. Verify Add Inventory Form opens
+    const invModalHeader = page.locator('h2:has-text("Add Inventory Item")');
+    await expect(invModalHeader).toBeVisible({ timeout: 5000 });
+
+    // 5. Fill quick inventory item
+    const uniqueSuffix = Date.now().toString().slice(-4);
+    const testProductName = `Quick POS Frame ${uniqueSuffix}`;
+    const testSku = `POS-QUICK-${uniqueSuffix}`;
+
+    await page.getByTestId('input-inventory-product-name').fill(testProductName);
+    await page.getByTestId('select-inventory-category').selectOption('FRAME');
+    await page.getByTestId('input-inventory-identifier').fill(testSku);
+    await page.getByTestId('input-inventory-selling-price').fill('1999.00');
+    await page.getByTestId('input-inventory-stock').fill('5');
+
+    // 6. Save item
+    const saveBtn = page.getByTestId('btn-save-inventory-item');
+    await expect(saveBtn).toBeVisible();
+    await saveBtn.click();
+
+    // 7. Modals close and item is automatically added to cart
+    await expect(invModalHeader).not.toBeVisible({ timeout: 10000 });
+
+    // 8. Verify the newly created item appears in the cart table!
+    const cartItemRow = page.locator('table', { hasText: testSku }).first();
+    await expect(cartItemRow).toBeVisible({ timeout: 10000 });
+  });
 });

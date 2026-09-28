@@ -1736,8 +1736,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\e2e\\patient-inventory-crud.spec.ts": {
-    "mtime": 1790585160.327901,
-    "ast_hash": "9095fdf9c00c8af0c0516ce0044c9a64",
+    "mtime": 1790591398.607013,
+    "ast_hash": "26d1bed4ef8afdbc5f4574d3a51e75b4",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\e2e\\pos-checkout.spec.ts": {
@@ -2211,8 +2211,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\add-inventory-form.tsx": {
-    "mtime": 1790584803.3485324,
-    "ast_hash": "902f4957ea02816b6bee840989b960cd",
+    "mtime": 1790591083.2244296,
+    "ast_hash": "989942c08c8383eded077ac88a4355fb",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\add-patient-modal.tsx": {
@@ -2346,8 +2346,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\add-product-modal.tsx": {
-    "mtime": 1790575297.4682572,
-    "ast_hash": "46f33066e793ecc57838b9e296c422b3",
+    "mtime": 1790591188.0501862,
+    "ast_hash": "52dd3a2a9f628ad1c67ff5a2e7ef1691",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\billing-cart.tsx": {
@@ -2371,8 +2371,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\inventory-search.tsx": {
-    "mtime": 1789391186.6459174,
-    "ast_hash": "461e49d3396641327b06be78364c9826",
+    "mtime": 1790591223.9820125,
+    "ast_hash": "ef344cd91a7043b29d62b8fbb54db8ee",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\invoice-details-modal.tsx": {
@@ -2391,8 +2391,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\pos-view.tsx": {
-    "mtime": 1790584896.2642746,
-    "ast_hash": "99d90610e9437f9af8b4bf0f0675d419",
+    "mtime": 1790591287.815372,
+    "ast_hash": "369cfdebd014db27590e32421ddb6ef8",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\prescription-grid.tsx": {
@@ -2826,8 +2826,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\agent-memory\\SESSION_HANDOFF.md": {
-    "mtime": 1790587406.8271704,
-    "ast_hash": "b20be5c8c957778fb21a535880e99af8",
+    "mtime": 1790592023.0331419,
+    "ast_hash": "039cb40b1eb2bf05f29d28f99cb996b2",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\docs\\archive\\ARCHIVE_LOG.md": {

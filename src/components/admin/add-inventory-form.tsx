@@ -35,12 +35,16 @@ interface AddInventoryFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (newItem: InventoryRow) => void;
+  initialIdentifier?: string;
+  initialCategory?: string;
 }
 
 export function AddInventoryForm({
   isOpen,
   onClose,
   onSuccess,
+  initialIdentifier,
+  initialCategory,
 }: AddInventoryFormProps) {
   const branches = useTenantStore((s) => s.branches);
   const selectedBranchId = useTenantStore((s) => s.selectedBranchId);
@@ -51,10 +55,10 @@ export function AddInventoryForm({
 
   // Form state - Essential Fields
   const [productName, setProductName] = useState('');
-  const [category, setCategory] = useState<string>('FRAME');
+  const [category, setCategory] = useState<string>(initialCategory || 'FRAME');
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [customCategoryName, setCustomCategoryName] = useState('');
-  const [identifier, setIdentifier] = useState(''); // Unified SKU / Barcode input
+  const [identifier, setIdentifier] = useState(initialIdentifier || ''); // Unified SKU / Barcode input
   const [sellingPrice, setSellingPrice] = useState('');
   const [stockQuantity, setStockQuantity] = useState(1);
   const [taxMode, setTaxMode] = useState<'GST' | 'EXEMPT'>('GST');
@@ -77,8 +81,14 @@ export function AddInventoryForm({
           ? selectedBranchId
           : branches[0]?.id || '';
       setBranchId(initialBranch);
+      if (initialIdentifier) {
+        setIdentifier(initialIdentifier);
+      }
+      if (initialCategory) {
+        setCategory(initialCategory);
+      }
     }
-  }, [isOpen, selectedBranchId, branches]);
+  }, [isOpen, selectedBranchId, branches, initialIdentifier, initialCategory]);
 
   if (!isOpen) return null;
 

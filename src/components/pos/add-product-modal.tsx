@@ -36,6 +36,7 @@ import {
   type StepOption,
 } from '@/actions/product-type-actions';
 import { getInventoryList, type InventoryRow } from '@/actions/inventory-actions';
+import { AddInventoryForm } from '@/components/admin/add-inventory-form';
 import type { InventoryItem } from './inventory-search';
 import type { POSPatient } from '@/store/pos-store';
 import type { PrescriptionValues } from './prescription-grid';
@@ -203,6 +204,7 @@ export function AddProductModal({
   const [clBaseCurve, setClBaseCurve] = useState<string>('8.5');
   const [clDiameter, setClDiameter] = useState<string>('14.2');
   const [clBoxes, setClBoxes] = useState<number>(1);
+  const [isCreateInventoryOpen, setIsCreateInventoryOpen] = useState(false);
 
   // Reset & Initialize on open
   useEffect(() => {
@@ -665,6 +667,18 @@ export function AddProductModal({
               </div>
             )}
 
+            {/* Quick Create Inventory Button */}
+            <button
+              type="button"
+              data-testid="btn-add-product-create-inventory"
+              onClick={() => setIsCreateInventoryOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 shadow-2xs transition active:scale-95 cursor-pointer"
+              title="Create new inventory item and add to cart"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Create Inventory</span>
+            </button>
+
             <button
               type="button"
               aria-label="Close add product modal"
@@ -711,6 +725,16 @@ export function AddProductModal({
                 >
                   {isSearchingMain ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
                   <span>Search</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="btn-quick-create-inventory-search"
+                  onClick={() => setIsCreateInventoryOpen(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition cursor-pointer shrink-0"
+                  title="Quick create new inventory item"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>+ Create Inventory</span>
                 </button>
                 {hasSearchedMain && (
                   <button
@@ -808,8 +832,19 @@ export function AddProductModal({
                       ))}
                     </div>
                   ) : (
-                    <div className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
-                      No products found matching &quot;{mainSearchQuery}&quot;. Try another term.
+                    <div className="py-6 text-center space-y-2">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        No products found matching &quot;{mainSearchQuery}&quot;.
+                      </p>
+                      <button
+                        type="button"
+                        data-testid="btn-modal-empty-create-inventory"
+                        onClick={() => setIsCreateInventoryOpen(true)}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition cursor-pointer"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>Create Inventory Item &quot;{mainSearchQuery}&quot;</span>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1964,6 +1999,39 @@ export function AddProductModal({
           )}
         </div>
       </div>
+
+      {/* Quick Add Inventory Modal */}
+      <AddInventoryForm
+        isOpen={isCreateInventoryOpen}
+        onClose={() => setIsCreateInventoryOpen(false)}
+        initialIdentifier={mainSearchQuery.trim() || undefined}
+        onSuccess={(newItem) => {
+          setIsCreateInventoryOpen(false);
+          const itemToAdd: InventoryItem = {
+            id: newItem.id,
+            sku: newItem.sku,
+            barcode: newItem.barcode,
+            branchId: newItem.branchId,
+            branchName: newItem.branchName,
+            category: newItem.category as any,
+            brand: newItem.brand,
+            model: newItem.model,
+            description: newItem.description,
+            sellingPrice: newItem.sellingPrice,
+            mrp: newItem.mrp,
+            stockQuantity: newItem.stockQuantity,
+            lowStockThreshold: newItem.lowStockThreshold,
+            taxRate: newItem.taxRate,
+            hsnCode: newItem.hsnCode,
+            lensType: null,
+            coating: null,
+            lensMaterial: null,
+          };
+          onAddInventoryItem(itemToAdd, selectedPatientId || null);
+          toast.success(`Inventory Item Created & Added to Cart: ${newItem.sku}`);
+          onClose();
+        }}
+      />
     </div>
   );
 }

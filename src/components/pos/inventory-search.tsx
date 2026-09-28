@@ -17,6 +17,8 @@ import {
   Sparkles,
   MapPin,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { AddInventoryForm } from '@/components/admin/add-inventory-form';
 
 export interface InventoryItem {
   id: string;
@@ -57,6 +59,7 @@ export function InventorySearch({ onAdd, onSelectFrame, branchId }: InventorySea
   const [isSearching, setIsSearching] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
+  const [isCreateInventoryOpen, setIsCreateInventoryOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -326,14 +329,20 @@ export function InventorySearch({ onAdd, onSelectFrame, branchId }: InventorySea
               </ul>
             </div>
           ) : query.trim().length >= 2 && !isSearching ? (
-            <div className="p-4 text-center">
+            <div className="p-4 text-center space-y-2">
               <Package className="mx-auto h-6 w-6 text-slate-300 dark:text-slate-600" />
               <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
                 No items matching &quot;{query}&quot;
               </p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-300">
-                Check SKU or try searching by category/brand.
-              </p>
+              <button
+                type="button"
+                data-testid="btn-search-quick-create-inventory"
+                onClick={() => setIsCreateInventoryOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Create Inventory Item</span>
+              </button>
             </div>
           ) : null}
         </div>
@@ -434,6 +443,40 @@ export function InventorySearch({ onAdd, onSelectFrame, branchId }: InventorySea
           </div>
         </div>
       )}
+
+      {/* Quick Add Inventory Modal */}
+      <AddInventoryForm
+        isOpen={isCreateInventoryOpen}
+        onClose={() => setIsCreateInventoryOpen(false)}
+        initialIdentifier={query.trim() || undefined}
+        onSuccess={(newItem) => {
+          setIsCreateInventoryOpen(false);
+          const itemToAdd: InventoryItem = {
+            id: newItem.id,
+            sku: newItem.sku,
+            barcode: newItem.barcode,
+            branchId: newItem.branchId,
+            branchName: newItem.branchName,
+            category: newItem.category as any,
+            brand: newItem.brand,
+            model: newItem.model,
+            description: newItem.description,
+            sellingPrice: newItem.sellingPrice,
+            mrp: newItem.mrp,
+            stockQuantity: newItem.stockQuantity,
+            lowStockThreshold: newItem.lowStockThreshold,
+            taxRate: newItem.taxRate,
+            hsnCode: newItem.hsnCode,
+            lensType: null,
+            coating: null,
+            lensMaterial: null,
+          };
+          onAdd(itemToAdd);
+          toast.success(`Inventory Item Created & Added to Cart: ${newItem.sku}`);
+          setQuery('');
+          setIsOpen(false);
+        }}
+      />
     </div>
   );
 }

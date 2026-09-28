@@ -52,6 +52,7 @@ import { QuickAddPatientModal } from '@/components/pos/quick-add-patient-modal';
 import { CompactPatientStrip } from '@/components/pos/compact-patient-strip';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EditInvoiceModal } from '@/components/admin/edit-invoice-modal';
+import { AddInventoryForm } from '@/components/admin/add-inventory-form';
 import { getStoreProfile } from '@/actions/settings-actions';
 import { getDynamicRelationship } from '@/lib/patient-relationship';
 import {
@@ -91,6 +92,7 @@ import {
   Wallet,
   X,
   Settings,
+  Package,
 } from 'lucide-react';
 import { getWhatsAppShareUrl } from '@/lib/whatsapp-utils';
 import { useBarcodeScanner } from '@/hooks/use-barcode-scanner';
@@ -185,6 +187,7 @@ export function PosView() {
   const [isInvoiceDetailsModalOpen, setIsInvoiceDetailsModalOpen] = useState(false);
   const [isQuickAddPatientOpen, setIsQuickAddPatientOpen] = useState(false);
   const [quickAddPrefill, setQuickAddPrefill] = useState('');
+  const [isQuickAddInventoryOpen, setIsQuickAddInventoryOpen] = useState(false);
 
   // Clean family members cluster & purchase history states
   const [availableFamilyMembers, setAvailableFamilyMembers] = useState<POSPatient[]>([]);
@@ -1657,6 +1660,16 @@ export function PosView() {
                     <Plus className="h-3.5 w-3.5" />
                     <span>Add Product [F2]</span>
                   </button>
+                  <button
+                    type="button"
+                    data-testid="btn-pos-create-inventory"
+                    onClick={() => setIsQuickAddInventoryOpen(true)}
+                    className="flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 shadow-2xs transition active:scale-95 cursor-pointer"
+                    title="Quick create new inventory item"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Create Inventory</span>
+                  </button>
                   {cartItems.length > 0 && (
                     <button
                       type="button"
@@ -2111,6 +2124,36 @@ export function PosView() {
           }}
         />
       )}
+
+      {/* ── Quick Create Inventory Modal ── */}
+      <AddInventoryForm
+        isOpen={isQuickAddInventoryOpen}
+        onClose={() => setIsQuickAddInventoryOpen(false)}
+        onSuccess={(newItem) => {
+          setIsQuickAddInventoryOpen(false);
+          addInventoryItem({
+            id: newItem.id,
+            sku: newItem.sku,
+            barcode: newItem.barcode,
+            branchId: newItem.branchId,
+            branchName: newItem.branchName,
+            category: newItem.category as any,
+            brand: newItem.brand,
+            model: newItem.model,
+            description: newItem.description,
+            sellingPrice: newItem.sellingPrice,
+            mrp: newItem.mrp,
+            stockQuantity: newItem.stockQuantity,
+            lowStockThreshold: newItem.lowStockThreshold,
+            taxRate: newItem.taxRate,
+            hsnCode: newItem.hsnCode,
+            lensType: null,
+            coating: null,
+            lensMaterial: null,
+          });
+          toast.success(`Inventory Item Created & Added to Cart: ${newItem.sku}`);
+        }}
+      />
 
       {/* ── MOUNTED PRINT TEMPLATES (Hidden on screen via @media screen, active on print) ── */}
       {completedOrder && (
