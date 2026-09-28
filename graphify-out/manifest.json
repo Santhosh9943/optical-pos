@@ -1741,8 +1741,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\e2e\\pos-checkout.spec.ts": {
-    "mtime": 1790537363.6123536,
-    "ast_hash": "127e1e5da070bfd5559794d7862c1108",
+    "mtime": 1790593126.5577989,
+    "ast_hash": "1194e0f78c3820fab5887a9e1a98a6e1",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\e2e\\pos-layout-modes.spec.ts": {
@@ -1751,8 +1751,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\e2e\\pos-settings-sidebar.spec.ts": {
-    "mtime": 1790568841.1150262,
-    "ast_hash": "b9654a8dd8a68d59c7c47341879288d6",
+    "mtime": 1790593026.5091386,
+    "ast_hash": "6fafd6392ff87bd50886b0c747f8bcde",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\e2e\\priority-notes.spec.ts": {
@@ -2281,8 +2281,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\settings-view.tsx": {
-    "mtime": 1790580270.213259,
-    "ast_hash": "2f830f2849510b9ec4ccc0f532a10b2b",
+    "mtime": 1790592970.461467,
+    "ast_hash": "c2dc9542ca365316892e34fdfaea5dcf",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\admin\\settle-balance-modal.tsx": {
@@ -2346,8 +2346,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\add-product-modal.tsx": {
-    "mtime": 1790591188.0501862,
-    "ast_hash": "52dd3a2a9f628ad1c67ff5a2e7ef1691",
+    "mtime": 1790593968.7132974,
+    "ast_hash": "fea64419ae9ff4cc300f65cc5b3c5bbd",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\components\\pos\\billing-cart.tsx": {
@@ -2676,8 +2676,8 @@
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\lib\\settings-registry.ts": {
-    "mtime": 1790568814.9496498,
-    "ast_hash": "c3365b9b47b06e9f1b9020ea619a5c28",
+    "mtime": 1790592944.1687615,
+    "ast_hash": "16feeafb8ca6156a885c797eed6ba008",
     "semantic_hash": ""
   },
   "F:\\hobby-projects\\optical-pos\\src\\lib\\store-profile.ts": {
@@ -2938,6 +2938,11 @@
   "F:\\hobby-projects\\optical-pos\\public\\guide.html": {
     "mtime": 1790581288.0588496,
     "ast_hash": "7834aee98861e4e9c39215b5fedf1aa2",
+    "semantic_hash": ""
+  },
+  "F:\\hobby-projects\\optical-pos\\e2e\\dynamic-catalog-grid-list.spec.ts": {
+    "mtime": 1790593277.545604,
+    "ast_hash": "ec4232e1f592344dd57c64de8172a1e7",
     "semantic_hash": ""
   }
 }

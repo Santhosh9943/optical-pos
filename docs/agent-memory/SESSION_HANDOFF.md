@@ -7,35 +7,49 @@
 ---
 
 ## 1. Active Session Metadata
-- **Last Updated**: `2026-09-28T16:10:00+05:30`
+- **Last Updated**: `2026-09-28T16:46:00+05:30`
 - **Active Platform / Agent**: Antigravity (Advanced Agentic Pair Programmer)
 - **Active Workspace**: `f:\hobby-projects\optical-pos`
 - **Current Git Branch**: `main`
 - **Deliverables**:
-  - `src/components/admin/add-inventory-form.tsx`: Added `initialIdentifier` and `initialCategory` support for prefilling form fields during quick-creation.
-  - `src/components/pos/add-product-modal.tsx`: Added `Create Inventory` button in modal header, `+ Create Inventory` in search bar, empty search state action button, and integrated `AddInventoryForm` with instant auto-add to billing cart.
-  - `src/components/pos/inventory-search.tsx`: Added `Create Inventory Item` button in empty state with auto-add to billing cart.
-  - `src/components/pos/pos-view.tsx`: Added `Create Inventory` button beside `Add Product [F2]` and mounted `AddInventoryForm` for direct single-click inventory creation.
-  - `e2e/patient-inventory-crud.spec.ts`: Added test `POS: Quick Create Inventory directly from Add Product [F2] and auto-add to cart` (all 5/5 tests passing in Chromium).
+  - `src/lib/settings-registry.ts`: Retired the `catalog` group containing `product-types` (`tabKey: 'products'`). Settings now cleanly houses 4 core groups (`store`, `account`, `communications`, `system`).
+  - `src/components/admin/settings-view.tsx`: Removed `ProductTypesSettings` and the `'products'` tab, eliminating the artificial product workflow builder from Settings.
+  - `src/components/pos/add-product-modal.tsx`: Completely redesigned into a 100% dynamic, inventory-driven catalog browser:
+    - **Zero Static/Predefined Categories**: When store inventory is empty, 0 categories appear. Categories are computed dynamically in real time exclusively from active inventory records.
+    - **Empty-State-First**: Friendly illustration and prompt to create inventory if the store has no items or all items are inactive.
+    - **Dual View Switcher (Box / Grid vs List)**: Interactive toggle between touch-friendly product cards and a dense, scannable table. Preferred mode persisted in `localStorage`.
+    - **Single Clean `+` Button**: Fixed double plus symbol (`+ + Create Inventory` -> single `<Plus />` with clean text).
+    - **Real-Time Search & Filtering**: Live debounced search across name, SKU, barcode, brand, model, description, coupled with dynamic category chips and stock status filter.
+    - **Customer's Own Frame Option**: One-click sub-dialog allowing patient-supplied frames with custom lens notes and pricing to be added to the bill.
+  - `e2e/dynamic-catalog-grid-list.spec.ts`: Added dedicated E2E test verifying Grid/List view switching, dynamic categories, live search, single plus symbol, and cart addition (100% green).
+  - `e2e/pos-settings-sidebar.spec.ts`: Updated to verify retirement of `Catalog & Dispensing` tab (100% green).
+  - `e2e/pos-checkout.spec.ts`: Updated Test Case 7 to test the dynamic inventory catalog, Grid/List views, and customer own frame workflow (100% green).
 - **Latest Quality Gate State**:
   - `npm run check`: **PASS (0 errors, 0 warnings)**
   - `npm run audit:security`: **PASS (0 critical violations)**
   - `npm run audit:design`: **PASS (92 UI components audited, 0 violations)**
   - Core POS Workflows (`npm run test:pos`): **12/12 PASS (100% green)**
-  - Multi-Branch Relations (`multi-branch-relations.spec.ts`): **6/6 PASS (100% green)**
+  - Dynamic Catalog & Grid/List (`dynamic-catalog-grid-list.spec.ts`): **1/1 PASS (100% green)**
+  - Settings Navigation Sidebar (`pos-settings-sidebar.spec.ts`): **1/1 PASS (100% green)**
   - Inventory & Patient CRUD (`patient-inventory-crud.spec.ts`): **5/5 PASS (100% green)**
   - Bug Fix Log: BUG-001 … BUG-041.
 
 ---
 
-## 2. Most Recent Task Accomplishments (Quick Create Inventory from Add Product & POS Workflows)
-1. **Add Product Modal Integration**:
-   - In `AddProductModal`, added a prominent `Create Inventory` button in the header and `+ Create Inventory` in the global search bar.
-   - When a search returns 0 results, rendered `[+ Create Inventory Item "{searchQuery}"]` prefilling the searched SKU/model.
-2. **Instant Cart Binding**:
-   - On submitting `AddInventoryForm` from `AddProductModal`, `InventorySearch`, or `PosView`, the newly created item is immediately inserted into the active billing cart with toast feedback and 0 page reloads.
-3. **Automated E2E Verification**:
-   - Added test in `e2e/patient-inventory-crud.spec.ts` verifying opening Add Product [F2], clicking Create Inventory, submitting a new frame, and confirming its presence in the billing cart table. Verified green in Chromium in 2.6s.
+## 2. Most Recent Task Accomplishments (Dynamic Inventory Catalog & POS Flow Simplification)
+1. **Retired Dynamic Product Categorization & POS Flow Builder**:
+   - Removed the abstract `ProductTypesSettings` and the `products` tab from Settings and registry. Catalog categories and pricing now originate 100% from active inventory records.
+2. **100% Dynamic Inventory-Driven Catalog**:
+   - Replaced the hardcoded categories (`POWER_GLASSES`, `BLUE_CUT`, etc.) and artificial sequential workflow steps with live inventory extraction.
+   - If a store has no items, 0 categories appear and an empty-state card prompts the user to create their first inventory item.
+3. **Interactive View Switcher (Box / Grid View vs List View)**:
+   - Added interactive `[ ⊞ Grid ]` and `[ ☰ List ]` mode toggles.
+   - Grid View displays rich cards with brand, model, SKU, stock status badges, selling price, and "+ Add" / "👓 Pair Lenses" buttons.
+   - List View displays a compact table for rapid cashier scanning.
+4. **Resolved Double Plus (`+ +`) Glitch**:
+   - Ensured all buttons display a single clean `+` icon/symbol.
+5. **Verified Quality Gates**:
+   - `npm run check` (0 errors), `npm run audit:security` (0 violations), `npm run audit:design` (0 violations), `npm run test:pos` (12/12 pass), `dynamic-catalog-grid-list.spec.ts` (pass), `pos-settings-sidebar.spec.ts` (pass).
    - Passed `npm run check`, `npm run audit:security`, `npm run audit:design`, `npm run test:pos` (12/12), `multi-branch-relations.spec.ts` (6/6), and `patient-inventory-crud.spec.ts` (4/4).
 
 ---

@@ -47,7 +47,6 @@ import {
 } from '@/actions/settings-actions';
 import { clearClientStorageCaches } from '@/hooks/use-cached-resource';
 import { testSmtpConnectionAction } from '@/actions/email-actions';
-import { ProductTypesSettings } from '@/components/admin/product-types-settings';
 import { authClient } from '@/lib/auth-client';
 import {
   getUserAccountStatusAction,
@@ -68,7 +67,6 @@ type TabType =
   | 'general'
   | 'print'
   | 'pos-layout'
-  | 'products'
   | 'email'
   | 'account'
   | 'notifications'
@@ -78,7 +76,6 @@ const VALID_TABS: TabType[] = [
   'general',
   'print',
   'pos-layout',
-  'products',
   'email',
   'account',
   'notifications',
@@ -738,7 +735,7 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
         </div>
 
         {/* Header Action: Auto-save badge on preference tabs vs Smart Save Button on form tabs */}
-        {(activeTab === 'print' || activeTab === 'products' || activeTab === 'pos-layout') && (
+        {(activeTab === 'print' || activeTab === 'pos-layout') && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
             <span>Auto-saves on selection</span>
@@ -769,7 +766,6 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
             {activeTab === 'general' && 'Store & Practice · Store Profile & Legal'}
             {activeTab === 'print' && 'Store & Practice · Hardware & Print Engine'}
             {activeTab === 'pos-layout' && 'Store & Practice · POS Viewport Layout'}
-            {activeTab === 'products' && 'Catalog & Dispensing · Product Types & Workflows'}
             {activeTab === 'account' && 'Profile & Security · Account & Security'}
             {activeTab === 'email' && 'Communications & Alerts · Email & SMTP Gateway'}
             {activeTab === 'system' && 'Subscription & System · System Engine & Cache'}
@@ -1465,11 +1461,6 @@ export function SettingsView({ initialProfile }: SettingsViewProps) {
               </div>
             </div>
           </div>
-        )}
-
-        {/* ── Tab 3: Dynamic Product Categorization & Workflow Builder ── */}
-        {activeTab === 'products' && (
-          <ProductTypesSettings />
         )}
 
         {/* ── Tab 4: Email & SMTP Configuration ── */}

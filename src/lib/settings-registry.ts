@@ -1,7 +1,6 @@
 import {
   Building2,
   Printer,
-  Sliders,
   Mail,
   RefreshCw,
   LayoutGrid,
@@ -11,7 +10,6 @@ import {
 
 export type SettingsCategoryKey =
   | 'store'
-  | 'catalog'
   | 'account'
   | 'communications'
   | 'system';
@@ -63,20 +61,6 @@ export const SETTINGS_NAV_GROUPS: SettingsCategoryGroup[] = [
         tabKey: 'pos-layout',
         testId: 'tab-pos-layout',
         badge: 'Display',
-      },
-    ],
-  },
-  {
-    id: 'catalog',
-    label: 'Catalog & Dispensing',
-    items: [
-      {
-        id: 'product-types',
-        title: 'Product Types & Workflows',
-        icon: Sliders,
-        tabKey: 'products',
-        testId: 'tab-product-types',
-        badge: 'Rx Wizard',
       },
     ],
   },

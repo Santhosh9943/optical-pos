@@ -21,9 +21,9 @@ test.describe('POS Screen Settings & Categorized Grouped Sidebar E2E Suite', () 
     const settingsSidebar = page.getByTestId('settings-navigation-sidebar');
     await expect(settingsSidebar).toBeVisible({ timeout: 10000 });
 
-    // Verify 5 Category Group Labels
+    // Verify 4 Active Category Group Labels (Catalog & Dispensing retired to inventory)
     await expect(settingsSidebar.locator('text=Store & Practice')).toBeVisible();
-    await expect(settingsSidebar.locator('text=Catalog & Dispensing')).toBeVisible();
+    await expect(settingsSidebar.locator('text=Catalog & Dispensing')).not.toBeVisible();
     await expect(settingsSidebar.locator('text=Profile & Security')).toBeVisible();
     await expect(settingsSidebar.locator('text=Communications & Alerts')).toBeVisible();
     await expect(settingsSidebar.locator('text=Subscription & System')).toBeVisible();
@@ -38,12 +38,9 @@ test.describe('POS Screen Settings & Categorized Grouped Sidebar E2E Suite', () 
     await expect(page.getByTestId('pos-layout-adaptive-card')).toBeVisible();
     await expect(page.getByTestId('pos-layout-dense-card')).toBeVisible();
 
-    // 5b. Product Types & Workflows
+    // 5b. Verify Product Types & Workflows tab is retired
     const productTypesItem = page.getByTestId('tab-product-types');
-    await expect(productTypesItem).toBeVisible();
-    await productTypesItem.click();
-    await expect(page).toHaveURL(/tab=products/);
-    await expect(page.getByTestId('product-types-settings-card')).toBeVisible();
+    await expect(productTypesItem).not.toBeVisible();
 
     // 5c. Email & SMTP Gateway
     const emailItem = page.getByTestId('tab-email-smtp');
